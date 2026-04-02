@@ -3,10 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, Project, ProjectSprite } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, Trash2, Sparkles, Loader2, X } from 'lucide-react';
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
+import SpritePreview from '@/components/SpritePreview';
+import { useGenerateSprite } from '@/hooks/useGenerateSprite';
 
 export default function ProjectWorkspace() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +20,27 @@ export default function ProjectWorkspace() {
   const [project, setProject] = useState<Project | null>(null);
   const [sprites, setSprites] = useState<ProjectSprite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatePrompt, setGeneratePrompt] = useState('');
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [selectedAnims, setSelectedAnims] = useState<string[]>(['idle', 'walk']);
+  const { isGenerating, error: generateError, result: generatedSprite, generate, clear: clearGenerated } = useGenerateSprite();
+
+  const AVAILABLE_ANIMS = [
+    { value: 'idle', label: 'Idle', desc: 'Respiración sutil' },
+    { value: 'walk', label: 'Walk', desc: 'Caminar' },
+    { value: 'attack', label: 'Attack', desc: 'Ataque con arma' },
+    { value: 'cast', label: 'Cast', desc: 'Lanzar hechizo' },
+    { value: 'hurt', label: 'Hurt', desc: 'Recibir daño' },
+    { value: 'jump', label: 'Jump', desc: 'Saltar' },
+  ];
+
+  const toggleAnim = (anim: string) => {
+    setSelectedAnims(prev =>
+      prev.includes(anim)
+        ? prev.filter(a => a !== anim)
+        : prev.length < 4 ? [...prev, anim] : prev
+    );
+  };
 
   useEffect(() => {
     if (id && user) {
@@ -70,6 +94,32 @@ export default function ProjectWorkspace() {
     }
   };
 
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!generatePrompt.trim() || isGenerating) return;
+    await generate(generatePrompt.trim(), selectedAnims);
+  };
+
+  const handleSaveGenerated = async () => {
+    if (!generatedSprite) return;
+    try {
+      const { data, error } = await supabase
+        .from('project_sprites')
+        .insert([{ project_id: id, asset_data: generatedSprite }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setSprites([data, ...sprites]);
+      clearGenerated();
+      setGeneratePrompt('');
+      setShowGenerator(false);
+      toast({ title: 'Sprite guardado', description: 'El sprite generado se guardó en tu proyecto.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-background flex flex-col items-center justify-center text-primary font-pixel text-xs">CARGANDO WORKSPACE...</div>;
   }
@@ -94,14 +144,135 @@ export default function ProjectWorkspace() {
               {project.name.toUpperCase()}
             </h1>
           </div>
-          <Button 
-            onClick={() => navigate(`/catalog?projectId=${project.id}`)}
-            className="font-pixel text-xs bg-primary text-primary-foreground hover:bg-primary/80 transition-all border border-primary/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
-          >
-            <Plus size={16} className="mr-2" />
-            AGREGAR DESDE CATALOGO
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => { setShowGenerator(!showGenerator); clearGenerated(); }}
+              className="font-pixel text-xs bg-purple-600 text-white hover:bg-purple-500 transition-all border border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.2)]"
+            >
+              <Sparkles size={16} className="mr-2" />
+              GENERAR CON IA
+            </Button>
+            <Button
+              onClick={() => navigate(`/catalog?projectId=${project.id}`)}
+              className="font-pixel text-xs bg-primary text-primary-foreground hover:bg-primary/80 transition-all border border-primary/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
+            >
+              <Plus size={16} className="mr-2" />
+              DESDE CATALOGO
+            </Button>
+          </div>
         </div>
+
+        {/* AI Generation Panel */}
+        {showGenerator && (
+          <div className="bg-card border border-purple-500/30 p-6 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-purple-400" />
+                <h2 className="font-pixel text-[10px] text-purple-400 tracking-wider">GENERAR SPRITE CON IA</h2>
+              </div>
+              <button onClick={() => { setShowGenerator(false); clearGenerated(); }} className="text-muted-foreground hover:text-white transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleGenerate} className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  value={generatePrompt}
+                  onChange={(e) => setGeneratePrompt(e.target.value)}
+                  placeholder="Describe tu sprite... ej: a red dragon, a treasure chest, a water tile"
+                  className="bg-secondary/50 font-mono flex-1"
+                  maxLength={500}
+                  disabled={isGenerating}
+                />
+                <Button
+                  type="submit"
+                  disabled={isGenerating || !generatePrompt.trim()}
+                  className="font-pixel text-[10px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 whitespace-nowrap"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 size={14} className="mr-2 animate-spin" />
+                      GENERANDO...
+                    </>
+                  ) : (
+                    'GENERAR'
+                  )}
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <span className="font-mono text-xs text-muted-foreground">
+                  Animaciones (2 frames c/u, max 4):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_ANIMS.map(anim => {
+                    const active = selectedAnims.includes(anim.value);
+                    return (
+                      <button
+                        key={anim.value}
+                        type="button"
+                        onClick={() => toggleAnim(anim.value)}
+                        disabled={isGenerating}
+                        className={`px-3 py-1.5 text-[10px] font-pixel rounded border transition-all ${
+                          active
+                            ? 'bg-purple-600/30 border-purple-500 text-purple-300'
+                            : 'bg-secondary/30 border-border text-muted-foreground hover:border-purple-500/50'
+                        } disabled:opacity-50`}
+                        title={anim.desc}
+                      >
+                        {anim.label.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedAnims.length === 0 && (
+                  <span className="font-mono text-[10px] text-muted-foreground/60">
+                    Sin animaciones = sprite estático (1 frame)
+                  </span>
+                )}
+              </div>
+            </form>
+
+            {generateError && (
+              <div className="text-sm font-mono text-destructive bg-destructive/10 border border-destructive/30 rounded p-3">
+                {generateError}
+              </div>
+            )}
+
+            {generatedSprite && (
+              <div className="border border-purple-500/20 rounded-lg p-4 space-y-4 bg-secondary/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-pixel text-xs text-foreground tracking-wider">{generatedSprite.name.toUpperCase()}</h3>
+                    <p className="font-mono text-[10px] text-muted-foreground mt-1">{generatedSprite.description}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveGenerated} className="font-pixel text-[10px] bg-primary text-primary-foreground hover:bg-primary/80 border border-primary">
+                      GUARDAR EN PROYECTO
+                    </Button>
+                    <Button onClick={() => clearGenerated()} variant="outline" className="font-pixel text-[10px]">
+                      DESCARTAR
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <div className="bg-card rounded border border-border p-3">
+                    <PaletteProvider defaultPalette={generatedSprite.palette}>
+                      <SpriteSheetCanvas asset={generatedSprite} />
+                    </PaletteProvider>
+                  </div>
+                  {generatedSprite.animations.length > 0 && (
+                    <div className="bg-card rounded border border-border p-3">
+                      <PaletteProvider defaultPalette={generatedSprite.palette}>
+                        <SpritePreview asset={generatedSprite} />
+                      </PaletteProvider>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Sprites Grid */}
         <div className="bg-card border border-border p-6 md:p-8 rounded-lg min-h-[50vh]">
