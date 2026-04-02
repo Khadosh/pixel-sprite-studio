@@ -4,8 +4,12 @@ import { getAssetById } from '@/lib/assets';
 import { PaletteProvider, usePalette } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { Download, RotateCcw, ArrowLeft } from 'lucide-react';
+import { Download, RotateCcw, ArrowLeft, Save } from 'lucide-react';
 import type { SpriteAsset } from '@/lib/types';
+import { useSearchParams } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 const PIXEL_SCALE = 4;
 const GRID_GAP = 1;
@@ -21,6 +25,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   const { palette, setPaletteColor, resetPalette } = usePalette();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId');
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
   const CELL_SIZE = asset.size * PIXEL_SCALE;
 
@@ -73,6 +81,29 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
     link.href = canvas.toDataURL('image/png');
     link.click();
   }, [asset, palette, CELL_SIZE]);
+
+  const handleSaveToProject = async () => {
+    if (!projectId) return;
+    try {
+      setIsSaving(true);
+      const assetDataToSave = {
+        ...asset,
+        palette: { ...palette } // Guardar la paleta actual
+      };
+
+      const { error } = await supabase
+        .from('project_sprites')
+        .insert([{ project_id: projectId, asset_data: assetDataToSave }]);
+
+      if (error) throw error;
+      toast({ title: 'Guardado', description: 'El sprite se ha guardado en tu proyecto exitosamente.' });
+      navigate(`/project/${projectId}`);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
 
@@ -133,13 +164,25 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                 <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
                   SPRITE GRID
                 </span>
-                <button
-                  onClick={handleExportPNG}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-primary text-primary-foreground rounded border border-primary hover:brightness-110 transition-all"
-                >
-                  <Download size={14} />
-                  EXPORT PNG
-                </button>
+                <div className="flex items-center gap-2">
+                  {projectId && (
+                    <button
+                      onClick={handleSaveToProject}
+                      disabled={isSaving}
+                      className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-green-600 text-white rounded border border-green-500 hover:brightness-110 transition-all disabled:opacity-50"
+                    >
+                      <Save size={14} />
+                      {isSaving ? 'GUARDANDO...' : 'GUARDAR EN PROYECTO'}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleExportPNG}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-primary text-primary-foreground rounded border border-primary hover:brightness-110 transition-all"
+                  >
+                    <Download size={14} />
+                    EXPORT PNG
+                  </button>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <SpriteSheetCanvas asset={asset} />

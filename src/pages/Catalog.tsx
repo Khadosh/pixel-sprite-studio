@@ -1,11 +1,16 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ASSET_CATALOG, getAssetsByCategory } from '@/lib/assets';
 import type { SpriteAsset } from '@/lib/types';
 import AssetCard from '@/components/AssetCard';
 import CategoryFilter from '@/components/CategoryFilter';
+import { ArrowLeft } from 'lucide-react';
 
 export default function Catalog() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get('projectId');
+  const navigate = useNavigate();
 
   const filteredAssets = useMemo(
     () => getAssetsByCategory(activeCategory),
@@ -30,6 +35,17 @@ export default function Catalog() {
       }} />
 
       <div className="relative max-w-6xl mx-auto px-4 py-8 md:px-8 md:py-12 space-y-8">
+        {/* Navigation */}
+        <div>
+          <button
+            onClick={() => navigate(projectId ? `/project/${projectId}` : '/')}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+            {projectId ? 'Volver al Proyecto' : 'Volver a la Home'}
+          </button>
+        </div>
+
         {/* Header */}
         <header className="text-center space-y-3">
           <div className="flex items-center justify-center gap-3">
@@ -70,7 +86,7 @@ export default function Catalog() {
         {filteredAssets.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredAssets.map(asset => (
-              <AssetCard key={asset.id} asset={asset} />
+              <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
             ))}
           </div>
         ) : (

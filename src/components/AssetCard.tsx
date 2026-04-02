@@ -24,9 +24,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 interface AssetCardProps {
   asset: SpriteAsset;
+  projectId?: string;
 }
 
-export default function AssetCard({ asset }: AssetCardProps) {
+export default function AssetCard({ asset, projectId }: AssetCardProps) {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { currentFrame } = useAssetPreview(asset);
@@ -73,7 +74,10 @@ export default function AssetCard({ asset }: AssetCardProps) {
   return (
     <button
       id={`asset-card-${asset.id}`}
-      onClick={() => navigate(`/asset/${asset.id}`)}
+      onClick={() => {
+        const query = projectId ? `?projectId=${projectId}` : '';
+        navigate(`/asset/${asset.id}${query}`);
+      }}
       className="group w-full text-left bg-card rounded-lg border border-border hover:border-primary/60 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden cursor-pointer"
     >
       {/* Preview canvas */}
