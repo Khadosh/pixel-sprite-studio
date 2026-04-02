@@ -1,0 +1,159 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase, Project } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { FolderGit2, LogOut, Plus, Search } from 'lucide-react';
+
+export default function Dashboard() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error: any) {
+      toast({ title: 'Error cargando proyectos', description: error.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim()) return;
+
+    try {
+      setIsCreating(true);
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{ name: newProjectName.trim(), user_id: user?.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setProjects([data, ...projects]);
+      setNewProjectName('');
+      toast({ title: 'Proyecto creado', description: 'Tu nuevo proyecto está listo.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Navbar Minimalista */}
+      <nav className="border-b border-border bg-card/50 backdrop-blur top-0 sticky z-10 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <span className="text-primary text-[10px]">✦</span>
+          </div>
+          <span className="font-pixel text-primary text-xs tracking-wider">PIXEL SPRITE STUDIO</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-muted-foreground font-mono text-[10px] hidden sm:inline-block">
+            {user?.email}
+          </span>
+          <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-white transition-colors">
+            <LogOut size={16} className="mr-2" />
+            <span className="font-mono text-xs">Logout</span>
+          </Button>
+        </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-6 py-10">
+        
+        {/* Create Project Section */}
+        <section className="mb-12 bg-card border border-border p-6 rounded-lg">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h2 className="font-pixel text-foreground tracking-wider text-sm mb-2">TUS PROYECTOS</h2>
+              <p className="text-muted-foreground font-mono text-xs max-w-lg">
+                Crea un proyecto para empezar a guardar, organizar y editar tus colecciones de pixel art generadas.
+              </p>
+            </div>
+            <form onSubmit={handleCreateProject} className="flex gap-2">
+              <Input 
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                placeholder="Nombre del proyecto..."
+                className="bg-secondary/50 font-mono w-full md:w-64"
+                maxLength={40}
+              />
+              <Button type="submit" disabled={isCreating || !newProjectName.trim()} className="bg-primary text-primary-foreground font-pixel text-[10px] whitespace-nowrap border border-primary hover:brightness-110">
+                <Plus size={14} className="mr-1" />
+                NUEVO
+              </Button>
+            </form>
+          </div>
+        </section>
+
+        {/* Projects Grid */}
+        <section>
+          {loading ? (
+            <div className="text-center py-20 font-pixel text-muted-foreground text-xs animate-pulse">
+              CARGANDO PROYECTOS...
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="text-center py-20 border border-dashed border-border rounded-lg bg-card/20">
+              <FolderGit2 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+              <p className="font-pixel text-muted-foreground text-xs mb-2">NINGUN PROYECTO AUN</p>
+              <p className="font-mono text-muted-foreground text-[10px]">Escribe un nombre arriba y crea tu primer workspace.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map((project) => (
+                <div 
+                  key={project.id}
+                  onClick={() => navigate(`/project/${project.id}`)}
+                  className="group bg-card border border-border p-5 rounded-lg hover:border-primary/50 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(34,197,94,0.1)] relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150" />
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-2 bg-secondary border border-border rounded-md text-primary group-hover:text-primary-foreground group-hover:bg-primary transition-colors">
+                      <FolderGit2 size={18} />
+                    </div>
+                  </div>
+                  <h3 className="font-mono font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                    {project.name}
+                  </h3>
+                  <p className="text-[10px] font-mono text-muted-foreground">
+                    Creado {new Date(project.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+      </main>
+    </div>
+  );
+}
