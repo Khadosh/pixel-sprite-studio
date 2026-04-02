@@ -1,18 +1,24 @@
 import { useCallback, useRef } from 'react';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { ANIMATIONS, FRAME_SIZE, PALETTE } from '@/lib/pixelCharacter';
-import { Download } from 'lucide-react';
+import { ANIMATIONS, FRAME_SIZE } from '@/lib/pixelCharacter';
+import { usePalette } from '@/hooks/usePalette';
+import { Download, RotateCcw } from 'lucide-react';
 
 const PIXEL_SCALE = 4;
 const CELL_SIZE = FRAME_SIZE * PIXEL_SCALE;
 const GRID_GAP = 1;
 
+const COLOR_NAMES: Record<string, string> = {
+  '1': 'Outline', '2': 'Skin', '3': 'Hair', '4': 'Shirt',
+  '5': 'Pants', '6': 'Shoes', '7': 'Sword', '8': 'Eyes', '9': 'Hurt'
+};
+
 export default function Index() {
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { palette, setPaletteColor, resetPalette } = usePalette();
 
   const handleExportPNG = useCallback(() => {
-    // Create a clean export canvas without labels, just transparent sprite grid
     const maxFrames = Math.max(...ANIMATIONS.map(a => a.frames.length));
     const w = maxFrames * (CELL_SIZE + GRID_GAP) - GRID_GAP;
     const h = ANIMATIONS.length * (CELL_SIZE + GRID_GAP) - GRID_GAP;
@@ -21,8 +27,6 @@ export default function Index() {
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext('2d')!;
-
-    // Transparent background
     ctx.clearRect(0, 0, w, h);
 
     ANIMATIONS.forEach((anim, rowIdx) => {
@@ -33,7 +37,7 @@ export default function Index() {
           for (let col = 0; col < FRAME_SIZE; col++) {
             const val = frame[row][col];
             if (val === 0) continue;
-            const color = PALETTE[val];
+            const color = palette[val];
             if (!color || color === 'transparent') continue;
             ctx.fillStyle = color;
             ctx.fillRect(
@@ -51,12 +55,11 @@ export default function Index() {
     link.download = 'spritesheet.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
-  }, []);
+  }, [palette]);
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
         <header className="text-center space-y-2">
           <h1 className="font-pixel text-primary text-lg md:text-xl tracking-wider">
             PIXEL SPRITE SHEET
@@ -66,9 +69,7 @@ export default function Index() {
           </p>
         </header>
 
-        {/* Main content */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Sprite Sheet Grid */}
           <div className="flex-1 overflow-x-auto">
             <div className="bg-card rounded-lg border border-border p-4 space-y-4">
               <div className="flex items-center justify-between">
@@ -89,7 +90,6 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Preview Panel */}
           <div className="w-full lg:w-64">
             <div className="bg-card rounded-lg border border-border p-4">
               <SpritePreview />
@@ -97,29 +97,40 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Legend */}
+        {/* Palette Editor */}
         <div className="bg-card rounded-lg border border-border p-4">
-          <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">
-            PALETTE
-          </span>
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
+              PALETTE
+            </span>
+            <button
+              onClick={resetPalette}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-pixel text-muted-foreground bg-secondary rounded border border-border hover:border-primary/50 transition-colors"
+            >
+              <RotateCcw size={10} />
+              RESET
+            </button>
+          </div>
           <div className="flex flex-wrap gap-3">
-            {Object.entries(PALETTE).filter(([k]) => k !== '0').map(([key, color]) => {
-              const names: Record<string, string> = {
-                '1': 'Outline', '2': 'Skin', '3': 'Hair', '4': 'Shirt',
-                '5': 'Pants', '6': 'Shoes', '7': 'Sword', '8': 'Eyes', '9': 'Hurt'
-              };
-              return (
-                <div key={key} className="flex items-center gap-2">
+            {Object.entries(palette).filter(([k]) => k !== '0').map(([key, color]) => (
+              <label key={key} className="flex items-center gap-2 cursor-pointer group">
+                <div className="relative">
                   <div
-                    className="w-4 h-4 rounded-sm border border-border"
+                    className="w-6 h-6 rounded-sm border border-border group-hover:border-primary/60 transition-colors"
                     style={{ backgroundColor: color }}
                   />
-                  <span className="text-xs text-muted-foreground font-mono">
-                    {names[key] || key}
-                  </span>
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setPaletteColor(Number(key), e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
                 </div>
-              );
-            })}
+                <span className="text-xs text-muted-foreground font-mono group-hover:text-foreground transition-colors">
+                  {COLOR_NAMES[key] || key}
+                </span>
+              </label>
+            ))}
           </div>
         </div>
 
