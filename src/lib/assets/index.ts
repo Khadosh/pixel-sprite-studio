@@ -4,6 +4,8 @@ import { pineTree } from './pineTree';
 import { treasureChest } from './treasureChest';
 import { waterTile } from './waterTile';
 import { coin } from './coin';
+import { xianxiaWizard } from './xianxiaWizard';
+import { xianxiaWizardAuto } from './xianxiaWizardAuto';
 
 /** All available assets in the catalog */
 export const ASSET_CATALOG: SpriteAsset[] = [
@@ -12,6 +14,8 @@ export const ASSET_CATALOG: SpriteAsset[] = [
   treasureChest,
   waterTile,
   coin,
+  xianxiaWizard,
+  xianxiaWizardAuto,
 ];
 
 /** Look up an asset by its unique ID */
@@ -26,4 +30,4 @@ export function getAssetsByCategory(category: string): SpriteAsset[] {
 }
 
 // Re-export individual assets for direct import
-export { warrior, pineTree, treasureChest, waterTile, coin };
+export { warrior, pineTree, treasureChest, waterTile, coin, xianxiaWizard, xianxiaWizardAuto };
