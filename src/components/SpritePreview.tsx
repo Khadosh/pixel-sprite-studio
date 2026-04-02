@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
-import { ANIMATIONS, FRAME_SIZE, PALETTE } from '@/lib/pixelCharacter';
+import { ANIMATIONS, FRAME_SIZE } from '@/lib/pixelCharacter';
+import { usePalette } from '@/hooks/usePalette';
 
 const PREVIEW_SCALE = 6;
 const PREVIEW_SIZE = FRAME_SIZE * PREVIEW_SCALE;
@@ -8,6 +9,7 @@ export default function SpritePreview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [animIdx, setAnimIdx] = useState(0);
   const [frameIdx, setFrameIdx] = useState(0);
+  const { palette } = usePalette();
 
   const anim = ANIMATIONS[animIdx];
 
@@ -26,7 +28,6 @@ export default function SpritePreview() {
 
     ctx.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
 
-    // Checkerboard
     const cs = 12;
     for (let y = 0; y < PREVIEW_SIZE; y += cs) {
       for (let x = 0; x < PREVIEW_SIZE; x += cs) {
@@ -36,19 +37,18 @@ export default function SpritePreview() {
       }
     }
 
-    // Draw frame
     const frame = anim.frames[frameIdx];
     for (let row = 0; row < FRAME_SIZE; row++) {
       for (let col = 0; col < FRAME_SIZE; col++) {
         const val = frame[row][col];
         if (val === 0) continue;
-        const color = PALETTE[val];
+        const color = palette[val];
         if (!color || color === 'transparent') continue;
         ctx.fillStyle = color;
         ctx.fillRect(col * PREVIEW_SCALE, row * PREVIEW_SCALE, PREVIEW_SCALE, PREVIEW_SCALE);
       }
     }
-  }, [anim, frameIdx]);
+  }, [anim, frameIdx, palette]);
 
   return (
     <div className="flex flex-col items-center gap-4">
