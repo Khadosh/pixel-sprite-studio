@@ -6,18 +6,19 @@ import type { Frame, SpriteAsset } from '@/lib/types';
  * Handles frame cycling based on the selected animation.
  * For static assets (no animations), returns the first frame.
  */
-export function useAssetPreview(asset: SpriteAsset, initialAnimIndex = 0) {
-  const [animationIndex, setAnimationIndex] = useState(initialAnimIndex);
+export function useAssetPreview(asset: SpriteAsset, animationName: string | null = null) {
   const [frameStep, setFrameStep] = useState(0);
 
-  const hasAnimations = asset.animations.length > 0;
-  const currentAnimation = hasAnimations ? asset.animations[animationIndex] : null;
+  const currentAnimation = animationName === 'base'
+    ? null
+    : animationName
+      ? asset.animations.find(a => a.name === animationName) || null
+      : asset.animations.length > 0 ? asset.animations[0] : null;
 
   // Reset frame step when animation changes
-  const setAnimationIndexSafe = useCallback((idx: number) => {
-    setAnimationIndex(idx);
+  useEffect(() => {
     setFrameStep(0);
-  }, []);
+  }, [animationName]);
 
   // Auto-cycle frames for animated assets
   useEffect(() => {
@@ -43,9 +44,6 @@ export function useAssetPreview(asset: SpriteAsset, initialAnimIndex = 0) {
   return {
     currentFrame,
     currentAnimation,
-    animationIndex,
-    setAnimationIndex: setAnimationIndexSafe,
-    frameStep,
-    hasAnimations,
+    hasAnimations: asset.animations.length > 0,
   };
 }
