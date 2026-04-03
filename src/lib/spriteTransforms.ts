@@ -126,17 +126,17 @@ export function generateIdle(base: Frame): [Frame, Frame] {
   return [cloneFrame(base), shiftDown(base, 1)];
 }
 
-/** Walk: shift bottom rows left/right to simulate feet alternating */
+/** Walk: shift only the bottom 2 rows (feet) left/right for a subtle step */
 export function generateWalk(base: Frame): [Frame, Frame] {
   const bounds = findBounds(base);
   if (!bounds) return [cloneFrame(base), cloneFrame(base)];
 
-  // Bottom third of the sprite = legs/feet area
-  const legStart = Math.floor(bounds.top + (bounds.bottom - bounds.top) * 0.7);
+  // Only the last 2 rows of the sprite (feet area)
+  const feetStart = Math.max(bounds.bottom - 1, bounds.top);
 
   return [
-    shiftRowsHorizontal(base, legStart, bounds.bottom, -1),
-    shiftRowsHorizontal(base, legStart, bounds.bottom, 1),
+    shiftRowsHorizontal(base, feetStart, bounds.bottom, -1),
+    shiftRowsHorizontal(base, feetStart, bounds.bottom, 1),
   ];
 }
 

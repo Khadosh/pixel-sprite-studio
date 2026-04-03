@@ -7,18 +7,13 @@ const PREVIEW_SCALE = 6;
 
 interface SpritePreviewProps {
   asset: SpriteAsset;
+  animationName?: string | null;
 }
 
-export default function SpritePreview({ asset }: SpritePreviewProps) {
+export default function SpritePreview({ asset, animationName = null }: SpritePreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { palette } = usePalette();
-  const {
-    currentFrame,
-    currentAnimation,
-    animationIndex,
-    setAnimationIndex,
-    hasAnimations,
-  } = useAssetPreview(asset);
+  const { currentFrame, currentAnimation } = useAssetPreview(asset, animationName);
 
   const PREVIEW_SIZE = asset.size * PREVIEW_SCALE;
 
@@ -67,23 +62,6 @@ export default function SpritePreview({ asset }: SpritePreviewProps) {
         className="rounded border border-border"
         style={{ imageRendering: 'pixelated' }}
       />
-      {hasAnimations && (
-        <div className="flex flex-wrap gap-2">
-          {asset.animations.map((a, i) => (
-            <button
-              key={a.name}
-              onClick={() => setAnimationIndex(i)}
-              className={`px-3 py-1.5 text-[10px] font-pixel rounded border transition-colors ${
-                i === animationIndex
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-secondary text-secondary-foreground border-border hover:border-primary/50'
-              }`}
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
