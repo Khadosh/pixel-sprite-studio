@@ -1,4 +1,4 @@
-import { Pencil, Eraser, Undo2 } from 'lucide-react';
+import { Pencil, Eraser, Undo2, Layers } from 'lucide-react';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 
 export type BrushSize = 1 | 4 | 16;
@@ -10,6 +10,8 @@ interface EditorToolbarProps {
   onBrushSizeChange: (s: BrushSize) => void;
   canUndo: boolean;
   onUndo: () => void;
+  onionSkin: boolean;
+  onToggleOnionSkin: () => void;
 }
 
 const BRUSH_SIZES: { value: BrushSize; label: string; icon: string }[] = [
@@ -18,7 +20,7 @@ const BRUSH_SIZES: { value: BrushSize; label: string; icon: string }[] = [
   { value: 16, label: '4x4', icon: '▣' },
 ];
 
-export default function EditorToolbar({ tool, onToolChange, brushSize, onBrushSizeChange, canUndo, onUndo }: EditorToolbarProps) {
+export default function EditorToolbar({ tool, onToolChange, brushSize, onBrushSizeChange, canUndo, onUndo, onionSkin, onToggleOnionSkin }: EditorToolbarProps) {
   const btnBase = 'p-2 rounded border transition-all';
   const btnActive = 'border-purple-500 bg-purple-600/30 text-purple-300';
   const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
@@ -63,6 +65,16 @@ export default function EditorToolbar({ tool, onToolChange, brushSize, onBrushSi
         title="Undo"
       >
         <Undo2 size={16} />
+      </button>
+
+      <div className="w-px h-6 bg-border mx-1" />
+
+      <button
+        onClick={onToggleOnionSkin}
+        className={`${btnBase} ${onionSkin ? btnActive : btnInactive}`}
+        title="Papel Cebolla (Onion Skin)"
+      >
+        <Layers size={16} />
       </button>
     </div>
   );

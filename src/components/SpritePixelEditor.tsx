@@ -14,6 +14,8 @@ interface SpritePixelEditorProps {
   onErasePixel: (row: number, col: number) => void;
   onStrokeStart: () => void;
   brushSize: number;
+  onionSkinPrevFrame?: number[][];
+  onionSkinNextFrame?: number[][];
 }
 
 export default function SpritePixelEditor({
@@ -25,6 +27,8 @@ export default function SpritePixelEditor({
   onErasePixel,
   onStrokeStart,
   brushSize,
+  onionSkinPrevFrame,
+  onionSkinNextFrame,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -57,9 +61,6 @@ export default function SpritePixelEditor({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Skip redraw during active strokes (handled by drawOnCanvas)
-    if (isDrawing || isErasing) return;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Checkerboard background
@@ -71,7 +72,31 @@ export default function SpritePixelEditor({
       }
     }
 
-    // Draw pixels
+    // Draw ghost frames (Onion skin)
+    const drawGhost = (ghostFrame: number[][], alpha: number, colorOverride?: string) => {
+      ctx.globalAlpha = alpha;
+      for (let row = 0; row < asset.size; row++) {
+        for (let col = 0; col < asset.size; col++) {
+          const val = ghostFrame[row][col];
+          if (val === 0) continue;
+          
+          if (colorOverride) {
+             ctx.fillStyle = colorOverride;
+          } else {
+             const color = asset.palette[val];
+             if (!color || color === 'transparent') continue;
+             ctx.fillStyle = color;
+          }
+          ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+        }
+      }
+      ctx.globalAlpha = 1.0;
+    };
+
+    if (onionSkinPrevFrame) drawGhost(onionSkinPrevFrame, 0.35, '#ff4a4a'); // Reddish tint for previous
+    if (onionSkinNextFrame) drawGhost(onionSkinNextFrame, 0.35, '#4aff4a'); // Greenish tint for next
+
+    // Draw main frame
     if (frame) {
       for (let row = 0; row < asset.size; row++) {
         for (let col = 0; col < asset.size; col++) {
@@ -98,7 +123,7 @@ export default function SpritePixelEditor({
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
     }
-  }, [asset, frame, frameIndex, canvasSize, isDrawing, isErasing]);
+  }, [asset, frame, frameIndex, canvasSize, isDrawing, isErasing, onionSkinPrevFrame, onionSkinNextFrame]);
 
   const drawOnCanvas = (cell: { r: number; c: number }, erase: boolean) => {
     if (erase) onErasePixel(cell.r, cell.c);

@@ -143,3 +143,96 @@ export function addExternalAnimation(
     animations,
   };
 }
+
+/**
+ * Duplicates the frame at targetIdx and inserts it right after it.
+ * Shifts all subsequent animation references + 1.
+ */
+export function duplicateFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset {
+  const newFrames = [...asset.frames];
+  const frameToCopy = newFrames[targetIdx].map(row => [...row]);
+  newFrames.splice(targetIdx + 1, 0, frameToCopy);
+
+  const newAnimations = asset.animations.map(anim => ({
+    ...anim,
+    frameIndices: anim.frameIndices.flatMap(oldIdx => {
+      if (oldIdx === targetIdx) return [oldIdx, targetIdx + 1];
+      return oldIdx > targetIdx ? oldIdx + 1 : oldIdx;
+    })
+  }));
+
+  return { ...asset, frames: newFrames, animations: newAnimations };
+}
+
+/**
+ * Inserts a fully transparent frame after targetIdx.
+ */
+export function insertEmptyFrame(asset: SpriteAsset, afterIdx: number): SpriteAsset {
+  const size = asset.size;
+  const newFrames = [...asset.frames];
+  const emptyFrame = Array.from({ length: size }, () => Array(size).fill(0));
+  newFrames.splice(afterIdx + 1, 0, emptyFrame);
+
+  const newAnimations = asset.animations.map(anim => ({
+    ...anim,
+    frameIndices: anim.frameIndices.flatMap(oldIdx => {
+      if (oldIdx === afterIdx) return [oldIdx, afterIdx + 1];
+      return oldIdx > afterIdx ? oldIdx + 1 : oldIdx;
+    })
+  }));
+
+  return { ...asset, frames: newFrames, animations: newAnimations };
+}
+
+/**
+ * Deletes the frame at targetIdx.
+ * Important: Base frame (index 0) cannot be deleted if it's the only frame to preserve asset integrity.
+ */
+export function deleteFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset {
+  if (asset.frames.length <= 1) return asset; // Don't delete the last remaining frame
+
+  const newFrames = [...asset.frames];
+  newFrames.splice(targetIdx, 1);
+
+  const newAnimations = asset.animations.map(anim => {
+    // Remove the deleted frame, shift > targetIdx down by 1
+    const validIndices = anim.frameIndices.filter(oldIdx => oldIdx !== targetIdx);
+    return {
+      ...anim,
+      frameIndices: validIndices.map(oldIdx => oldIdx > targetIdx ? oldIdx - 1 : oldIdx)
+    };
+  });
+
+  return { ...asset, frames: newFrames, animations: newAnimations };
+}
+
+/**
+ * Moves a frame from one index to another, updating animation definitions
+ * to point to their correctly displaced frames.
+ */
+export function moveFrame(asset: SpriteAsset, fromIdx: number, toIdx: number): SpriteAsset {
+  if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= asset.frames.length || toIdx >= asset.frames.length) {
+    return asset;
+  }
+
+  const newFrames = [...asset.frames];
+  const [movedFrame] = newFrames.splice(fromIdx, 1);
+  newFrames.splice(toIdx, 0, movedFrame);
+
+  const newAnimations = asset.animations.map(anim => ({
+    ...anim,
+    frameIndices: anim.frameIndices.map(oldIdx => {
+      if (oldIdx === fromIdx) return toIdx;
+
+      if (fromIdx > toIdx) { // Moved left
+        if (oldIdx >= toIdx && oldIdx < fromIdx) return oldIdx + 1;
+      } else { // Moved right
+        if (oldIdx > fromIdx && oldIdx <= toIdx) return oldIdx - 1;
+      }
+      return oldIdx;
+    })
+  }));
+
+  return { ...asset, frames: newFrames, animations: newAnimations };
+}
+

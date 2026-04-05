@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
 import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import type { SpriteAsset } from '@/lib/types';
@@ -9,7 +10,7 @@ import PaletteBar from '@/components/PaletteBar';
 import EditorToolbar from '@/components/EditorToolbar';
 import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';
-import { generateAnimationsClientSide } from '@/lib/spriteAnimations';
+import { generateAnimationsClientSide, duplicateFrame, deleteFrame, insertEmptyFrame, moveFrame } from '@/lib/spriteAnimations';
 import { useGenerateAnimation } from '@/hooks/useGenerateAnimation';
 
 const PIXEL_SCALE = 4;
@@ -68,8 +69,11 @@ function FrameThumb({
   );
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
       className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'scale-105' : 'opacity-60 hover:opacity-90'}`}
     >
       <canvas
@@ -79,7 +83,7 @@ function FrameThumb({
         style={{ imageRendering: 'pixelated', width: THUMB_SIZE, height: THUMB_SIZE }}
       />
       <span className="font-mono text-[8px] text-muted-foreground">{label}</span>
-    </button>
+    </div>
   );
 }
 
@@ -94,6 +98,7 @@ export default function SpriteEditorModal({
   const [viewingAnimation, setViewingAnimation] = useState<string>('base');
   const [assetName, setAssetName] = useState(initialAsset.name);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [onionSkin, setOnionSkin] = useState(false);
 
   const visibleFramesIndices = useMemo(() => {
     if (viewingAnimation === 'base' || editedAsset.animations.length === 0) {
@@ -103,6 +108,17 @@ export default function SpriteEditorModal({
     if (!anim) return [0];
     return [...new Set(anim.frameIndices)];
   }, [editedAsset.animations, viewingAnimation]);
+
+  const onionGhostFrames = useMemo(() => {
+    if (!onionSkin) return { prev: undefined, next: undefined };
+    const currentIndex = visibleFramesIndices.indexOf(editingFrameIndex);
+    const prevIndex = currentIndex > 0 ? visibleFramesIndices[currentIndex - 1] : -1;
+    const nextIndex = currentIndex < visibleFramesIndices.length - 1 ? visibleFramesIndices[currentIndex + 1] : -1;
+    return {
+      prev: prevIndex >= 0 ? editedAsset.frames[prevIndex] : undefined,
+      next: nextIndex >= 0 ? editedAsset.frames[nextIndex] : undefined,
+    };
+  }, [onionSkin, visibleFramesIndices, editingFrameIndex, editedAsset.frames]);
 
   useEffect(() => {
     if (editingFrameIndex >= editedAsset.frames.length) {
@@ -149,6 +165,26 @@ export default function SpriteEditorModal({
       setEditingFrameIndex(0);
     }
   };
+
+  const handleDuplicateFrame = useCallback((idx: number) => {
+    setEditedAsset(prev => duplicateFrame(prev, idx));
+  }, []);
+
+  const handleDeleteFrame = useCallback((idx: number) => {
+    if (editingFrameIndex === idx) setEditingFrameIndex(Math.max(0, idx - 1));
+    else if (editingFrameIndex > idx) setEditingFrameIndex(editingFrameIndex - 1);
+    setEditedAsset(prev => deleteFrame(prev, idx));
+  }, [editingFrameIndex]);
+
+  const handleInsertEmptyFrame = useCallback((idx: number) => {
+    setEditedAsset(prev => insertEmptyFrame(prev, idx));
+  }, []);
+
+  const handleMoveFrame = useCallback((fromIdx: number, toIdx: number) => {
+    if (editingFrameIndex === fromIdx) setEditingFrameIndex(toIdx);
+    else if (editingFrameIndex === toIdx) setEditingFrameIndex(fromIdx);
+    setEditedAsset(prev => moveFrame(prev, fromIdx, toIdx));
+  }, [editingFrameIndex]);
 
   const handleGenerateAnimationsAI = async () => {
     if (selectedAnims.length === 0) return;
@@ -270,7 +306,7 @@ export default function SpriteEditorModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-none h-[95vh] max-h-none flex flex-col bg-card border-border p-4 gap-4 overflow-hidden">
         {/* HEADER */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0">
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0 pr-12">
           <div className="flex items-center gap-2">
             {isEditingName ? (
               <input
@@ -342,6 +378,8 @@ export default function SpriteEditorModal({
                 onBrushSizeChange={setBrushSize}
                 canUndo={canUndo}
                 onUndo={undo}
+                onionSkin={onionSkin}
+                onToggleOnionSkin={() => setOnionSkin(p => !p)}
               />
             </div>
             {/* CANVAS AREA */}
@@ -355,6 +393,8 @@ export default function SpriteEditorModal({
                 onPaintPixel={paintPixel}
                 onErasePixel={erasePixel}
                 onStrokeStart={pushUndo}
+                onionSkinPrevFrame={onionGhostFrames.prev}
+                onionSkinNextFrame={onionGhostFrames.next}
               />
             </div>
           </div>
@@ -444,20 +484,48 @@ export default function SpriteEditorModal({
                   </div>
                 )}
 
-                <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1">
+                <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1 px-1 items-end min-h-[50px]">
                   {visibleFramesIndices.map((frameIndex) => {
                     const frame = editedAsset.frames[frameIndex];
                     if (!frame) return null;
                     return (
-                      <FrameThumb
-                        key={frameIndex}
-                        frame={frame}
-                        palette={editedAsset.palette}
-                        size={editedAsset.size}
-                        isActive={frameIndex === editingFrameIndex}
-                        label={frameLabels[frameIndex]}
-                        onClick={() => setEditingFrameIndex(frameIndex)}
-                      />
+                      <ContextMenu key={frameIndex}>
+                        <ContextMenuTrigger asChild>
+                          <div
+                            className="shrink-0 cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={(e) => { e.dataTransfer.setData('text/plain', frameIndex.toString()); e.dataTransfer.dropEffect = 'move'; }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDragEnter={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                              if (!isNaN(fromIdx) && fromIdx !== frameIndex) handleMoveFrame(fromIdx, frameIndex);
+                            }}
+                          >
+                            <FrameThumb
+                              frame={frame}
+                              palette={editedAsset.palette}
+                              size={editedAsset.size}
+                              isActive={frameIndex === editingFrameIndex}
+                              label={frameLabels[frameIndex]}
+                              onClick={() => setEditingFrameIndex(frameIndex)}
+                            />
+                          </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => handleDuplicateFrame(frameIndex)}>
+                            Duplicar Frame
+                          </ContextMenuItem>
+                          <ContextMenuItem onClick={() => handleInsertEmptyFrame(frameIndex)}>
+                            Insertar Vacío (Después)
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem disabled={frameIndex === 0} onClick={() => handleDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
+                            Eliminar Frame
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     );
                   })}
                 </div>
