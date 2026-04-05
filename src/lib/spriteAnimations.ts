@@ -98,3 +98,48 @@ function generateFramePair(
       return generateIdle(base);
   }
 }
+
+/**
+ * Injects 3 externally generated frames (e.g. from AI) into a SpriteAsset
+ * to form a 4-frame animation (baseFrame + 3 new frames).
+ */
+export function addExternalAnimation(
+  asset: SpriteAsset,
+  animationName: string,
+  newFrames: number[][][],
+): SpriteAsset {
+  // If the API returned exactly 3 frames
+  if (newFrames.length !== 3) {
+    throw new Error('addExternalAnimation expects exactly 3 new frames');
+  }
+
+  const frames = [...asset.frames];
+  const startIndex = frames.length;
+
+  frames.push(...newFrames);
+
+  const fps = animationName === 'idle' ? 3 : animationName === 'cast' ? 4 : 5;
+  const newAnimation: AnimationDef = {
+    name: animationName,
+    label: animationName.toUpperCase(),
+    // Base frame (0) followed by the 3 new frames
+    frameIndices: [0, startIndex, startIndex + 1, startIndex + 2],
+    fps,
+  };
+
+  const animations = [...asset.animations];
+  const existingIdx = animations.findIndex(a => a.name === animationName);
+  
+  if (existingIdx >= 0) {
+    // Replace if it already exists
+    animations[existingIdx] = newAnimation;
+  } else {
+    animations.push(newAnimation);
+  }
+
+  return {
+    ...asset,
+    frames,
+    animations,
+  };
+}

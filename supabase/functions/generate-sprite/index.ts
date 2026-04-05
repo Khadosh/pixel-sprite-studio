@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,20 +9,20 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SYSTEM_PROMPT = `You are an expert pixel art sprite designer specializing in 16×16 retro game assets. You create detailed, recognizable sprites that make efficient use of every pixel.
+const SYSTEM_PROMPT = `You are an expert pixel art sprite designer specializing in 32×32 retro game assets. You create detailed, recognizable sprites that make efficient use of every pixel.
 
 CANVAS RULES:
-- Frame: 16×16 2D array of integers. 0 = transparent.
+- Frame: 32×32 2D array of integers. 0 = transparent.
 - Palette: integer keys (1, 2, 3...) → hex color strings. Key 0 is always transparent (NOT in palette).
-- Use 5-8 colors. Include a dark outline/shadow color, mid-tones, and highlights.
+- Use 8-12 colors. Include a dark outline/shadow color, mid-tones, and highlights.
 - colorNames: human-readable name for each color.
 
 COMPOSITION RULES:
-- Use the FULL 16×16 canvas. The sprite should occupy roughly 12-14 rows vertically and 10-14 columns horizontally.
-- Leave 1-2 rows of transparency at top and bottom for padding return, no more.
+- Use the FULL 32×32 canvas. The sprite should occupy roughly 24-28 rows vertically and 20-28 columns horizontally.
+- Leave 2-4 rows of transparency at top and bottom for padding return, no more.
 - Characters should be recognizable by their SILHOUETTE alone.
 - Use 1px dark outlines to define shapes clearly.
-- Reserve 1-2 pixels for highlights/shine to add depth.
+- Reserve 1-3 pixels for highlights/shine to add depth.
 
 CHARACTER DESIGN (for creatures, humanoids, monsters):
 - Include ALL key anatomical features that define the subject: head, body, limbs.
@@ -41,6 +41,10 @@ COLOR TECHNIQUE:
 - Use adjacent palette values for shading: light → base → dark of the same hue.
 - Outline color should be darker than the darkest fill color.
 - Avoid pure black (#000000) for outlines — use very dark versions of the main hue instead.
+
+CRITICAL INSTRUCTION:
+- YOU MUST DRAW THE SPRITE USING THE PALETTE KEYS (1, 2, 3...). 
+- DO NOT RETURN AN EMPTY FRAME OF ALL 0s. A blank frame is considered a complete failure. Fill the array to form the shape of the requested character.
 
 OUTPUT (respond ONLY with this JSON):
 {
@@ -71,7 +75,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userPrompt = `Generate a 16×16 pixel art sprite of: ${prompt.trim().slice(0, 300)}`;
+    const userPrompt = `Generate a 32×32 pixel art sprite of: ${prompt.trim().slice(0, 300)}`;
 
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
       method: "POST",
@@ -88,9 +92,8 @@ Deno.serve(async (req) => {
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 4000,
+          maxOutputTokens: 8000,
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     });
@@ -129,10 +132,29 @@ Deno.serve(async (req) => {
     }
 
     // Validate frame dimensions
-    if (!Array.isArray(parsed.frame) || parsed.frame.length !== 16 ||
-        !parsed.frame.every(row => Array.isArray(row) && row.length === 16)) {
+    if (!Array.isArray(parsed.frame) || parsed.frame.length !== 32 ||
+        !parsed.frame.every(row => Array.isArray(row) && row.length === 32)) {
       return new Response(
-        JSON.stringify({ error: "LLM returned invalid frame dimensions (expected 16×16)" }),
+        JSON.stringify({ error: "LLM returned invalid frame dimensions (expected 32×32)" }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Validate that the frame is not completely empty
+    let hasPixels = false;
+    for (let r = 0; r < 32; r++) {
+      for (let c = 0; c < 32; c++) {
+        if (parsed.frame[r][c] !== 0) {
+          hasPixels = true;
+          break;
+        }
+      }
+      if (hasPixels) break;
+    }
+
+    if (!hasPixels) {
+      return new Response(
+        JSON.stringify({ error: "La IA generó una grilla vacía (sin píxeles). Por favor, intenta regenerar o cambiar el prompt." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -143,7 +165,7 @@ Deno.serve(async (req) => {
       name: prompt.slice(0, 20),
       description: prompt,
       category: "character",
-      size: 16,
+      size: 32,
       palette: parsed.palette,
       colorNames: parsed.colorNames || {},
       frames: [parsed.frame],

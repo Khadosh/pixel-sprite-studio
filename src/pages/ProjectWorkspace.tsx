@@ -282,6 +282,9 @@ export default function ProjectWorkspace() {
           }}
           initialAsset={editorAsset}
           onSave={handleEditorSave}
+          generatePrompt={editorIsNew && generatePrompt ? generatePrompt : undefined}
+          onRegenerate={editorIsNew ? () => generate(generatePrompt) : undefined}
+          isGenerating={isGenerating}
         />
       )}
     </div>

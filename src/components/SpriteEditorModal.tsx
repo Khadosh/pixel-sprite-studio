@@ -10,6 +10,7 @@ import EditorToolbar from '@/components/EditorToolbar';
 import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';
 import { generateAnimationsClientSide } from '@/lib/spriteAnimations';
+import { useGenerateAnimation } from '@/hooks/useGenerateAnimation';
 
 const PIXEL_SCALE = 4;
 const THUMB_SCALE = 4;
@@ -29,6 +30,9 @@ interface SpriteEditorModalProps {
   onOpenChange: (open: boolean) => void;
   initialAsset: SpriteAsset;
   onSave: (asset: SpriteAsset) => void;
+  generatePrompt?: string;
+  onRegenerate?: () => void;
+  isGenerating?: boolean;
 }
 
 function FrameThumb({
@@ -80,7 +84,7 @@ function FrameThumb({
 }
 
 export default function SpriteEditorModal({
-  open, onOpenChange, initialAsset, onSave,
+  open, onOpenChange, initialAsset, onSave, generatePrompt, onRegenerate, isGenerating
 }: SpriteEditorModalProps) {
   const [editedAsset, setEditedAsset] = useState<SpriteAsset>(initialAsset);
   const [selectedAnims, setSelectedAnims] = useState<string[]>(() => {
@@ -103,6 +107,16 @@ export default function SpriteEditorModal({
       setEditingFrameIndex(0);
     }
   }, [editedAsset.frames, editingFrameIndex]);
+
+  // Sync state if initialAsset changes (e.g. from regeneration)
+  useEffect(() => {
+    setEditedAsset(initialAsset);
+    setSelectedAnims(initialAsset.animations.map(a => a.name));
+    setEditingFrameIndex(0);
+    setViewingAnimation('base');
+  }, [initialAsset]);
+
+  const { isGenerating: isAnimGenerating, currentAnimation, error: animError, generateAnimationsSequence } = useGenerateAnimation();
 
   const {
     tool, setTool,
@@ -131,6 +145,17 @@ export default function SpriteEditorModal({
       setViewingAnimation('base');
       setEditingFrameIndex(0);
     }
+  };
+
+  const handleGenerateAnimationsAI = async () => {
+    if (selectedAnims.length === 0) return;
+    await generateAnimationsSequence(editedAsset, selectedAnims, (updatedAsset) => {
+      setEditedAsset(updatedAsset);
+      if (updatedAsset.animations.length > 0) {
+        setViewingAnimation(updatedAsset.animations[updatedAsset.animations.length - 1].name);
+        setEditingFrameIndex(updatedAsset.animations[updatedAsset.animations.length - 1].frameIndices[0]);
+      }
+    });
   };
 
   const handleChangeColor = useCallback((key: number, color: string) => {
@@ -241,10 +266,27 @@ export default function SpriteEditorModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card border-border">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0">
           <DialogTitle className="font-pixel text-sm text-primary tracking-wider">
             {editedAsset.name.toUpperCase()} — EDITOR
           </DialogTitle>
+          {generatePrompt && onRegenerate && (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline-block max-w-[200px] truncate">
+                Prompt: "{generatePrompt}"
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRegenerate}
+                disabled={isGenerating}
+                className="font-pixel text-[10px] border-purple-500 text-purple-400 hover:bg-purple-600/20"
+              >
+                {isGenerating ? 'GENERANDO...' : 'REGENERAR'}
+                {!isGenerating && <Sparkles size={12} className="ml-1" />}
+              </Button>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex flex-col lg:flex-row gap-6">
@@ -388,14 +430,28 @@ export default function SpriteEditorModal({
                   );
                 })}
               </div>
-              <Button
-                onClick={handleGenerateAnimations}
-                disabled={selectedAnims.length === 0}
-                className="w-full font-pixel text-[10px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500"
-              >
-                <Sparkles size={14} className="mr-2" />
-                {editedAsset.animations.length > 0 ? 'REGENERAR ANIMACIONES' : 'GENERAR ANIMACIONES'}
-              </Button>
+              <div className="flex gap-2 w-full pt-1">
+                <Button
+                  onClick={handleGenerateAnimations}
+                  disabled={selectedAnims.length === 0 || isAnimGenerating}
+                  className="flex-[0.8] font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border"
+                  title="Generación instantánea por matemática"
+                >
+                  QUICK (MATH)
+                </Button>
+                <Button
+                  onClick={handleGenerateAnimationsAI}
+                  disabled={selectedAnims.length === 0 || isAnimGenerating}
+                  className="flex-[1.2] font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500"
+                  title="Generación de alta calidad usando IA (consume tokens)"
+                >
+                  <Sparkles size={12} className="mr-1" />
+                  {isAnimGenerating ? `GENERANDO... ${currentAnimation?.substring(0, 4).toUpperCase()}` : 'GENERAR CON IA'}
+                </Button>
+              </div>
+              {animError && (
+                <div className="text-red-400 text-[10px] mt-1 break-words">{animError}</div>
+              )}
             </div>
           </div>
         </div>

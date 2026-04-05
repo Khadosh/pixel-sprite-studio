@@ -27,16 +27,16 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] Prompt engineering mejorado (composición, anatomía, técnica de color)
 - [x] Validación del JSON devuelto (dimensiones de frame)
 - [x] Edge function con Gemini 2.5 Flash + `responseMimeType: "application/json"`
-- [ ] Subir a 32×32 para mejor detalle (en progreso)
-- [ ] Hacer transforms dinámicos (no hardcodear tamaño 16)
-- [ ] Preview rápido inline antes de abrir editor
-- [ ] Botón "Regenerar" sin perder el prompt
+- [x] Subir a 32×32 para mejor detalle (en progreso)
+- [x] Hacer transforms dinámicos (no hardcodear tamaño 16)
+- [x] Preview rápido inline antes de abrir editor (Resuelto con Regenerar in-editor)
+- [x] Botón "Regenerar" sin perder el prompt
 
 ### 1.2 — Generación de animaciones separada
-- [ ] Generar una animación a la vez (Idle, Walk, Attack, etc.)
-- [ ] Opción batch (llamadas independientes)
-- [ ] AI-assisted: LLM genera variaciones del frame base
-- [ ] Mantener transforms client-side como opción "Quick"
+- [x] Generar una animación a la vez (Idle, Walk, Attack, etc.)
+- [x] Opción batch (llamadas independientes)
+- [x] AI-assisted: LLM genera variaciones del frame base
+- [x] Mantener transforms client-side como opción "Quick"
 
 ---
 

@@ -9,10 +9,12 @@ function cloneFrame(frame: Frame): Frame {
 
 /** Shift all non-zero pixels down by `px` rows. Top rows become transparent. */
 export function shiftDown(frame: Frame, px: number): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
   const out = cloneFrame(frame);
   // Work bottom-up to avoid overwriting
-  for (let r = 15; r >= 0; r--) {
-    for (let c = 0; c < 16; c++) {
+  for (let r = size - 1; r >= 0; r--) {
+    for (let c = 0; c < size; c++) {
       if (r - px >= 0) {
         out[r][c] = frame[r - px][c];
       } else {
@@ -25,9 +27,11 @@ export function shiftDown(frame: Frame, px: number): Frame {
 
 /** Shift all non-zero pixels right by `px` cols. Left cols become transparent. */
 export function shiftRight(frame: Frame, px: number): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
   const out = cloneFrame(frame);
-  for (let r = 0; r < 16; r++) {
-    for (let c = 15; c >= 0; c--) {
+  for (let r = 0; r < size; r++) {
+    for (let c = size - 1; c >= 0; c--) {
       if (c - px >= 0) {
         out[r][c] = frame[r][c - px];
       } else {
@@ -40,12 +44,14 @@ export function shiftRight(frame: Frame, px: number): Frame {
 
 /** Shift only rows from `startRow` to `endRow` (inclusive) left/right by `px`. */
 function shiftRowsHorizontal(frame: Frame, startRow: number, endRow: number, px: number): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
   const out = cloneFrame(frame);
-  for (let r = startRow; r <= Math.min(endRow, 15); r++) {
-    const newRow: Row = new Array(16).fill(0);
-    for (let c = 0; c < 16; c++) {
+  for (let r = startRow; r <= Math.min(endRow, size - 1); r++) {
+    const newRow: Row = new Array(size).fill(0);
+    for (let c = 0; c < size; c++) {
       const srcC = c - px;
-      if (srcC >= 0 && srcC < 16) {
+      if (srcC >= 0 && srcC < size) {
         newRow[c] = frame[r][srcC];
       }
     }
@@ -59,9 +65,10 @@ function shiftRowsHorizontal(frame: Frame, startRow: number, endRow: number, px:
  * Returns { top, bottom, left, right } or null if frame is empty.
  */
 function findBounds(frame: Frame) {
-  let top = 16, bottom = -1, left = 16, right = -1;
-  for (let r = 0; r < 16; r++) {
-    for (let c = 0; c < 16; c++) {
+  const size = frame.length;
+  let top = size, bottom = -1, left = size, right = -1;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
       if (frame[r][c] !== 0) {
         if (r < top) top = r;
         if (r > bottom) bottom = r;
@@ -79,6 +86,8 @@ function findBounds(frame: Frame) {
  * Simulates a magic/energy effect emanating from a weapon or hand.
  */
 function addGlow(frame: Frame, glowColor: number): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
   const out = cloneFrame(frame);
   const bounds = findBounds(frame);
   if (!bounds) return out;
@@ -111,7 +120,7 @@ function addGlow(frame: Frame, glowColor: number): Frame {
   for (const [dr, dc] of glowOffsets) {
     const gr = tipR + dr;
     const gc = tipC + dc;
-    if (gr >= 0 && gr < 16 && gc >= 0 && gc < 16 && out[gr][gc] === 0) {
+    if (gr >= 0 && gr < size && gc >= 0 && gc < size && out[gr][gc] === 0) {
       out[gr][gc] = glowColor;
     }
   }
@@ -131,8 +140,10 @@ export function generateWalk(base: Frame): [Frame, Frame] {
   const bounds = findBounds(base);
   if (!bounds) return [cloneFrame(base), cloneFrame(base)];
 
-  // Only the last 2 rows of the sprite (feet area)
-  const feetStart = Math.max(bounds.bottom - 1, bounds.top);
+  // The last part of the sprite depends on size. We assume bottom 2-3 rows are feet.
+  // For 16px it's 2 rows, for 32px it might be 3-4. We use ~15% of size.
+  const feetRows = Math.max(2, Math.floor(base.length * 0.15));
+  const feetStart = Math.max(bounds.bottom - (feetRows - 1), bounds.top);
 
   return [
     shiftRowsHorizontal(base, feetStart, bounds.bottom, -1),
