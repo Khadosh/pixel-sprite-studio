@@ -1,27 +1,27 @@
 import { useCallback, useRef } from 'react';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { PIXEL_WARRIOR_ASSET } from '@/lib/pixelCharacterAsset';
+import { ANIMATIONS, FRAME_SIZE } from '@/lib/pixelCharacter';
 import { usePalette } from '@/hooks/usePalette';
 import { Download, RotateCcw } from 'lucide-react';
 
 const PIXEL_SCALE = 4;
+const CELL_SIZE = FRAME_SIZE * PIXEL_SCALE;
 const GRID_GAP = 1;
+
+const COLOR_NAMES: Record<string, string> = {
+  '1': 'Outline', '2': 'Skin', '3': 'Hair', '4': 'Shirt',
+  '5': 'Pants', '6': 'Shoes', '7': 'Sword', '8': 'Eyes', '9': 'Hurt'
+};
 
 export default function Index() {
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const { palette, setPaletteColor, resetPalette } = usePalette();
-  const asset = PIXEL_WARRIOR_ASSET;
-  const CELL_SIZE = asset.size * PIXEL_SCALE;
 
   const handleExportPNG = useCallback(() => {
-    const rows = asset.animations.length > 0
-      ? asset.animations.map(a => a.frameIndices)
-      : [asset.frames.map((_, i) => i)];
-
-    const maxCols = Math.max(...rows.map(r => r.length));
-    const w = maxCols * (CELL_SIZE + GRID_GAP) - GRID_GAP;
-    const h = rows.length * (CELL_SIZE + GRID_GAP) - GRID_GAP;
+    const maxFrames = Math.max(...ANIMATIONS.map(a => a.frames.length));
+    const w = maxFrames * (CELL_SIZE + GRID_GAP) - GRID_GAP;
+    const h = ANIMATIONS.length * (CELL_SIZE + GRID_GAP) - GRID_GAP;
 
     const canvas = document.createElement('canvas');
     canvas.width = w;
@@ -29,14 +29,12 @@ export default function Index() {
     const ctx = canvas.getContext('2d')!;
     ctx.clearRect(0, 0, w, h);
 
-    rows.forEach((frameIndices, rowIdx) => {
+    ANIMATIONS.forEach((anim, rowIdx) => {
       const y = rowIdx * (CELL_SIZE + GRID_GAP);
-      frameIndices.forEach((frameIdx, colIdx) => {
+      anim.frames.forEach((frame, colIdx) => {
         const x = colIdx * (CELL_SIZE + GRID_GAP);
-        const frame = asset.frames[frameIdx];
-        if (!frame) return;
-        for (let row = 0; row < asset.size; row++) {
-          for (let col = 0; col < asset.size; col++) {
+        for (let row = 0; row < FRAME_SIZE; row++) {
+          for (let col = 0; col < FRAME_SIZE; col++) {
             const val = frame[row][col];
             if (val === 0) continue;
             const color = palette[val];
@@ -57,7 +55,7 @@ export default function Index() {
     link.download = 'spritesheet.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
-  }, [palette, asset, CELL_SIZE]);
+  }, [palette]);
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
@@ -67,7 +65,7 @@ export default function Index() {
             PIXEL SPRITE SHEET
           </h1>
           <p className="text-muted-foreground text-sm font-mono">
-            Character animation grid • {asset.size}×{asset.size} px • Transparent export
+            Character animation grid • 16×16 px • Transparent export
           </p>
         </header>
 
@@ -87,14 +85,14 @@ export default function Index() {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <SpriteSheetCanvas asset={asset} onCanvasReady={(c) => { exportCanvasRef.current = c; }} />
+                <SpriteSheetCanvas onCanvasReady={(c) => { exportCanvasRef.current = c; }} />
               </div>
             </div>
           </div>
 
           <div className="w-full lg:w-64">
             <div className="bg-card rounded-lg border border-border p-4">
-              <SpritePreview asset={asset} />
+              <SpritePreview />
             </div>
           </div>
         </div>
@@ -129,7 +127,7 @@ export default function Index() {
                   />
                 </div>
                 <span className="text-xs text-muted-foreground font-mono group-hover:text-foreground transition-colors">
-                  {asset.colorNames[Number(key)] || key}
+                  {COLOR_NAMES[key] || key}
                 </span>
               </label>
             ))}
@@ -137,7 +135,7 @@ export default function Index() {
         </div>
 
         <footer className="text-center text-[10px] text-muted-foreground font-mono pb-4">
-          {asset.animations.length} states • {asset.frames.length} frames • {asset.size}×{asset.size} px • transparent PNG export
+          6 states • 4 frames each • 16×16 px • transparent PNG export
         </footer>
       </div>
     </div>
