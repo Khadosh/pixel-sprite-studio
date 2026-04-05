@@ -20,55 +20,67 @@ export default function PaletteBar({
   onRemoveColor,
 }: PaletteBarProps) {
   return (
-    <div className="flex flex-wrap gap-2 items-end">
+    <div className="flex flex-col gap-1">
       {Object.entries(palette)
         .filter(([k]) => k !== '0')
         .map(([key, color]) => {
           const k = Number(key);
           const isActive = k === activeColorKey;
           return (
-            <div key={key} className="group flex flex-col items-center gap-1 relative">
-              <button
-                onClick={() => onSelectColor(k)}
-                className={`relative w-8 h-8 rounded-sm border-2 transition-all ${
-                  isActive
-                    ? 'border-white scale-110 shadow-[0_0_8px_rgba(255,255,255,0.3)]'
-                    : 'border-border hover:border-muted-foreground'
+            <div
+              key={key}
+              onClick={() => onSelectColor(k)}
+              onDoubleClick={(e) => {
+                const input = e.currentTarget.querySelector('input[type="color"]') as HTMLInputElement;
+                if (input) input.click();
+              }}
+              className={`group flex items-center gap-3 relative p-1.5 rounded border transition-colors cursor-pointer select-none ${
+                isActive
+                  ? 'bg-purple-600/20 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
+                  : 'bg-background/50 border-transparent hover:border-border'
+              }`}
+              title="Click para SELECCIONAR | Doble Click para EDITAR"
+            >
+              <div
+                className={`flex-shrink-0 relative w-6 h-6 rounded-sm border-2 transition-all ${
+                  isActive ? 'border-white' : 'border-border'
                 }`}
                 style={{ backgroundColor: color }}
-                title={colorNames[k] || `Color ${key}`}
               />
-              {onRemoveColor && (
+              <span className={`flex-1 text-[10px] font-mono transition-colors truncate ${isActive ? 'text-purple-300 font-bold' : 'text-muted-foreground'}`}>
+                {colorNames[k] || key}
+              </span>
+              
+              <input
+                type="color"
+                value={color}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => onChangeColor(k, e.target.value)}
+                className="absolute opacity-0 w-0 h-0 select-none pointer-events-none"
+                tabIndex={-1}
+              />
+
+              {onRemoveColor && isActive && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onRemoveColor(k); }}
-                  className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
-                  title="Remove color"
+                  className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded transition-colors"
+                  title="Eliminar color"
                 >
-                  <X size={10} />
+                  <X size={12} />
                 </button>
               )}
-              <label className="relative cursor-pointer">
-                <span className="text-[8px] font-mono text-muted-foreground hover:text-foreground transition-colors">
-                  {colorNames[k] || key}
-                </span>
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => onChangeColor(k, e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </label>
             </div>
           );
         })}
       {onAddColor && (
         <button
           onClick={onAddColor}
-          className="w-8 h-8 rounded-sm border-2 border-dashed border-border hover:border-purple-500 text-muted-foreground hover:text-purple-400 flex items-center justify-center transition-all"
+          className="w-full py-2 rounded-sm border-2 border-dashed border-border hover:border-purple-500 text-muted-foreground hover:text-purple-400 flex items-center justify-center transition-all bg-background/30"
           title="Agregar color"
         >
-          <Plus size={14} />
+          <Plus size={14} className="mr-1" />
+          <span className="font-pixel text-[8px]">NUEVO COLOR</span>
         </button>
       )}
     </div>

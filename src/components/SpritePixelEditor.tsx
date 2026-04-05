@@ -138,13 +138,13 @@ export default function SpritePixelEditor({
   };
 
   return (
-    <div className="relative" style={{ width: canvasSize, height: canvasSize }}>
+    <div className="relative flex items-center justify-center w-full h-full">
       <canvas
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
-        className="rounded border border-border cursor-crosshair"
-        style={{ imageRendering: 'pixelated', width: canvasSize, height: canvasSize }}
+        className="rounded border border-border cursor-crosshair max-w-full max-h-full shrink-0 shadow-lg"
+        style={{ imageRendering: 'pixelated', objectFit: 'contain', aspectRatio: '1 / 1' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

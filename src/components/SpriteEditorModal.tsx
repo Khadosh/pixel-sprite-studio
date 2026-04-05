@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Sparkles, Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import type { SpriteAsset } from '@/lib/types';
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
@@ -92,6 +92,8 @@ export default function SpriteEditorModal({
   });
   const [editingFrameIndex, setEditingFrameIndex] = useState(0);
   const [viewingAnimation, setViewingAnimation] = useState<string>('base');
+  const [assetName, setAssetName] = useState(initialAsset.name);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const visibleFramesIndices = useMemo(() => {
     if (viewingAnimation === 'base' || editedAsset.animations.length === 0) {
@@ -111,6 +113,7 @@ export default function SpriteEditorModal({
   // Sync state if initialAsset changes (e.g. from regeneration)
   useEffect(() => {
     setEditedAsset(initialAsset);
+    setAssetName(initialAsset.name);
     setSelectedAnims(initialAsset.animations.map(a => a.name));
     setEditingFrameIndex(0);
     setViewingAnimation('base');
@@ -246,7 +249,7 @@ export default function SpriteEditorModal({
   };
 
   const handleSave = () => {
-    onSave(editedAsset);
+    onSave({ ...editedAsset, name: assetName });
     onOpenChange(false);
   };
 
@@ -265,21 +268,41 @@ export default function SpriteEditorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card border-border">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0">
-          <DialogTitle className="font-pixel text-sm text-primary tracking-wider">
-            {editedAsset.name.toUpperCase()} — EDITOR
-          </DialogTitle>
+      <DialogContent className="w-[95vw] max-w-none h-[95vh] max-h-none flex flex-col bg-card border-border p-4 gap-4 overflow-hidden">
+        {/* HEADER */}
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            {isEditingName ? (
+              <input
+                autoFocus
+                type="text"
+                value={assetName}
+                onChange={e => setAssetName(e.target.value)}
+                onBlur={() => setIsEditingName(false)}
+                onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
+                className="bg-background border border-purple-500 rounded px-2 py-1 text-sm font-pixel text-primary outline-none"
+              />
+            ) : (
+              <DialogTitle
+                className="font-pixel text-sm text-primary tracking-wider flex items-center gap-2 cursor-pointer hover:text-purple-400 transition-colors"
+                onClick={() => setIsEditingName(true)}
+                title="Click para editar nombre"
+              >
+                {assetName.toUpperCase()} — EDITOR
+                <Edit2 size={12} className="opacity-50" />
+              </DialogTitle>
+            )}
+          </div>
           {generatePrompt && onRegenerate && (
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline-block max-w-[200px] truncate">
+              <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline-block max-w-[300px] truncate">
                 Prompt: "{generatePrompt}"
               </span>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={onRegenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || isAnimGenerating}
                 className="font-pixel text-[10px] border-purple-500 text-purple-400 hover:bg-purple-600/20"
               >
                 {isGenerating ? 'GENERANDO...' : 'REGENERAR'}
@@ -289,113 +312,11 @@ export default function SpriteEditorModal({
           )}
         </DialogHeader>
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left: Pixel Editor + Frame selector */}
-          <div className="space-y-4">
-            <EditorToolbar
-              tool={tool}
-              onToolChange={setTool}
-              brushSize={brushSize}
-              onBrushSizeChange={setBrushSize}
-              canUndo={canUndo}
-              onUndo={undo}
-            />
-            <SpritePixelEditor
-              asset={editedAsset}
-              frameIndex={editingFrameIndex}
-              activeColorKey={activeColorKey}
-              tool={tool}
-              brushSize={brushSize}
-              onPaintPixel={paintPixel}
-              onErasePixel={erasePixel}
-              onStrokeStart={pushUndo}
-            />
-
-            {/* Frame selector strip */}
-            {editedAsset.frames.length > 1 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  {editedAsset.animations.length > 0 && (
-                    <div className="flex gap-1 overflow-x-auto">
-                      <button
-                        onClick={() => { setViewingAnimation('base'); setEditingFrameIndex(0); }}
-                        className={`text-[8px] font-pixel px-2 py-1 rounded border transition-colors ${viewingAnimation === 'base' ? 'bg-purple-600/30 border-purple-500 text-purple-300' : 'border-border text-muted-foreground hover:border-purple-500/50'}`}
-                      >
-                        BASE
-                      </button>
-                      {editedAsset.animations.map(a => (
-                        <button
-                          key={a.name}
-                          onClick={() => { setViewingAnimation(a.name); setEditingFrameIndex(a.frameIndices[0]); }}
-                          className={`text-[8px] font-pixel px-2 py-1 rounded border transition-colors ${viewingAnimation === a.name ? 'bg-purple-600/30 border-purple-500 text-purple-300' : 'border-border text-muted-foreground hover:border-purple-500/50'}`}
-                        >
-                          {a.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => {
-                        const currentVisibleIdx = visibleFramesIndices.indexOf(editingFrameIndex);
-                        if (currentVisibleIdx > 0) {
-                          setEditingFrameIndex(visibleFramesIndices[currentVisibleIdx - 1]);
-                        }
-                      }}
-                      disabled={visibleFramesIndices.indexOf(editingFrameIndex) <= 0}
-                      className="p-1 rounded border border-border text-muted-foreground hover:text-white disabled:opacity-30 transition-colors"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        const currentVisibleIdx = visibleFramesIndices.indexOf(editingFrameIndex);
-                        if (currentVisibleIdx < visibleFramesIndices.length - 1) {
-                          setEditingFrameIndex(visibleFramesIndices[currentVisibleIdx + 1]);
-                        }
-                      }}
-                      disabled={visibleFramesIndices.indexOf(editingFrameIndex) >= visibleFramesIndices.length - 1 || visibleFramesIndices.indexOf(editingFrameIndex) === -1}
-                      className="p-1 rounded border border-border text-muted-foreground hover:text-white disabled:opacity-30 transition-colors"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {visibleFramesIndices.map((frameIndex) => {
-                    const frame = editedAsset.frames[frameIndex];
-                    if (!frame) return null;
-                    return (
-                      <FrameThumb
-                        key={frameIndex}
-                        frame={frame}
-                        palette={editedAsset.palette}
-                        size={editedAsset.size}
-                        isActive={frameIndex === editingFrameIndex}
-                        label={frameLabels[frameIndex]}
-                        onClick={() => setEditingFrameIndex(frameIndex)}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Preview + Palette + Animations */}
-          <div className="flex-1 space-y-4 min-w-0">
-            {/* Preview */}
-            {editedAsset.animations.length > 0 && (
-              <div className="bg-secondary/30 rounded-lg border border-border p-4">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PREVIEW</span>
-                <PaletteProvider defaultPalette={editedAsset.palette}>
-                  <SpritePreview asset={editedAsset} animationName={viewingAnimation} />
-                </PaletteProvider>
-              </div>
-            )}
-
-            {/* Palette */}
+        {/* MAIN BODY: 3 Columns */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
+          
+          {/* LEFT: Target only Palette now */}
+          <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1 custom-scrollbar">
             <div className="bg-secondary/30 rounded-lg border border-border p-4">
               <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PALETTE</span>
               <PaletteBar
@@ -408,8 +329,46 @@ export default function SpriteEditorModal({
                 onRemoveColor={handleRemoveColor}
               />
             </div>
+          </div>
 
-            {/* Animation Controls */}
+          {/* CENTER: Canvas */}
+          <div className="flex-1 min-w-0 bg-black/40 rounded-lg border border-border flex flex-col overflow-hidden relative">
+            {/* TOOLBAR HEADER */}
+            <div className="flex-shrink-0 border-b border-border bg-secondary/30 p-2 flex justify-center">
+              <EditorToolbar
+                tool={tool}
+                onToolChange={setTool}
+                brushSize={brushSize}
+                onBrushSizeChange={setBrushSize}
+                canUndo={canUndo}
+                onUndo={undo}
+              />
+            </div>
+            {/* CANVAS AREA */}
+            <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
+              <SpritePixelEditor
+                asset={editedAsset}
+                frameIndex={editingFrameIndex}
+                activeColorKey={activeColorKey}
+                tool={tool}
+                brushSize={brushSize}
+                onPaintPixel={paintPixel}
+                onErasePixel={erasePixel}
+                onStrokeStart={pushUndo}
+              />
+            </div>
+          </div>
+
+          {/* RIGHT: Preview & Animation Controls */}
+          <div className="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pl-1 custom-scrollbar">
+            {editedAsset.animations.length > 0 && (
+              <div className="bg-secondary/30 rounded-lg border border-border p-4">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PREVIEW</span>
+                <PaletteProvider defaultPalette={editedAsset.palette}>
+                  <SpritePreview asset={editedAsset} animationName={viewingAnimation} />
+                </PaletteProvider>
+              </div>
+            )}
             <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
               <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">ANIMACIONES</span>
               <div className="flex flex-wrap gap-2">
@@ -430,19 +389,19 @@ export default function SpriteEditorModal({
                   );
                 })}
               </div>
-              <div className="flex gap-2 w-full pt-1">
+              <div className="flex flex-col gap-2 w-full pt-1">
                 <Button
                   onClick={handleGenerateAnimations}
                   disabled={selectedAnims.length === 0 || isAnimGenerating}
-                  className="flex-[0.8] font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border"
+                  className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border"
                   title="Generación instantánea por matemática"
                 >
-                  QUICK (MATH)
+                  QUICK MATCH (ALGORITHMIC)
                 </Button>
                 <Button
                   onClick={handleGenerateAnimationsAI}
                   disabled={selectedAnims.length === 0 || isAnimGenerating}
-                  className="flex-[1.2] font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500"
+                  className="w-full font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500"
                   title="Generación de alta calidad usando IA (consume tokens)"
                 >
                   <Sparkles size={12} className="mr-1" />
@@ -456,23 +415,76 @@ export default function SpriteEditorModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-border">
-          <Button onClick={handleExportPNG} variant="outline" className="font-pixel text-[10px]">
-            <Download size={14} className="mr-2" />
-            EXPORT PNG
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="font-pixel text-[10px]">
-              CANCELAR
+        {/* FOOTER: Timeline + Save Actions */}
+        <div className="flex flex-col xl:flex-row items-end justify-between pt-3 border-t border-border gap-4 flex-shrink-0">
+          {/* Timeline Strip */}
+          <div className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col bg-secondary/20 p-2 rounded-lg border border-border">
+            {editedAsset.frames.length > 0 ? (
+              <div className="flex flex-col gap-2 w-full">
+                {editedAsset.animations.length > 0 && (
+                  <div className="flex items-center gap-2 border-b border-border/50 pb-2">
+                    <span className="font-pixel text-[8px] text-muted-foreground shrink-0">ANIMACIONES:</span>
+                    <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1">
+                      <button
+                        onClick={() => { setViewingAnimation('base'); setEditingFrameIndex(0); }}
+                        className={`text-[8px] font-pixel px-2 py-1 rounded transition-colors ${viewingAnimation === 'base' ? 'bg-purple-600 border border-purple-500 text-white' : 'bg-background border border-border text-muted-foreground hover:border-purple-500/50 hover:text-foreground'}`}
+                      >
+                        BASE
+                      </button>
+                      {editedAsset.animations.map(a => (
+                        <button
+                          key={a.name}
+                          onClick={() => { setViewingAnimation(a.name); setEditingFrameIndex(a.frameIndices[0]); }}
+                          className={`text-[8px] font-pixel px-2 py-1 rounded transition-colors ${viewingAnimation === a.name ? 'bg-purple-600 border border-purple-500 text-white' : 'bg-background border border-border text-muted-foreground hover:border-purple-500/50 hover:text-foreground'}`}
+                        >
+                          {a.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1">
+                  {visibleFramesIndices.map((frameIndex) => {
+                    const frame = editedAsset.frames[frameIndex];
+                    if (!frame) return null;
+                    return (
+                      <FrameThumb
+                        key={frameIndex}
+                        frame={frame}
+                        palette={editedAsset.palette}
+                        size={editedAsset.size}
+                        isActive={frameIndex === editingFrameIndex}
+                        label={frameLabels[frameIndex]}
+                        onClick={() => setEditingFrameIndex(frameIndex)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <span className="font-pixel text-[10px] text-muted-foreground">SIN FRAMES</span>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-4 shrink-0">
+            <Button onClick={handleExportPNG} variant="outline" className="font-pixel text-[10px]">
+              <Download size={14} className="mr-2" />
+              EXPORTAR
             </Button>
-            <Button
-              onClick={handleSave}
-              className="font-pixel text-[10px] bg-primary text-primary-foreground hover:bg-primary/80 border border-primary"
-            >
-              <Save size={14} className="mr-2" />
-              GUARDAR
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="font-pixel text-[10px]">
+                CERRAR
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="font-pixel text-[10px] bg-primary text-primary-foreground hover:bg-primary/80 border border-primary"
+              >
+                <Save size={14} className="mr-2" />
+                GUARDAR
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
