@@ -36,14 +36,16 @@ export default function SpritePreview({ asset, animationName = null }: SpritePre
     }
 
     // Draw sprite
-    for (let row = 0; row < asset.size; row++) {
-      for (let col = 0; col < asset.size; col++) {
-        const val = currentFrame[row][col];
-        if (val === 0) continue;
-        const color = palette[val];
-        if (!color || color === 'transparent') continue;
-        ctx.fillStyle = color;
-        ctx.fillRect(col * PREVIEW_SCALE, row * PREVIEW_SCALE, PREVIEW_SCALE, PREVIEW_SCALE);
+    if (currentFrame) {
+      for (let row = 0; row < asset.size; row++) {
+        for (let col = 0; col < asset.size; col++) {
+          const val = currentFrame[row]?.[col];
+          if (!val || val === 0) continue;
+          const color = palette?.[val];
+          if (!color || color === 'transparent') continue;
+          ctx.fillStyle = color;
+          ctx.fillRect(col * PREVIEW_SCALE, row * PREVIEW_SCALE, PREVIEW_SCALE, PREVIEW_SCALE);
+        }
       }
     }
   }, [asset, currentFrame, palette, PREVIEW_SIZE]);

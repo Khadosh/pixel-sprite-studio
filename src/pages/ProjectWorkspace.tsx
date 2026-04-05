@@ -282,7 +282,6 @@ export default function ProjectWorkspace() {
           }}
           initialAsset={editorAsset}
           onSave={handleEditorSave}
-          showAnimationControls={editorIsNew}
         />
       )}
     </div>

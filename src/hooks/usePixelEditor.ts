@@ -16,6 +16,7 @@ export function usePixelEditor(
   const [undoLen, setUndoLen] = useState(0);
 
   const pushUndo = useCallback(() => {
+    if (!asset.frames[frameIndex]) return;
     const frame = asset.frames[frameIndex];
     const snapshot = frame.map(row => [...row]);
     undoStack.current.push(snapshot);
@@ -24,6 +25,7 @@ export function usePixelEditor(
   }, [asset, frameIndex]);
 
   const fillArea = useCallback((row: number, col: number, value: number) => {
+    if (!asset.frames[frameIndex]) return;
     const currentFrame = asset.frames[frameIndex];
     const newFrame = currentFrame.map(r => [...r]);
     const side = brushSize === 1 ? 1 : brushSize === 4 ? 2 : 4;

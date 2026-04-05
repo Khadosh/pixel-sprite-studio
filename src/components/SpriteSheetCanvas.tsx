@@ -39,7 +39,7 @@ export default function SpriteSheetCanvas({ asset, onCanvasReady }: SpriteSheetC
   const CELL_SIZE = asset.size * PIXEL_SCALE;
   const hasAnimations = asset.animations.length > 0;
 
-  // Calculate grid dimensions based on asset type
+  // Calculate grid dimensions
   let rows: { label: string; frameIndices: number[] }[];
 
   if (hasAnimations) {
@@ -92,6 +92,8 @@ export default function SpriteSheetCanvas({ asset, onCanvasReady }: SpriteSheetC
         ctx.strokeRect(x - 0.5, y - 0.5, CELL_SIZE + 1, CELL_SIZE + 1);
 
         const frame = asset.frames[frameIdx];
+        if (!frame) return;
+
         for (let fRow = 0; fRow < asset.size; fRow++) {
           for (let fCol = 0; fCol < asset.size; fCol++) {
             const val = frame[fRow][fCol];

@@ -26,6 +26,7 @@ export interface SpriteAsset {
   description: string;
   /** Asset category for catalog filtering */
   category: 'character' | 'terrain' | 'prop' | 'nature' | 'ui';
+
   /** Grid size in pixels (width = height). Typically 16. */
   size: number;
   /** Color palette: number → hex color string. 0 is always transparent. */
@@ -34,6 +35,7 @@ export interface SpriteAsset {
   colorNames: Record<number, string>;
   /** All unique frames for this asset */
   frames: Frame[];
+
   /** Animation definitions. Empty array = static asset (single frame). */
   animations: AnimationDef[];
   /** Optional tags for search/filtering */

@@ -84,7 +84,6 @@ export default function SpriteEditorModal({
 }: SpriteEditorModalProps) {
   const [editedAsset, setEditedAsset] = useState<SpriteAsset>(initialAsset);
   const [selectedAnims, setSelectedAnims] = useState<string[]>(() => {
-    // Init from existing animations
     return initialAsset.animations.map(a => a.name);
   });
   const [editingFrameIndex, setEditingFrameIndex] = useState(0);
@@ -103,7 +102,7 @@ export default function SpriteEditorModal({
     if (editingFrameIndex >= editedAsset.frames.length) {
       setEditingFrameIndex(0);
     }
-  }, [editedAsset.frames.length, editingFrameIndex]);
+  }, [editedAsset.frames, editingFrameIndex]);
 
   const {
     tool, setTool,
@@ -122,7 +121,6 @@ export default function SpriteEditorModal({
   };
 
   const handleGenerateAnimations = () => {
-    // Generate only the ones in selectedAnims and leave the others intact
     const withAnims = generateAnimationsClientSide(editedAsset, selectedAnims);
     setEditedAsset(withAnims);
 
@@ -169,7 +167,7 @@ export default function SpriteEditorModal({
         ...prev,
         palette: newPalette,
         colorNames: newColorNames,
-        frames: newFrames
+        frames: newFrames,
       };
     });
     if (activeColorKey === key) setActiveColorKey(1);
@@ -178,18 +176,18 @@ export default function SpriteEditorModal({
   const handleExportPNG = () => {
     const asset = editedAsset;
     const hasAnims = asset.animations.length > 0;
-    let rows: { frameIndices: number[] }[];
+    let exportRows: { frameIndices: number[] }[];
 
     if (hasAnims) {
-      rows = asset.animations.map(a => ({ frameIndices: a.frameIndices }));
+      exportRows = asset.animations.map(a => ({ frameIndices: a.frameIndices }));
     } else {
-      rows = [{ frameIndices: asset.frames.map((_, i) => i) }];
+      exportRows = [{ frameIndices: asset.frames.map((_, i) => i) }];
     }
 
     const cellSize = asset.size * PIXEL_SCALE;
-    const maxCols = Math.max(...rows.map(r => r.frameIndices.length));
+    const maxCols = Math.max(...exportRows.map(r => r.frameIndices.length));
     const w = maxCols * cellSize;
-    const h = rows.length * cellSize;
+    const h = exportRows.length * cellSize;
 
     const canvas = document.createElement('canvas');
     canvas.width = w;
@@ -197,11 +195,12 @@ export default function SpriteEditorModal({
     const ctx = canvas.getContext('2d')!;
     ctx.clearRect(0, 0, w, h);
 
-    rows.forEach((row, rowIdx) => {
+    exportRows.forEach((row, rowIdx) => {
       const y = rowIdx * cellSize;
       row.frameIndices.forEach((frameIdx, colIdx) => {
         const x = colIdx * cellSize;
         const frame = asset.frames[frameIdx];
+        if (!frame) return;
         for (let fRow = 0; fRow < asset.size; fRow++) {
           for (let fCol = 0; fCol < asset.size; fCol++) {
             const val = frame[fRow][fCol];
@@ -368,7 +367,7 @@ export default function SpriteEditorModal({
               />
             </div>
 
-            {/* Animation Controls — always visible */}
+            {/* Animation Controls */}
             <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
               <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">ANIMACIONES</span>
               <div className="flex flex-wrap gap-2">

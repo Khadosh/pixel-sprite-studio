@@ -52,19 +52,21 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
     }
 
     // Draw sprite
-    for (let row = 0; row < asset.size; row++) {
-      for (let col = 0; col < asset.size; col++) {
-        const val = currentFrame[row][col];
-        if (val === 0) continue;
-        const color = asset.palette[val];
-        if (!color || color === 'transparent') continue;
-        ctx.fillStyle = color;
-        ctx.fillRect(
-          col * CARD_PIXEL_SCALE,
-          row * CARD_PIXEL_SCALE,
-          CARD_PIXEL_SCALE,
-          CARD_PIXEL_SCALE
-        );
+    if (currentFrame) {
+      for (let row = 0; row < asset.size; row++) {
+        for (let col = 0; col < asset.size; col++) {
+          const val = currentFrame[row]?.[col];
+          if (!val || val === 0) continue;
+          const color = asset.palette[val];
+          if (!color || color === 'transparent') continue;
+          ctx.fillStyle = color;
+          ctx.fillRect(
+            col * CARD_PIXEL_SCALE,
+            row * CARD_PIXEL_SCALE,
+            CARD_PIXEL_SCALE,
+            CARD_PIXEL_SCALE
+          );
+        }
       }
     }
   }, [asset, currentFrame, canvasSize]);
@@ -113,7 +115,7 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
         </p>
         <div className="flex items-center gap-2 pt-1">
           <span className="text-[8px] text-muted-foreground font-mono">
-            {asset.size}×{asset.size}px
+            {asset.size}x{asset.size}px
           </span>
           <span className="text-[8px] text-muted-foreground">•</span>
           <span className="text-[8px] text-muted-foreground font-mono">
