@@ -181,11 +181,36 @@ export default function SpriteEditorModal({
     tool, setTool,
     activeColorKey, setActiveColorKey,
     brushSize, setBrushSize,
-    paintPixel, erasePixel, pushUndo,
-    undo, canUndo,
+    mirrorX, setMirrorX, draftFrame,
+    handlePointerDown, handlePointerMove, handlePointerUp,
+    undo, pushUndo, canUndo,
   } = usePixelEditor(editedAsset, editingFrameIndex, (updated) => {
     setEditedAsset(updated);
   });
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (document.activeElement?.tagName === 'INPUT') return;
+
+      switch (e.key.toLowerCase()) {
+        case 'b': setTool('pencil'); break;
+        case 'e': setTool('eraser'); break;
+        case 'i': setTool('picker'); break;
+        case 'g': setTool('fill'); break;
+        case 'm': setMirrorX(prev => !prev); break;
+        case 'z': 
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            undo();
+          }
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setTool, setMirrorX, undo]);
 
   const toggleAnim = (anim: string) => {
     setSelectedAnims(prev =>
@@ -451,6 +476,8 @@ export default function SpriteEditorModal({
                 onUndo={undo}
                 onionSkin={onionSkin}
                 onToggleOnionSkin={() => setOnionSkin(p => !p)}
+                mirrorX={mirrorX}
+                onToggleMirrorX={() => setMirrorX(p => !p)}
               />
             </div>
             {/* CANVAS AREA */}
@@ -461,9 +488,10 @@ export default function SpriteEditorModal({
                 activeColorKey={activeColorKey}
                 tool={tool}
                 brushSize={brushSize}
-                onPaintPixel={paintPixel}
-                onErasePixel={erasePixel}
-                onStrokeStart={pushUndo}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                draftFrame={draftFrame}
                 onionSkinPrevFrame={onionGhostFrames.prev}
                 onionSkinNextFrame={onionGhostFrames.next}
               />

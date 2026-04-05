@@ -9,37 +9,33 @@ interface SpritePixelEditorProps {
   asset: SpriteAsset;
   frameIndex: number;
   activeColorKey: number;
-  tool: 'pencil' | 'eraser';
-  onPaintPixel: (row: number, col: number) => void;
-  onErasePixel: (row: number, col: number) => void;
-  onStrokeStart: () => void;
+  tool: string;
+  onPointerDown: (row: number, col: number) => void;
+  onPointerMove: (row: number, col: number) => void;
+  onPointerUp: () => void;
   brushSize: number;
   onionSkinPrevFrame?: number[][];
   onionSkinNextFrame?: number[][];
+  draftFrame?: number[][] | null;
 }
 
 export default function SpritePixelEditor({
   asset,
   frameIndex,
-  activeColorKey,
-  tool,
-  onPaintPixel,
-  onErasePixel,
-  onStrokeStart,
-  brushSize,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
   onionSkinPrevFrame,
   onionSkinNextFrame,
+  draftFrame,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [isErasing, setIsErasing] = useState(false);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
-  const hasStartedStroke = useRef(false);
 
   const canvasSize = asset.size * PIXEL_SCALE;
   const frame = asset.frames[frameIndex] ?? null;
 
-  const getCell = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCell = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
@@ -93,21 +89,40 @@ export default function SpritePixelEditor({
       ctx.globalAlpha = 1.0;
     };
 
-    if (onionSkinPrevFrame) drawGhost(onionSkinPrevFrame, 0.35, '#ff4a4a'); // Reddish tint for previous
-    if (onionSkinNextFrame) drawGhost(onionSkinNextFrame, 0.35, '#4aff4a'); // Greenish tint for next
+    if (onionSkinPrevFrame) drawGhost(onionSkinPrevFrame, 0.35, '#ff4a4a');
+    if (onionSkinNextFrame) drawGhost(onionSkinNextFrame, 0.35, '#4aff4a');
 
-    // Draw main frame
-    if (frame) {
+    // Helper to draw a specific frame matrix
+    const drawFrameData = (data: number[][], treatZeroAsTransparent: boolean) => {
       for (let row = 0; row < asset.size; row++) {
         for (let col = 0; col < asset.size; col++) {
-          const val = frame[row][col];
-          if (val === 0) continue;
-          const color = asset.palette[val];
-          if (!color || color === 'transparent') continue;
-          ctx.fillStyle = color;
+          const val = data[row][col];
+          if (val === -1) continue; // Always meaning "no pixel here"
+          if (treatZeroAsTransparent && val === 0) continue; 
+          
+          if (val === 0) {
+            // Eraser tool effectively drawing 0 (transparent) on draft: 
+            // We draw a visual cue like a dark checkered red or just clear it. 
+            // We can draw a grey square to denote it's being erased
+            ctx.fillStyle = '#ff000055';
+          } else {
+            const color = asset.palette[val];
+            if (!color || color === 'transparent') continue;
+            ctx.fillStyle = color;
+          }
           ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
         }
       }
+    }
+
+    // Draw main frame
+    if (frame) {
+      drawFrameData(frame, true);
+    }
+    
+    // Draw draft frame overlay
+    if (draftFrame) {
+      drawFrameData(draftFrame, false);
     }
 
     // Grid lines
@@ -123,39 +138,32 @@ export default function SpritePixelEditor({
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
     }
-  }, [asset, frame, frameIndex, canvasSize, isDrawing, isErasing, onionSkinPrevFrame, onionSkinNextFrame]);
+  }, [asset, frame, draftFrame, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
 
-  const drawOnCanvas = (cell: { r: number; c: number }, erase: boolean) => {
-    if (erase) onErasePixel(cell.r, cell.c);
-    else onPaintPixel(cell.r, cell.c);
-  };
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // Only accept left click
+    if (e.button !== 0) return;
+    
+    // Attempt pointer capture to track outside canvas
+    e.currentTarget.setPointerCapture(e.pointerId);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const cell = getCell(e);
     if (!cell) return;
-    hasStartedStroke.current = true;
-    onStrokeStart();
 
-    const isErase = e.button === 2;
-    if (isErase) setIsErasing(true);
-    else setIsDrawing(true);
-
-    drawOnCanvas(cell, isErase);
+    onPointerDown(cell.r, cell.c);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const cell = getCell(e);
     setHoverCell(cell);
-    if (cell) {
-      if (isErasing) drawOnCanvas(cell, true);
-      else if (isDrawing) drawOnCanvas(cell, false);
+    if (cell && e.buttons === 1) { // 1 means primary button is pressed
+      onPointerMove(cell.r, cell.c);
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDrawing(false);
-    setIsErasing(false);
-    hasStartedStroke.current = false;
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    onPointerUp();
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -168,13 +176,13 @@ export default function SpritePixelEditor({
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
-        className="rounded border border-border cursor-crosshair max-w-full max-h-full shrink-0 shadow-lg"
+        className="rounded border border-border cursor-crosshair max-w-full max-h-full shrink-0 shadow-lg touch-none"
         style={{ imageRendering: 'pixelated', objectFit: 'contain', aspectRatio: '1 / 1' }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
-        onMouseLeave={() => { setIsDrawing(false); setIsErasing(false); setHoverCell(null); }}
+        onMouseLeave={() => { setHoverCell(null); }}
       />
     </div>
   );
