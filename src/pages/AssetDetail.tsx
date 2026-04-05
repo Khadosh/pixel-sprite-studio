@@ -1,15 +1,16 @@
-import { useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useCallback, useMemo, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getAssetById } from '@/lib/assets';
 import { PaletteProvider, usePalette } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { Download, RotateCcw, ArrowLeft, Save } from 'lucide-react';
+import SpritePixelEditor from '@/components/SpritePixelEditor';
+import EditorToolbar from '@/components/EditorToolbar';
+import { usePixelEditor } from '@/hooks/usePixelEditor';
+import { Download, RotateCcw, ArrowLeft, Save, Pencil, X } from 'lucide-react';
 import type { SpriteAsset } from '@/lib/types';
-import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
 
 const PIXEL_SCALE = 4;
 const GRID_GAP = 1;
@@ -22,7 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   ui:        '#a855f7',
 };
 
-function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
+function AssetDetailContent({ initialAsset }: { initialAsset: SpriteAsset }) {
   const { palette, setPaletteColor, resetPalette } = usePalette();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -30,10 +31,22 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
+  // Mutable asset for editing
+  const [asset, setAsset] = useState<SpriteAsset>(() => ({
+    ...initialAsset,
+    frames: initialAsset.frames.map(f => f.map(r => [...r])),
+  }));
+
+  // Editor state
+  const [editing, setEditing] = useState(false);
+  const [editFrameIndex, setEditFrameIndex] = useState(0);
+  const [onionSkin, setOnionSkin] = useState(false);
+
+  const editor = usePixelEditor(asset, editFrameIndex, setAsset);
+
   const CELL_SIZE = asset.size * PIXEL_SCALE;
 
   const handleExportPNG = useCallback(() => {
-    // Determine export layout
     const hasAnimations = asset.animations.length > 0;
     let rows: { frameIndices: number[] }[];
 
@@ -86,15 +99,10 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
     if (!projectId) return;
     try {
       setIsSaving(true);
-      const assetDataToSave = {
-        ...asset,
-        palette: { ...palette } // Guardar la paleta actual
-      };
-
+      const assetDataToSave = { ...asset, palette: { ...palette } };
       const { error } = await supabase
         .from('project_sprites')
         .insert([{ project_id: projectId, asset_data: assetDataToSave }]);
-
       if (error) throw error;
       toast({ title: 'Guardado', description: 'El sprite se ha guardado en tu proyecto exitosamente.' });
       navigate(`/project/${projectId}`);
@@ -106,13 +114,16 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   };
 
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
-
   const frameCount = asset.frames.length;
   const animCount = asset.animations.length;
 
+  // Onion skin frames for the editor
+  const onionSkinPrev = onionSkin && editFrameIndex > 0 ? asset.frames[editFrameIndex - 1] : undefined;
+  const onionSkinNext = onionSkin && editFrameIndex < frameCount - 1 ? asset.frames[editFrameIndex + 1] : undefined;
+
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Back link + header */}
         <div className="space-y-4">
           <button
@@ -139,9 +150,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                 {asset.category.toUpperCase()}
               </span>
             </div>
-            <p className="text-muted-foreground text-sm font-mono">
-              {asset.description}
-            </p>
+            <p className="text-muted-foreground text-sm font-mono">{asset.description}</p>
             <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
               <span>{asset.size}×{asset.size} px</span>
               <span className="text-border">•</span>
@@ -160,11 +169,22 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 overflow-x-auto">
             <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
                   SPRITE GRID
                 </span>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditing(!editing)}
+                    className={`flex items-center gap-2 px-4 py-2 text-xs font-pixel rounded border transition-all ${
+                      editing
+                        ? 'bg-accent text-accent-foreground border-accent hover:brightness-110'
+                        : 'bg-secondary text-secondary-foreground border-border hover:border-primary/50'
+                    }`}
+                  >
+                    {editing ? <X size={14} /> : <Pencil size={14} />}
+                    {editing ? 'CERRAR EDITOR' : 'EDITAR PÍXELES'}
+                  </button>
                   {projectId && (
                     <button
                       onClick={handleSaveToProject}
@@ -172,7 +192,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                       className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-green-600 text-white rounded border border-green-500 hover:brightness-110 transition-all disabled:opacity-50"
                     >
                       <Save size={14} />
-                      {isSaving ? 'GUARDANDO...' : 'GUARDAR EN PROYECTO'}
+                      {isSaving ? 'GUARDANDO...' : 'GUARDAR'}
                     </button>
                   )}
                   <button
@@ -197,6 +217,90 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
             </div>
           </div>
         </div>
+
+        {/* Pixel Editor */}
+        {editing && (
+          <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
+                PIXEL EDITOR
+              </span>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                Frame {editFrameIndex + 1} / {frameCount}
+              </span>
+            </div>
+
+            {/* Toolbar */}
+            <EditorToolbar
+              tool={editor.tool}
+              onToolChange={editor.setTool}
+              brushSize={editor.brushSize}
+              onBrushSizeChange={editor.setBrushSize}
+              canUndo={editor.canUndo}
+              onUndo={editor.undo}
+              onionSkin={onionSkin}
+              onToggleOnionSkin={() => setOnionSkin(s => !s)}
+              mirrorX={editor.mirrorX}
+              onToggleMirrorX={() => editor.setMirrorX(m => !m)}
+            />
+
+            {/* Frame selector */}
+            <div className="flex flex-wrap gap-2">
+              {asset.frames.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setEditFrameIndex(idx)}
+                  className={`px-3 py-1.5 text-[10px] font-pixel rounded border transition-all ${
+                    editFrameIndex === idx
+                      ? 'border-primary bg-primary/20 text-primary'
+                      : 'border-border text-muted-foreground hover:border-muted-foreground'
+                  }`}
+                >
+                  F{idx + 1}
+                </button>
+              ))}
+            </div>
+
+            {/* Active color indicator */}
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-pixel text-muted-foreground">COLOR:</span>
+              <div className="flex gap-1.5">
+                {Object.entries(palette).filter(([k]) => k !== '0').map(([key, color]) => (
+                  <button
+                    key={key}
+                    onClick={() => editor.setActiveColorKey(Number(key))}
+                    className={`w-6 h-6 rounded-sm border-2 transition-all ${
+                      editor.activeColorKey === Number(key)
+                        ? 'border-primary scale-110 shadow-md shadow-primary/30'
+                        : 'border-border hover:border-muted-foreground'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    title={asset.colorNames[Number(key)] || key}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Canvas editor */}
+            <div className="flex justify-center">
+              <div className="max-w-[400px] w-full aspect-square">
+                <SpritePixelEditor
+                  asset={asset}
+                  frameIndex={editFrameIndex}
+                  activeColorKey={editor.activeColorKey}
+                  tool={editor.tool}
+                  brushSize={editor.brushSize}
+                  onPointerDown={editor.handlePointerDown}
+                  onPointerMove={editor.handlePointerMove}
+                  onPointerUp={editor.handlePointerUp}
+                  onionSkinPrevFrame={onionSkinPrev}
+                  onionSkinNextFrame={onionSkinNext}
+                  draftFrame={editor.draftFrame}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Palette Editor */}
         <div className="bg-card rounded-lg border border-border p-4">
@@ -237,7 +341,6 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
           </div>
         </div>
 
-        {/* Footer */}
         <footer className="text-center text-[10px] text-muted-foreground font-mono pb-4">
           {asset.name} • {frameCount} frames • {asset.size}×{asset.size} px • transparent PNG export
         </footer>
@@ -274,7 +377,7 @@ export default function AssetDetail() {
 
   return (
     <PaletteProvider defaultPalette={asset.palette}>
-      <AssetDetailContent asset={asset} />
+      <AssetDetailContent initialAsset={asset} />
     </PaletteProvider>
   );
 }
