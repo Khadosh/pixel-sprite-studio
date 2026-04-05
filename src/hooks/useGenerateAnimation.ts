@@ -40,6 +40,7 @@ export function useGenerateAnimation() {
           headers: {
             'Content-Type': 'application/json',
             'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
           },
           body: JSON.stringify({
             baseFrame,

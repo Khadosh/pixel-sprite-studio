@@ -27,6 +27,7 @@ export function useGenerateSprite() {
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
         },
         body: JSON.stringify({ prompt }),
       });
