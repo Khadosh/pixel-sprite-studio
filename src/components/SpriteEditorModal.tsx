@@ -11,8 +11,15 @@ import PaletteBar from '@/components/PaletteBar';
 import EditorToolbar from '@/components/EditorToolbar';
 import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';
-import { generateAnimationsClientSide, duplicateFrame, deleteFrame, insertEmptyFrame, moveFrame } from '@/lib/spriteAnimations';
+import { generateAnimationsClientSide, moveFrame } from '@/lib/spriteAnimations';
 import { useGenerateAnimation } from '@/hooks/useGenerateAnimation';
+import { 
+  ensureLayerSupport, 
+  compositeFrame, 
+  addEmptyFrameToAllLayers, 
+  removeFrameFromAllLayers, 
+  duplicateFrameInAllLayers 
+} from '@/lib/layerUtils';
 import {
   DndContext,
   closestCenter,
@@ -122,7 +129,9 @@ function SortableFrameThumb({ frameIndex, children }: { frameIndex: number; chil
 export default function SpriteEditorModal({
   open, onOpenChange, initialAsset, onSave, generatePrompt, onRegenerate, isGenerating
 }: SpriteEditorModalProps) {
-  const [editedAsset, setEditedAsset] = useState<SpriteAsset>(initialAsset);
+  const [editedAsset, setEditedAsset] = useState<SpriteAsset>(() => ensureLayerSupport(initialAsset));
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(() => editedAsset.layers[0]?.id || null);
+  
   const [selectedAnims, setSelectedAnims] = useState<string[]>(() => {
     return initialAsset.animations.map(a => a.name);
   });
@@ -155,24 +164,28 @@ export default function SpriteEditorModal({
     const prevIndex = currentIndex > 0 ? visibleFramesIndices[currentIndex - 1] : -1;
     const nextIndex = currentIndex < visibleFramesIndices.length - 1 ? visibleFramesIndices[currentIndex + 1] : -1;
     return {
-      prev: prevIndex >= 0 ? editedAsset.frames[prevIndex] : undefined,
-      next: nextIndex >= 0 ? editedAsset.frames[nextIndex] : undefined,
+      prev: prevIndex >= 0 ? compositeFrame(editedAsset, prevIndex) : undefined,
+      next: nextIndex >= 0 ? compositeFrame(editedAsset, nextIndex) : undefined,
     };
-  }, [onionSkin, visibleFramesIndices, editingFrameIndex, editedAsset.frames]);
+  }, [onionSkin, visibleFramesIndices, editingFrameIndex, editedAsset]);
+
+  const frameCount = editedAsset.layers[0]?.frames.length || editedAsset.frames?.length || 0;
 
   useEffect(() => {
-    if (editingFrameIndex >= editedAsset.frames.length) {
+    if (editingFrameIndex >= frameCount) {
       setEditingFrameIndex(0);
     }
-  }, [editedAsset.frames, editingFrameIndex]);
+  }, [frameCount, editingFrameIndex]);
 
   // Sync state if initialAsset changes (e.g. from regeneration)
   useEffect(() => {
-    setEditedAsset(initialAsset);
+    const migrated = ensureLayerSupport(initialAsset);
+    setEditedAsset(migrated);
     setAssetName(initialAsset.name);
     setSelectedAnims(initialAsset.animations.map(a => a.name));
     setEditingFrameIndex(0);
     setViewingAnimation('base');
+    if (migrated.layers[0]) setActiveLayerId(migrated.layers[0].id);
   }, [initialAsset]);
 
   const { isGenerating: isAnimGenerating, currentAnimation, error: animError, generateAnimationsSequence } = useGenerateAnimation();
@@ -184,7 +197,7 @@ export default function SpriteEditorModal({
     mirrorX, setMirrorX, draftFrame,
     handlePointerDown, handlePointerMove, handlePointerUp,
     undo, pushUndo, canUndo,
-  } = usePixelEditor(editedAsset, editingFrameIndex, (updated) => {
+  } = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     setEditedAsset(updated);
   });
 
@@ -232,17 +245,17 @@ export default function SpriteEditorModal({
   };
 
   const handleDuplicateFrame = useCallback((idx: number) => {
-    setEditedAsset(prev => duplicateFrame(prev, idx));
+    setEditedAsset(prev => duplicateFrameInAllLayers(prev, idx));
   }, []);
 
   const handleDeleteFrame = useCallback((idx: number) => {
     if (editingFrameIndex === idx) setEditingFrameIndex(Math.max(0, idx - 1));
     else if (editingFrameIndex > idx) setEditingFrameIndex(editingFrameIndex - 1);
-    setEditedAsset(prev => deleteFrame(prev, idx));
+    setEditedAsset(prev => removeFrameFromAllLayers(prev, idx));
   }, [editingFrameIndex]);
 
   const handleInsertEmptyFrame = useCallback((idx: number) => {
-    setEditedAsset(prev => insertEmptyFrame(prev, idx));
+    setEditedAsset(prev => addEmptyFrameToAllLayers(prev, idx));
   }, []);
 
   const handleMoveFrame = useCallback((fromIdx: number, toIdx: number) => {
@@ -319,15 +332,18 @@ export default function SpriteEditorModal({
       const newColorNames = { ...prev.colorNames };
       delete newColorNames[key];
 
-      const newFrames = prev.frames.map(f =>
-        f.map(r => r.map(c => c === key ? 0 : c))
-      );
+      const newLayers = prev.layers.map(layer => ({
+        ...layer,
+        frames: layer.frames.map(f =>
+          f.map(r => r.map(c => c === key ? 0 : c))
+        )
+      }));
 
       return {
         ...prev,
         palette: newPalette,
         colorNames: newColorNames,
-        frames: newFrames,
+        layers: newLayers,
       };
     });
     if (activeColorKey === key) setActiveColorKey(1);
@@ -359,7 +375,7 @@ export default function SpriteEditorModal({
       const y = rowIdx * cellSize;
       row.frameIndices.forEach((frameIdx, colIdx) => {
         const x = colIdx * cellSize;
-        const frame = asset.frames[frameIdx];
+        const frame = compositeFrame(asset, frameIdx);
         if (!frame) return;
         for (let fRow = 0; fRow < asset.size; fRow++) {
           for (let fCol = 0; fCol < asset.size; fCol++) {
@@ -386,7 +402,7 @@ export default function SpriteEditorModal({
   };
 
   const frameLabels = useMemo(() => {
-    const labels: string[] = editedAsset.frames.map((_, i) => `F${i}`);
+    const labels: string[] = frameCount > 0 ? Array.from({ length: frameCount }, (_, i) => `F${i}`) : [];
     for (const anim of editedAsset.animations) {
       const uniqueIndices = [...new Set(anim.frameIndices)];
       uniqueIndices.forEach((fi, seq) => {
@@ -396,7 +412,7 @@ export default function SpriteEditorModal({
       });
     }
     return labels;
-  }, [editedAsset]);
+  }, [editedAsset.animations, frameCount]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -486,6 +502,7 @@ export default function SpriteEditorModal({
                 asset={editedAsset}
                 frameIndex={editingFrameIndex}
                 activeColorKey={activeColorKey}
+                activeLayerId={activeLayerId}
                 tool={tool}
                 brushSize={brushSize}
                 onPointerDown={handlePointerDown}
@@ -558,7 +575,7 @@ export default function SpriteEditorModal({
         <div className="flex flex-col xl:flex-row items-end justify-between pt-3 border-t border-border gap-4 flex-shrink-0">
           {/* Timeline Strip */}
           <div className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col bg-secondary/20 p-2 rounded-lg border border-border">
-            {editedAsset.frames.length > 0 ? (
+            {frameCount > 0 ? (
               <div className="flex flex-col gap-2 w-full">
                 {editedAsset.animations.length > 0 && (
                   <div className="flex items-center gap-2 border-b border-border/50 pb-2">
@@ -586,16 +603,13 @@ export default function SpriteEditorModal({
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={visibleFramesIndices.map(i => i.toString())} strategy={horizontalListSortingStrategy}>
                     <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1 px-1 items-end min-h-[50px]">
-                      {visibleFramesIndices.map((frameIndex) => {
-                        const frame = editedAsset.frames[frameIndex];
-                        if (!frame) return null;
-                        return (
-                          <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
+                      {visibleFramesIndices.map((frameIndex) => (
+                        <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
                             <ContextMenu>
                               <ContextMenuTrigger asChild>
                                 <div>
                                   <FrameThumb
-                                    frame={frame}
+                                    frame={compositeFrame(editedAsset, frameIndex)}
                                     palette={editedAsset.palette}
                                     size={editedAsset.size}
                                     isActive={frameIndex === editingFrameIndex}
@@ -617,9 +631,8 @@ export default function SpriteEditorModal({
                                 </ContextMenuItem>
                               </ContextMenuContent>
                             </ContextMenu>
-                          </SortableFrameThumb>
-                        );
-                      })}
+                        </SortableFrameThumb>
+                      ))}
                     </div>
                   </SortableContext>
                 </DndContext>

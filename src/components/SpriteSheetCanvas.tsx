@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { usePalette } from '@/hooks/usePalette';
+import { compositeFrame } from '@/lib/layerUtils';
 
 const PIXEL_SCALE = 4;
 const GRID_GAP = 2;
@@ -49,9 +50,11 @@ export default function SpriteSheetCanvas({ asset, onCanvasReady }: SpriteSheetC
     }));
   } else {
     // Static: show all frames in a single row
+    // Use either layers[0].frames or frames
+    const frameCount = asset.layers?.[0]?.frames.length ?? asset.frames?.length ?? 1;
     rows = [{
       label: asset.name.toUpperCase(),
-      frameIndices: asset.frames.map((_, i) => i),
+      frameIndices: Array.from({ length: frameCount }, (_, i) => i),
     }];
   }
 
@@ -91,7 +94,11 @@ export default function SpriteSheetCanvas({ asset, onCanvasReady }: SpriteSheetC
         ctx.lineWidth = 1;
         ctx.strokeRect(x - 0.5, y - 0.5, CELL_SIZE + 1, CELL_SIZE + 1);
 
-        const frame = asset.frames[frameIdx];
+        // Composite frame from layers (or fallback to legacy frames)
+        const frame = asset.layers && asset.layers.length > 0 
+          ? compositeFrame(asset, frameIdx) 
+          : (asset.frames?.[frameIdx] || null);
+          
         if (!frame) return;
 
         for (let fRow = 0; fRow < asset.size; fRow++) {

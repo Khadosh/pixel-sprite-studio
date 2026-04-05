@@ -107,7 +107,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
 
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
 
-  const frameCount = asset.frames.length;
+  const frameCount = asset.layers?.[0]?.frames.length || asset.frames?.length || 0;
   const animCount = asset.animations.length;
 
   return (

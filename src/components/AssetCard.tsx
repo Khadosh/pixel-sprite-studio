@@ -33,6 +33,7 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
   const { currentFrame } = useAssetPreview(asset);
 
   const canvasSize = asset.size * CARD_PIXEL_SCALE;
+  const frameCount = asset.layers?.[0]?.frames.length || asset.frames?.length || 0;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -119,7 +120,7 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
           </span>
           <span className="text-[8px] text-muted-foreground">•</span>
           <span className="text-[8px] text-muted-foreground font-mono">
-            {asset.frames.length} frame{asset.frames.length !== 1 ? 's' : ''}
+            {frameCount} frame{frameCount !== 1 ? 's' : ''}
           </span>
           {asset.animations.length > 0 && (
             <>

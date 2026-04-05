@@ -261,7 +261,7 @@ export default function ProjectWorkspace() {
                         {asset.name.toUpperCase()}
                       </h3>
                       <p className="font-mono text-[8px] text-muted-foreground">
-                        {asset.frames.length} frame{asset.frames.length !== 1 ? 's' : ''} · Click para editar
+                        {asset.layers?.[0]?.frames.length || asset.frames?.length || 0} frame{(asset.layers?.[0]?.frames.length || asset.frames?.length || 0) !== 1 ? 's' : ''} · Click para editar
                       </p>
                     </div>
                   </div>

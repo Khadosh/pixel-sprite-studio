@@ -4,19 +4,29 @@
 /** A single frame of pixel art — a 2D grid where each number maps to a palette color. */
 export type Frame = number[][];
 
+/** A layer within a sprite asset. */
+export interface SpriteLayer {
+  id: string;
+  name: string;
+  isVisible: boolean;
+  isLocked: boolean;
+  opacity: number; // 0.0 to 1.0
+  frames: Frame[]; // Frame content for this layer
+}
+
 /** Defines a named animation as a sequence of frame indices. */
 export interface AnimationDef {
   /** Machine-readable name, e.g. 'idle', 'walk' */
   name: string;
   /** Display label, e.g. 'IDLE', 'WALK' */
   label: string;
-  /** Indices into SpriteAsset.frames[] — allows frame reuse */
+  /** Indices into SpriteAsset.layers[0].frames[] — allows frame reuse */
   frameIndices: number[];
   /** Playback speed in frames per second. Default: 5 (200ms per frame) */
   fps?: number;
 }
 
-/** A complete sprite asset with its own palette, frames, and optional animations. */
+/** A complete sprite asset with its own palette, layers, and optional animations. */
 export interface SpriteAsset {
   /** Unique identifier, used in URLs */
   id: string;
@@ -27,14 +37,18 @@ export interface SpriteAsset {
   /** Asset category for catalog filtering */
   category: 'character' | 'terrain' | 'prop' | 'nature' | 'ui';
 
-  /** Grid size in pixels (width = height). Typically 16. */
+  /** Grid size in pixels (width = height). Typically 16 or 32. */
   size: number;
   /** Color palette: number → hex color string. 0 is always transparent. */
   palette: Record<number, string>;
   /** Human-readable names for each palette color (for the palette editor) */
   colorNames: Record<number, string>;
-  /** All unique frames for this asset */
-  frames: Frame[];
+  
+  /** [DEPRECATED] All unique frames for this asset. Moved to layers. */
+  frames?: Frame[];
+  
+  /** All layers for this asset */
+  layers: SpriteLayer[];
 
   /** Animation definitions. Empty array = static asset (single frame). */
   animations: AnimationDef[];

@@ -7,6 +7,7 @@ export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rec
 export function usePixelEditor(
   asset: SpriteAsset,
   frameIndex: number,
+  activeLayerId: string | null,
   onAssetChange: (a: SpriteAsset) => void,
 ) {
   const [tool, setTool] = useState<EditorTool>('pencil');
@@ -24,24 +25,47 @@ export function usePixelEditor(
   // To avoid redundant frame copies during pencil strokes
   const strokeMutableFrame = useRef<Frame | null>(null);
 
+  const getActiveLayerFrame = useCallback(() => {
+    if (!asset.layers || asset.layers.length === 0) return asset.frames?.[frameIndex] || null;
+    const layer = asset.layers.find(l => l.id === activeLayerId) || asset.layers[0];
+    return layer.frames[frameIndex] || null;
+  }, [asset.layers, asset.frames, activeLayerId, frameIndex]);
+
+  const updateActiveLayerFrame = useCallback((newFrame: Frame) => {
+    if (!asset.layers || asset.layers.length === 0) {
+      if (!asset.frames) return;
+      const newFrames = [...asset.frames];
+      newFrames[frameIndex] = newFrame;
+      onAssetChange({ ...asset, frames: newFrames });
+      return;
+    }
+
+    const newLayers = asset.layers.map(l => {
+      if (l.id === activeLayerId || (!activeLayerId && l === asset.layers[0])) {
+        const newFrames = [...l.frames];
+        newFrames[frameIndex] = newFrame;
+        return { ...l, frames: newFrames };
+      }
+      return l;
+    });
+    onAssetChange({ ...asset, layers: newLayers });
+  }, [asset, activeLayerId, frameIndex, onAssetChange]);
+
   const pushUndo = useCallback(() => {
-    if (!asset.frames[frameIndex]) return;
-    const frame = asset.frames[frameIndex];
+    const frame = getActiveLayerFrame();
+    if (!frame) return;
     const snapshot = frame.map(row => [...row]);
     undoStack.current.push(snapshot);
     if (undoStack.current.length > 50) undoStack.current.shift();
     setUndoLen(undoStack.current.length);
-  }, [asset, frameIndex]);
+  }, [getActiveLayerFrame]);
 
   const undo = useCallback(() => {
     const snapshot = undoStack.current.pop();
     if (!snapshot) return;
     setUndoLen(undoStack.current.length);
-
-    const newFrames = [...asset.frames];
-    newFrames[frameIndex] = snapshot;
-    onAssetChange({ ...asset, frames: newFrames });
-  }, [asset, frameIndex, onAssetChange]);
+    updateActiveLayerFrame(snapshot);
+  }, [updateActiveLayerFrame]);
 
   const applyPixelsToFrame = (frame: Frame, pixels: {r: number, c: number, v: number}[], size: number) => {
     for (const { r, c, v } of pixels) {
@@ -73,8 +97,8 @@ export function usePixelEditor(
 
   const getLinePixels = (r0: number, c0: number, r1: number, c1: number, v: number, size: number) => {
     const pixels: {r: number, c: number, v: number}[] = [];
-    let dr = Math.abs(r1 - r0), sr = r0 < r1 ? 1 : -1;
-    let dc = Math.abs(c1 - c0), sc = c0 < c1 ? 1 : -1;
+    const dr = Math.abs(r1 - r0), sr = r0 < r1 ? 1 : -1;
+    const dc = Math.abs(c1 - c0), sc = c0 < c1 ? 1 : -1;
     let err = (dc > dr ? dc : -dr) / 2, e2;
 
     let currR = r0, currC = c0;
@@ -117,7 +141,7 @@ export function usePixelEditor(
   };
 
   const executeFloodFill = (startR: number, startC: number) => {
-    const frame = asset.frames[frameIndex];
+    const frame = getActiveLayerFrame();
     if (!frame) return;
     const targetColor = frame[startR][startC];
     const replacementColor = tool === 'eraser' ? 0 : activeColorKey;
@@ -136,16 +160,15 @@ export function usePixelEditor(
       queue.push({ r: r + 1, c }, { r: r - 1, c }, { r, c: c + 1 }, { r, c: c - 1 });
     }
 
-    const newFrames = [...asset.frames];
-    newFrames[frameIndex] = newFrame;
-    onAssetChange({ ...asset, frames: newFrames });
+    updateActiveLayerFrame(newFrame);
   };
 
   const handlePointerDown = useCallback((r: number, c: number) => {
-    if (!asset.frames[frameIndex]) return;
+    const frame = getActiveLayerFrame();
+    if (!frame) return;
     
     if (tool === 'picker') {
-      const colorId = asset.frames[frameIndex][r][c];
+      const colorId = frame[r][c];
       if (colorId !== 0) setActiveColorKey(colorId);
       return;
     }
@@ -163,22 +186,20 @@ export function usePixelEditor(
     const value = tool === 'eraser' ? 0 : activeColorKey;
 
     if (tool === 'pencil' || tool === 'eraser') {
-      strokeMutableFrame.current = asset.frames[frameIndex].map(row => [...row]);
+      strokeMutableFrame.current = frame.map(row => [...row]);
       applyPixelsToFrame(strokeMutableFrame.current, expandBrush(r, c, value, asset.size), asset.size);
-      
-      const newFrames = [...asset.frames];
-      newFrames[frameIndex] = strokeMutableFrame.current;
-      onAssetChange({ ...asset, frames: newFrames });
+      updateActiveLayerFrame(strokeMutableFrame.current);
     } else {
       // Use -1 to represent 'empty/untouched draft space' since 0 is eraser transparency
       const emptyDraft = Array.from({ length: asset.size }, () => Array(asset.size).fill(-1));
       applyPixelsToFrame(emptyDraft, expandBrush(r, c, value, asset.size), asset.size);
       setDraftFrame(emptyDraft);
     }
-  }, [tool, activeColorKey, asset, frameIndex, brushSize, mirrorX, pushUndo]);
+  }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush]);
 
   const handlePointerMove = useCallback((r: number, c: number) => {
-    if (!isDrawing.current || !strokeStart.current || !asset.frames[frameIndex]) return;
+    const frame = getActiveLayerFrame();
+    if (!isDrawing.current || !strokeStart.current || !frame) return;
 
     const value = tool === 'eraser' ? 0 : activeColorKey;
 
@@ -187,9 +208,7 @@ export function usePixelEditor(
         applyPixelsToFrame(strokeMutableFrame.current, getLinePixels(strokeStart.current.r, strokeStart.current.c, r, c, value, asset.size), asset.size);
         strokeStart.current = { r, c }; 
 
-        const newFrames = [...asset.frames];
-        newFrames[frameIndex] = [...strokeMutableFrame.current.map(row => [...row])];
-        onAssetChange({ ...asset, frames: newFrames });
+        updateActiveLayerFrame([...strokeMutableFrame.current.map(row => [...row])]);
       }
     } else {
       const shapeDraft = Array.from({ length: asset.size }, () => Array(asset.size).fill(-1));
@@ -197,30 +216,29 @@ export function usePixelEditor(
       applyPixelsToFrame(shapeDraft, pixels, asset.size);
       setDraftFrame(shapeDraft);
     }
-  }, [tool, activeColorKey, asset, frameIndex, brushSize, mirrorX]);
+  }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, getLinePixels, getShapePixels]);
 
   const handlePointerUp = useCallback(() => {
     if (!isDrawing.current) return;
     isDrawing.current = false;
 
     if ((tool === 'rect' || tool === 'circle' || tool === 'line') && draftFrame) {
-      if (!asset.frames[frameIndex]) return;
-      const baseFrame = asset.frames[frameIndex];
+      const baseFrame = getActiveLayerFrame();
+      if (!baseFrame) return;
+      
       const mergedFrame = baseFrame.map((row, rr) => 
         row.map((col, cc) => {
           const draftVal = draftFrame[rr][cc];
           return draftVal !== -1 ? draftVal : col;
         })
       );
-      const newFrames = [...asset.frames];
-      newFrames[frameIndex] = mergedFrame;
-      onAssetChange({ ...asset, frames: newFrames });
+      updateActiveLayerFrame(mergedFrame);
       setDraftFrame(null);
     }
     
     strokeMutableFrame.current = null;
     strokeStart.current = null;
-  }, [tool, draftFrame, asset, frameIndex, onAssetChange]);
+  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame]);
   
   return {
     tool, setTool,

@@ -1,4 +1,4 @@
-import type { SpriteAsset, AnimationDef } from '@/lib/types';
+import type { SpriteAsset, AnimationDef, SpriteLayer, Frame } from '@/lib/types';
 import {
   generateIdle,
   generateWalk,
@@ -9,45 +9,56 @@ import {
 } from '@/lib/spriteTransforms';
 
 /**
- * Takes a SpriteAsset with 1 base frame and generates animation frames client-side.
- * Returns a new SpriteAsset with all frames and animation definitions.
+ * Takes a SpriteAsset and generates animation frames client-side.
+ * Returns a new SpriteAsset with all layers updated and animation definitions.
  */
 export function generateAnimationsClientSide(
   asset: SpriteAsset,
   animationNames: string[],
 ): SpriteAsset {
-  const baseFrame = asset.frames[0];
+  // Use first layer for transform metrics (like base frames)
+  const firstLayer = asset.layers[0];
+  const baseFrame = firstLayer.frames[0];
+  
   const paletteKeys = Object.keys(asset.palette).map(Number).filter(k => k > 0);
   const glowColor = Math.max(...paletteKeys);
 
-  const allFrames: number[][][] = [baseFrame.map(r => [...r])];
-  const animDefs: AnimationDef[] = [];
+  // New layers with their new frames
+  const newLayers: SpriteLayer[] = asset.layers.map(layer => {
+    return {
+      ...layer,
+      frames: [layer.frames[0].map(r => [...r])]
+    };
+  });
 
+  const animDefs: AnimationDef[] = [];
   const existingAnimMap = new Map(asset.animations.map(a => [a.name, a]));
-  // We process all animations that are either already existing or explicitly requested to be generated
   const allAnimNamesToProcess = [...new Set([...asset.animations.map(a => a.name), ...animationNames])];
 
   for (const animName of allAnimNamesToProcess) {
     if (animationNames.includes(animName)) {
-      // Regenerate unconditionally
-      const fi = allFrames.length;
-      const [f0, f1] = generateFramePair(baseFrame, animName, glowColor);
-      allFrames.push(
-        f0, 
-        f1, 
-        f0.map(r => [...r]), 
-        f1.map(r => [...r])
-      );
+      // Regenerate for all layers
+      const startIndex = newLayers[0].frames.length;
+      
+      newLayers.forEach(layer => {
+        const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor);
+        layer.frames.push(
+          f0, 
+          f1, 
+          f0.map(r => [...r]), 
+          f1.map(r => [...r])
+        );
+      });
 
       const fps = animName === 'idle' ? 3 : animName === 'cast' ? 4 : 5;
       animDefs.push({
         name: animName,
         label: animName.toUpperCase(),
-        frameIndices: [fi, fi + 1, fi + 2, fi + 3],
+        frameIndices: [startIndex, startIndex + 1, startIndex + 2, startIndex + 3],
         fps,
       });
     } else {
-      // Keep existing (don't regenerate)
+      // Keep existing
       const oldAnim = existingAnimMap.get(animName);
       if (oldAnim) {
         const newIndices: number[] = [];
@@ -55,8 +66,13 @@ export function generateAnimationsClientSide(
 
         for (const oldIdx of oldAnim.frameIndices) {
           if (!indexMapping.has(oldIdx)) {
-            indexMapping.set(oldIdx, allFrames.length);
-            allFrames.push(asset.frames[oldIdx].map(r => [...r]));
+            const nextIdx = newLayers[0].frames.length;
+            indexMapping.set(oldIdx, nextIdx);
+            newLayers.forEach(l => {
+              // Extract from original asset layers or frames
+              const frameToCopy = l.frames[oldIdx] || asset.frames?.[oldIdx] || Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+              l.frames.push(frameToCopy.map(r => [...r]));
+            });
           }
           newIndices.push(indexMapping.get(oldIdx)!);
         }
@@ -71,7 +87,7 @@ export function generateAnimationsClientSide(
 
   return {
     ...asset,
-    frames: allFrames,
+    layers: newLayers,
     animations: animDefs,
   };
 }
@@ -102,27 +118,35 @@ function generateFramePair(
 /**
  * Injects 3 externally generated frames (e.g. from AI) into a SpriteAsset
  * to form a 4-frame animation (baseFrame + 3 new frames).
+ * AI frames are injected ONLY into the first layer.
  */
 export function addExternalAnimation(
   asset: SpriteAsset,
   animationName: string,
   newFrames: number[][][],
 ): SpriteAsset {
-  // If the API returned exactly 3 frames
   if (newFrames.length !== 3) {
     throw new Error('addExternalAnimation expects exactly 3 new frames');
   }
 
-  const frames = [...asset.frames];
-  const startIndex = frames.length;
-
-  frames.push(...newFrames);
+  const startIndex = asset.layers[0].frames.length;
+  const newLayers = asset.layers.map((layer, idx) => {
+    const frames = [...layer.frames];
+    if (idx === 0) {
+      frames.push(...newFrames);
+    } else {
+      // Add empty frames to other layers to maintain alignment
+      for (let i = 0; i < 3; i++) {
+        frames.push(Array.from({ length: asset.size }, () => Array(asset.size).fill(0)));
+      }
+    }
+    return { ...layer, frames };
+  });
 
   const fps = animationName === 'idle' ? 3 : animationName === 'cast' ? 4 : 5;
   const newAnimation: AnimationDef = {
     name: animationName,
     label: animationName.toUpperCase(),
-    // Base frame (0) followed by the 3 new frames
     frameIndices: [0, startIndex, startIndex + 1, startIndex + 2],
     fps,
   };
@@ -131,7 +155,6 @@ export function addExternalAnimation(
   const existingIdx = animations.findIndex(a => a.name === animationName);
   
   if (existingIdx >= 0) {
-    // Replace if it already exists
     animations[existingIdx] = newAnimation;
   } else {
     animations.push(newAnimation);
@@ -139,19 +162,22 @@ export function addExternalAnimation(
 
   return {
     ...asset,
-    frames,
+    layers: newLayers,
     animations,
   };
 }
 
 /**
- * Duplicates the frame at targetIdx and inserts it right after it.
- * Shifts all subsequent animation references + 1.
+ * [REPLACED BY layerUtils version but kept for compatibility]
+ * Duplicates the frame index in all layers.
  */
 export function duplicateFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset {
-  const newFrames = [...asset.frames];
-  const frameToCopy = newFrames[targetIdx].map(row => [...row]);
-  newFrames.splice(targetIdx + 1, 0, frameToCopy);
+  const newLayers = asset.layers.map(layer => {
+    const newFrames = [...layer.frames];
+    const frameToCopy = newFrames[targetIdx].map(row => [...row]);
+    newFrames.splice(targetIdx + 1, 0, frameToCopy);
+    return { ...layer, frames: newFrames };
+  });
 
   const newAnimations = asset.animations.map(anim => ({
     ...anim,
@@ -161,17 +187,20 @@ export function duplicateFrame(asset: SpriteAsset, targetIdx: number): SpriteAss
     })
   }));
 
-  return { ...asset, frames: newFrames, animations: newAnimations };
+  return { ...asset, layers: newLayers, animations: newAnimations };
 }
 
 /**
- * Inserts a fully transparent frame after targetIdx.
+ * [REPLACED BY layerUtils version with local insert logic]
  */
 export function insertEmptyFrame(asset: SpriteAsset, afterIdx: number): SpriteAsset {
   const size = asset.size;
-  const newFrames = [...asset.frames];
-  const emptyFrame = Array.from({ length: size }, () => Array(size).fill(0));
-  newFrames.splice(afterIdx + 1, 0, emptyFrame);
+  const newLayers = asset.layers.map(layer => {
+    const newFrames = [...layer.frames];
+    const emptyFrame = Array.from({ length: size }, () => Array(size).fill(0));
+    newFrames.splice(afterIdx + 1, 0, emptyFrame);
+    return { ...layer, frames: newFrames };
+  });
 
   const newAnimations = asset.animations.map(anim => ({
     ...anim,
@@ -181,21 +210,23 @@ export function insertEmptyFrame(asset: SpriteAsset, afterIdx: number): SpriteAs
     })
   }));
 
-  return { ...asset, frames: newFrames, animations: newAnimations };
+  return { ...asset, layers: newLayers, animations: newAnimations };
 }
 
 /**
- * Deletes the frame at targetIdx.
- * Important: Base frame (index 0) cannot be deleted if it's the only frame to preserve asset integrity.
+ * [REPLACED BY layerUtils version]
  */
 export function deleteFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset {
-  if (asset.frames.length <= 1) return asset; // Don't delete the last remaining frame
+  const firstLayer = asset.layers[0];
+  if (firstLayer.frames.length <= 1) return asset;
 
-  const newFrames = [...asset.frames];
-  newFrames.splice(targetIdx, 1);
+  const newLayers = asset.layers.map(layer => {
+    const newFrames = [...layer.frames];
+    newFrames.splice(targetIdx, 1);
+    return { ...layer, frames: newFrames };
+  });
 
   const newAnimations = asset.animations.map(anim => {
-    // Remove the deleted frame, shift > targetIdx down by 1
     const validIndices = anim.frameIndices.filter(oldIdx => oldIdx !== targetIdx);
     return {
       ...anim,
@@ -203,27 +234,29 @@ export function deleteFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset 
     };
   });
 
-  return { ...asset, frames: newFrames, animations: newAnimations };
+  return { ...asset, layers: newLayers, animations: newAnimations };
 }
 
 /**
- * Moves a frame from one index to another, updating animation definitions
- * to point to their correctly displaced frames.
+ * Moves a frame from one index to another, updating all layers.
  */
 export function moveFrame(asset: SpriteAsset, fromIdx: number, toIdx: number): SpriteAsset {
-  if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= asset.frames.length || toIdx >= asset.frames.length) {
+  const frameCount = asset.layers[0]?.frames.length || 0;
+  if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= frameCount || toIdx >= frameCount) {
     return asset;
   }
 
-  const newFrames = [...asset.frames];
-  const [movedFrame] = newFrames.splice(fromIdx, 1);
-  newFrames.splice(toIdx, 0, movedFrame);
+  const newLayers = asset.layers.map(layer => {
+    const newFrames = [...layer.frames];
+    const [movedFrame] = newFrames.splice(fromIdx, 1);
+    newFrames.splice(toIdx, 0, movedFrame);
+    return { ...layer, frames: newFrames };
+  });
 
   const newAnimations = asset.animations.map(anim => ({
     ...anim,
     frameIndices: anim.frameIndices.map(oldIdx => {
       if (oldIdx === fromIdx) return toIdx;
-
       if (fromIdx > toIdx) { // Moved left
         if (oldIdx >= toIdx && oldIdx < fromIdx) return oldIdx + 1;
       } else { // Moved right
@@ -233,6 +266,5 @@ export function moveFrame(asset: SpriteAsset, fromIdx: number, toIdx: number): S
     })
   }));
 
-  return { ...asset, frames: newFrames, animations: newAnimations };
+  return { ...asset, layers: newLayers, animations: newAnimations };
 }
-

@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import type { Frame, SpriteAsset } from '@/lib/types';
+import { compositeFrame } from '@/lib/layerUtils';
 
 /**
  * Hook for animating asset previews.
@@ -36,9 +37,13 @@ export function useAssetPreview(asset: SpriteAsset, animationName: string | null
   let currentFrame: Frame;
   if (currentAnimation) {
     const frameIdx = currentAnimation.frameIndices[frameStep];
-    currentFrame = asset.frames[frameIdx];
+    currentFrame = asset.layers && asset.layers.length > 0 
+      ? compositeFrame(asset, frameIdx) 
+      : (asset.frames?.[frameIdx] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
   } else {
-    currentFrame = asset.frames[0];
+    currentFrame = asset.layers && asset.layers.length > 0 
+      ? compositeFrame(asset, 0) 
+      : (asset.frames?.[0] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
   }
 
   return {

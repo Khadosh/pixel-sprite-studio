@@ -9,6 +9,7 @@ interface SpritePixelEditorProps {
   asset: SpriteAsset;
   frameIndex: number;
   activeColorKey: number;
+  activeLayerId: string | null;
   tool: string;
   onPointerDown: (row: number, col: number) => void;
   onPointerMove: (row: number, col: number) => void;
@@ -22,6 +23,7 @@ interface SpritePixelEditorProps {
 export default function SpritePixelEditor({
   asset,
   frameIndex,
+  activeLayerId,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -33,7 +35,9 @@ export default function SpritePixelEditor({
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
 
   const canvasSize = asset.size * PIXEL_SCALE;
-  const frame = asset.frames[frameIndex] ?? null;
+  
+  // No longer using a single 'frame' variable at the top level
+  // as we index into layers inside the draw loop.
 
   const getCell = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -115,12 +119,26 @@ export default function SpritePixelEditor({
       }
     }
 
-    // Draw main frame
-    if (frame) {
-      drawFrameData(frame, true);
+    // Draw layers
+    if (asset.layers && asset.layers.length > 0) {
+      asset.layers.forEach(layer => {
+        if (!layer.isVisible) return;
+        const layerFrame = layer.frames[frameIndex];
+        if (!layerFrame) return;
+
+        // Dim non-active layers
+        const isActive = layer.id === activeLayerId;
+        ctx.globalAlpha = isActive ? 1.0 : 0.4;
+        
+        drawFrameData(layerFrame, true);
+      });
+      ctx.globalAlpha = 1.0;
+    } else if (asset.frames?.[frameIndex]) {
+      // Legacy fallback
+      drawFrameData(asset.frames[frameIndex], true);
     }
     
-    // Draw draft frame overlay
+    // Draw draft frame overlay (most likely for the active layer)
     if (draftFrame) {
       drawFrameData(draftFrame, false);
     }
@@ -138,7 +156,7 @@ export default function SpritePixelEditor({
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
     }
-  }, [asset, frame, draftFrame, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
+  }, [asset, activeLayerId, draftFrame, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     // Only accept left click
