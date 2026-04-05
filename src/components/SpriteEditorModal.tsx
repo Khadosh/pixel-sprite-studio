@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { arrayMove } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,20 @@ import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';
 import { generateAnimationsClientSide, duplicateFrame, deleteFrame, insertEmptyFrame, moveFrame } from '@/lib/spriteAnimations';
 import { useGenerateAnimation } from '@/hooks/useGenerateAnimation';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const PIXEL_SCALE = 4;
 const THUMB_SCALE = 4;
@@ -87,6 +102,23 @@ function FrameThumb({
   );
 }
 
+function SortableFrameThumb({ frameIndex, children }: { frameIndex: number; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: frameIndex.toString() });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 0,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="shrink-0">
+      {children}
+    </div>
+  );
+}
+
 export default function SpriteEditorModal({
   open, onOpenChange, initialAsset, onSave, generatePrompt, onRegenerate, isGenerating
 }: SpriteEditorModalProps) {
@@ -99,6 +131,14 @@ export default function SpriteEditorModal({
   const [assetName, setAssetName] = useState(initialAsset.name);
   const [isEditingName, setIsEditingName] = useState(false);
   const [onionSkin, setOnionSkin] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Start drag only after moving 5px
+      },
+    })
+  );
 
   const visibleFramesIndices = useMemo(() => {
     if (viewingAnimation === 'base' || editedAsset.animations.length === 0) {
@@ -185,6 +225,37 @@ export default function SpriteEditorModal({
     else if (editingFrameIndex === toIdx) setEditingFrameIndex(fromIdx);
     setEditedAsset(prev => moveFrame(prev, fromIdx, toIdx));
   }, [editingFrameIndex]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const activeId = parseInt(active.id as string);
+      const overId = parseInt(over.id as string);
+
+      if (!isNaN(activeId) && !isNaN(overId)) {
+        if (viewingAnimation === 'base') return;
+
+        setEditedAsset(prev => {
+          const animIndex = prev.animations.findIndex(a => a.name === viewingAnimation);
+          if (animIndex === -1) return prev;
+
+          const anim = prev.animations[animIndex];
+          
+          // Reordenar estrictamente la secuencia visible de la animación sin tocar la memoria global
+          const oldTimelineIndex = anim.frameIndices.indexOf(activeId);
+          const newTimelineIndex = anim.frameIndices.indexOf(overId);
+
+          if (oldTimelineIndex !== -1 && newTimelineIndex !== -1) {
+            const newFrameIndices = arrayMove(anim.frameIndices, oldTimelineIndex, newTimelineIndex);
+            const newAnimations = [...prev.animations];
+            newAnimations[animIndex] = { ...anim, frameIndices: newFrameIndices };
+            return { ...prev, animations: newAnimations };
+          }
+          return prev;
+        });
+      }
+    }
+  };
 
   const handleGenerateAnimationsAI = async () => {
     if (selectedAnims.length === 0) return;
@@ -484,51 +555,46 @@ export default function SpriteEditorModal({
                   </div>
                 )}
 
-                <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1 px-1 items-end min-h-[50px]">
-                  {visibleFramesIndices.map((frameIndex) => {
-                    const frame = editedAsset.frames[frameIndex];
-                    if (!frame) return null;
-                    return (
-                      <ContextMenu key={frameIndex}>
-                        <ContextMenuTrigger asChild>
-                          <div
-                            className="shrink-0 cursor-grab active:cursor-grabbing"
-                            draggable
-                            onDragStart={(e) => { e.dataTransfer.setData('text/plain', frameIndex.toString()); e.dataTransfer.dropEffect = 'move'; }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDragEnter={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-                              if (!isNaN(fromIdx) && fromIdx !== frameIndex) handleMoveFrame(fromIdx, frameIndex);
-                            }}
-                          >
-                            <FrameThumb
-                              frame={frame}
-                              palette={editedAsset.palette}
-                              size={editedAsset.size}
-                              isActive={frameIndex === editingFrameIndex}
-                              label={frameLabels[frameIndex]}
-                              onClick={() => setEditingFrameIndex(frameIndex)}
-                            />
-                          </div>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent>
-                          <ContextMenuItem onClick={() => handleDuplicateFrame(frameIndex)}>
-                            Duplicar Frame
-                          </ContextMenuItem>
-                          <ContextMenuItem onClick={() => handleInsertEmptyFrame(frameIndex)}>
-                            Insertar Vacío (Después)
-                          </ContextMenuItem>
-                          <ContextMenuSeparator />
-                          <ContextMenuItem disabled={frameIndex === 0} onClick={() => handleDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
-                            Eliminar Frame
-                          </ContextMenuItem>
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    );
-                  })}
-                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={visibleFramesIndices.map(i => i.toString())} strategy={horizontalListSortingStrategy}>
+                    <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1 px-1 items-end min-h-[50px]">
+                      {visibleFramesIndices.map((frameIndex) => {
+                        const frame = editedAsset.frames[frameIndex];
+                        if (!frame) return null;
+                        return (
+                          <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
+                            <ContextMenu>
+                              <ContextMenuTrigger asChild>
+                                <div>
+                                  <FrameThumb
+                                    frame={frame}
+                                    palette={editedAsset.palette}
+                                    size={editedAsset.size}
+                                    isActive={frameIndex === editingFrameIndex}
+                                    label={frameLabels[frameIndex]}
+                                    onClick={() => setEditingFrameIndex(frameIndex)}
+                                  />
+                                </div>
+                              </ContextMenuTrigger>
+                              <ContextMenuContent>
+                                <ContextMenuItem onClick={() => handleDuplicateFrame(frameIndex)}>
+                                  Duplicar Frame
+                                </ContextMenuItem>
+                                <ContextMenuItem onClick={() => handleInsertEmptyFrame(frameIndex)}>
+                                  Insertar Vacío (Después)
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem disabled={frameIndex === 0} onClick={() => handleDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
+                                  Eliminar Frame
+                                </ContextMenuItem>
+                              </ContextMenuContent>
+                            </ContextMenu>
+                          </SortableFrameThumb>
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </div>
             ) : (
               <span className="font-pixel text-[10px] text-muted-foreground">SIN FRAMES</span>

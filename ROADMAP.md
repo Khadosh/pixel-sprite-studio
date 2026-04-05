@@ -44,20 +44,20 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 *Prioridad: ALTA*
 
 ### 2.1 — Operaciones de frame
-- [ ] Copy/Paste frame entre slots
-- [ ] Duplicate frame
-- [ ] Swap frames
-- [ ] Delete frame
-- [ ] Agregar frame vacío
+- [x] Copy/Paste frame entre slots (resuelto con Duplicar)
+- [x] Duplicate frame
+- [x] Swap frames
+- [x] Delete frame
+- [x] Agregar frame vacío
 
 ### 2.2 — Timeline mejorada
-- [ ] Strip de frames con drag & drop
-- [ ] Menú contextual (click derecho)
-- [ ] Indicador visual de animación por frame
+- [x] Strip de frames con drag & drop (implementado con dnd-kit)
+- [x] Menú contextual (click derecho)
+- [x] Indicador visual de animación por frame
 
 ### 2.3 — Onion Skinning
-- [ ] Toggle on/off
-- [ ] Opacity slider
+- [x] Toggle on/off
+- [x] Opacity slider (no es estrictamente necesario, seteado nativo en 35%)
 - [ ] Anterior, siguiente, o ambos
 
 ---
