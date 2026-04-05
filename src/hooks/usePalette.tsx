@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
 type Palette = Record<number, string>;
 
@@ -21,6 +21,10 @@ interface PaletteProviderProps {
  */
 export function PaletteProvider({ defaultPalette, children }: PaletteProviderProps) {
   const [palette, setPalette] = useState<Palette>({ ...defaultPalette });
+
+  useEffect(() => {
+    setPalette({ ...defaultPalette });
+  }, [defaultPalette]);
 
   const setPaletteColor = useCallback((key: number, color: string) => {
     setPalette(prev => ({ ...prev, [key]: color }));

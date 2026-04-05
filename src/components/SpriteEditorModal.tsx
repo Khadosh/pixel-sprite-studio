@@ -3,7 +3,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
-import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
+import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Eye, EyeOff, Lock, Unlock, Layers, ChevronUp, ChevronDown } from 'lucide-react';
 import type { SpriteAsset } from '@/lib/types';
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
@@ -18,7 +18,13 @@ import {
   compositeFrame, 
   addEmptyFrameToAllLayers, 
   removeFrameFromAllLayers, 
-  duplicateFrameInAllLayers 
+  duplicateFrameInAllLayers,
+  addNewLayer,
+  removeLayer,
+  toggleLayerVisibility,
+  toggleLayerLock,
+  renameLayer,
+  reorderLayers
 } from '@/lib/layerUtils';
 import {
   DndContext,
@@ -140,6 +146,7 @@ export default function SpriteEditorModal({
   const [assetName, setAssetName] = useState(initialAsset.name);
   const [isEditingName, setIsEditingName] = useState(false);
   const [onionSkin, setOnionSkin] = useState(false);
+  const [showAllColors, setShowAllColors] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -157,6 +164,22 @@ export default function SpriteEditorModal({
     if (!anim) return [0];
     return [...new Set(anim.frameIndices)];
   }, [editedAsset.animations, viewingAnimation]);
+
+  const activeLayer = useMemo(() => 
+    editedAsset.layers.find(l => l.id === activeLayerId),
+    [editedAsset.layers, activeLayerId]
+  );
+
+  const filteredPalette = useMemo(() => {
+    if (showAllColors || !activeLayer || !activeLayer.paletteIds) return editedAsset.palette;
+    
+    const filtered: Record<number, string> = { 0: 'transparent' };
+    const ids = activeLayer.paletteIds || [];
+    ids.forEach(id => {
+      if (editedAsset.palette[id]) filtered[id] = editedAsset.palette[id];
+    });
+    return filtered;
+  }, [editedAsset.palette, activeLayer, showAllColors]);
 
   const onionGhostFrames = useMemo(() => {
     if (!onionSkin) return { prev: undefined, next: undefined };
@@ -192,7 +215,7 @@ export default function SpriteEditorModal({
 
   const {
     tool, setTool,
-    activeColorKey, setActiveColorKey,
+    activeColorKey, setActiveColorKey: setEditorColorKey,
     brushSize, setBrushSize,
     mirrorX, setMirrorX, draftFrame,
     handlePointerDown, handlePointerMove, handlePointerUp,
@@ -200,6 +223,25 @@ export default function SpriteEditorModal({
   } = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     setEditedAsset(updated);
   });
+
+  const setActiveColorKey = useCallback((key: number) => {
+    setEditorColorKey(key);
+    // Auto-assign to layer if in "Show All" mode and we select a global color
+    if (showAllColors && activeLayerId) {
+      setEditedAsset(prev => {
+        const layerIdx = prev.layers.findIndex(l => l.id === activeLayerId);
+        if (layerIdx === -1) return prev;
+        const layer = prev.layers[layerIdx];
+        const pIds = layer.paletteIds || [];
+        if (!pIds.includes(key)) {
+          const newLayers = [...prev.layers];
+          newLayers[layerIdx] = { ...layer, paletteIds: [...pIds, key] };
+          return { ...prev, layers: newLayers };
+        }
+        return prev;
+      });
+    }
+  }, [setEditorColorKey, showAllColors, activeLayerId]);
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -313,17 +355,38 @@ export default function SpriteEditorModal({
     }));
   }, []);
 
+  const handleRenameColor = useCallback((key: number, name: string) => {
+    setEditedAsset(prev => ({
+      ...prev,
+      colorNames: { ...prev.colorNames, [key]: name },
+    }));
+  }, []);
+
   const handleAddColor = useCallback(() => {
     setEditedAsset(prev => {
       const keys = Object.keys(prev.palette).map(Number).filter(k => k > 0);
       const newKey = keys.length > 0 ? Math.max(...keys) + 1 : 1;
+      const updatedPalette = { ...prev.palette, [newKey]: '#888888' };
+      const updatedColorNames = { ...prev.colorNames, [newKey]: `Color ${newKey}` };
+      
+      const newLayers = prev.layers.map(layer => {
+        if (layer.id === activeLayerId) {
+          const pIds = layer.paletteIds || [];
+          if (!pIds.includes(newKey)) {
+            return { ...layer, paletteIds: [...pIds, newKey] };
+          }
+        }
+        return layer;
+      });
+
       return {
         ...prev,
-        palette: { ...prev.palette, [newKey]: '#888888' },
-        colorNames: { ...prev.colorNames, [newKey]: `Color ${newKey}` },
+        palette: updatedPalette,
+        colorNames: updatedColorNames,
+        layers: newLayers,
       };
     });
-  }, []);
+  }, [activeLayerId]);
 
   const handleRemoveColor = useCallback((key: number) => {
     setEditedAsset(prev => {
@@ -332,22 +395,58 @@ export default function SpriteEditorModal({
       const newColorNames = { ...prev.colorNames };
       delete newColorNames[key];
 
-      const newLayers = prev.layers.map(layer => ({
-        ...layer,
-        frames: layer.frames.map(f =>
-          f.map(r => r.map(c => c === key ? 0 : c))
-        )
-      }));
-
       return {
         ...prev,
         palette: newPalette,
         colorNames: newColorNames,
-        layers: newLayers,
+        layers: prev.layers.map(layer => ({
+          ...layer,
+          paletteIds: layer.paletteIds?.filter(id => id !== key),
+          frames: layer.frames.map(f =>
+            f.map(r => r.map(c => c === key ? 0 : c))
+          )
+        })),
       };
     });
     if (activeColorKey === key) setActiveColorKey(1);
   }, [activeColorKey, setActiveColorKey]);
+
+  const handleAddLayer = useCallback(() => {
+    setEditedAsset(prev => {
+      const updated = addNewLayer(prev, `Layer ${prev.layers.length + 1}`);
+      setActiveLayerId(updated.layers[updated.layers.length - 1].id);
+      return updated;
+    });
+  }, []);
+
+  const handleRemoveLayer = useCallback((layerId: string) => {
+    setEditedAsset(prev => {
+      if (prev.layers.length <= 1) return prev;
+      const updated = removeLayer(prev, layerId);
+      if (activeLayerId === layerId) {
+        setActiveLayerId(updated.layers[updated.layers.length - 1].id);
+      }
+      return updated;
+    });
+  }, [activeLayerId]);
+
+  const handleToggleLayerVisibility = useCallback((layerId: string) => {
+    setEditedAsset(prev => toggleLayerVisibility(prev, layerId));
+  }, []);
+
+  const handleToggleLayerLock = useCallback((layerId: string) => {
+    setEditedAsset(prev => toggleLayerLock(prev, layerId));
+  }, []);
+
+  const handleRenameLayer = useCallback((layerId: string, name: string) => {
+    setEditedAsset(prev => renameLayer(prev, layerId, name));
+  }, []);
+
+  const handleMoveLayer = useCallback((fromIdx: number, direction: 'up' | 'down') => {
+    const toIdx = direction === 'up' ? fromIdx + 1 : fromIdx - 1;
+    if (toIdx < 0 || toIdx >= editedAsset.layers.length) return;
+    setEditedAsset(prev => reorderLayers(prev, fromIdx, toIdx));
+  }, [editedAsset.layers.length]);
 
   const handleExportPNG = () => {
     const asset = editedAsset;
@@ -463,19 +562,110 @@ export default function SpriteEditorModal({
         {/* MAIN BODY: 3 Columns */}
         <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
           
-          {/* LEFT: Target only Palette now */}
+          {/* LEFT: Palette & Layers */}
           <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1 custom-scrollbar">
+            {/* PALETTE */}
             <div className="bg-secondary/30 rounded-lg border border-border p-4">
-              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PALETTE</span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">PALETTE</span>
+                <button 
+                  onClick={() => setShowAllColors(!showAllColors)}
+                  className={`text-[8px] font-pixel px-2 py-0.5 rounded border transition-colors ${showAllColors ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'border-border text-muted-foreground'}`}
+                >
+                  {showAllColors ? 'SHOWING ALL' : 'LAYER SCOPED'}
+                </button>
+              </div>
               <PaletteBar
-                palette={editedAsset.palette}
+                palette={filteredPalette}
                 colorNames={editedAsset.colorNames}
                 activeColorKey={activeColorKey}
                 onSelectColor={setActiveColorKey}
                 onChangeColor={handleChangeColor}
                 onAddColor={handleAddColor}
                 onRemoveColor={handleRemoveColor}
+                onRenameColor={handleRenameColor}
               />
+            </div>
+
+            {/* LAYERS */}
+            <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-[300px]">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">LAYERS</span>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6 text-purple-400 hover:text-purple-300 hover:bg-purple-600/20"
+                  onClick={handleAddLayer}
+                >
+                  <Plus size={14} />
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-1 flex-1">
+                {[...editedAsset.layers].reverse().map((layer, revIdx) => {
+                  const idx = editedAsset.layers.length - 1 - revIdx;
+                  const isActive = layer.id === activeLayerId;
+
+                  return (
+                    <div 
+                      key={layer.id}
+                      onClick={() => setActiveLayerId(layer.id)}
+                      className={`group flex items-center gap-2 p-2 rounded border cursor-pointer transition-all ${
+                        isActive 
+                          ? 'bg-purple-600/20 border-purple-500/50 text-foreground' 
+                          : 'bg-background/20 border-transparent hover:bg-secondary/40 text-muted-foreground'
+                      }`}
+                    >
+                      <button 
+                        className={`hover:text-primary transition-colors ${!layer.isVisible && 'text-muted-foreground/30'}`}
+                        onClick={(e) => { e.stopPropagation(); handleToggleLayerVisibility(layer.id); }}
+                      >
+                        {layer.isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+                      </button>
+                      
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <Layers size={10} className="shrink-0 opacity-40" />
+                        <span className="truncate font-pixel text-[10px]">
+                          {layer.name}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const newName = prompt('Enter new layer name:', layer.name);
+                            if (newName) handleRenameLayer(layer.id, newName);
+                          }}
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button 
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'up'); }}
+                          disabled={idx === editedAsset.layers.length - 1}
+                        >
+                          <ChevronUp size={12} />
+                        </button>
+                        <button 
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'down'); }}
+                          disabled={idx === 0}
+                        >
+                          <ChevronDown size={12} />
+                        </button>
+                        <button 
+                          className="text-red-500/70 hover:text-red-400"
+                          onClick={(e) => { e.stopPropagation(); handleRemoveLayer(layer.id); }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -517,14 +707,12 @@ export default function SpriteEditorModal({
 
           {/* RIGHT: Preview & Animation Controls */}
           <div className="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pl-1 custom-scrollbar">
-            {editedAsset.animations.length > 0 && (
-              <div className="bg-secondary/30 rounded-lg border border-border p-4">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PREVIEW</span>
-                <PaletteProvider defaultPalette={editedAsset.palette}>
-                  <SpritePreview asset={editedAsset} animationName={viewingAnimation} />
-                </PaletteProvider>
-              </div>
-            )}
+            <div className="bg-secondary/30 rounded-lg border border-border p-4">
+              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PREVIEW</span>
+              <PaletteProvider defaultPalette={editedAsset.palette}>
+                <SpritePreview asset={editedAsset} animationName={viewingAnimation} />
+              </PaletteProvider>
+            </div>
             <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
               <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">ANIMACIONES</span>
               <div className="flex flex-wrap gap-2">

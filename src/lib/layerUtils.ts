@@ -99,6 +99,7 @@ export function duplicateFrameInAllLayers(asset: SpriteAsset, frameIndex: number
     const newFrames = [...layer.frames];
     // Deep clone the frame matrix
     const frameToCopy = layer.frames[frameIndex];
+    if (!frameToCopy) return layer;
     const newFrame = frameToCopy.map(row => [...row]);
     newFrames.splice(frameIndex + 1, 0, newFrame);
     return { ...layer, frames: newFrames };
@@ -108,4 +109,87 @@ export function duplicateFrameInAllLayers(asset: SpriteAsset, frameIndex: number
     ...asset,
     layers: newLayers
   };
+}
+
+/**
+ * Adds a new layer to the top of the stack.
+ */
+export function addNewLayer(asset: SpriteAsset, name: string): SpriteAsset {
+  const frameCount = asset.layers[0]?.frames.length || asset.frames?.length || 1;
+  const size = asset.size;
+
+  const newLayer: SpriteLayer = {
+    id: `layer-${Date.now()}`,
+    name,
+    isVisible: true,
+    isLocked: false,
+    opacity: 1,
+    frames: Array.from({ length: frameCount }, () => 
+      Array.from({ length: size }, () => Array(size).fill(0))
+    ),
+    paletteIds: [], // Start with empty palette
+  };
+
+  return {
+    ...asset,
+    layers: [...asset.layers, newLayer]
+  };
+}
+
+/**
+ * Removes a layer by ID (only if there's more than one layer).
+ */
+export function removeLayer(asset: SpriteAsset, layerId: string): SpriteAsset {
+  if (asset.layers.length <= 1) return asset;
+
+  return {
+    ...asset,
+    layers: asset.layers.filter(l => l.id !== layerId)
+  };
+}
+
+/**
+ * Toggles visibility for a layer.
+ */
+export function toggleLayerVisibility(asset: SpriteAsset, layerId: string): SpriteAsset {
+  return {
+    ...asset,
+    layers: asset.layers.map(l => 
+      l.id === layerId ? { ...l, isVisible: !l.isVisible } : l
+    )
+  };
+}
+
+/**
+ * Toggles lock for a layer.
+ */
+export function toggleLayerLock(asset: SpriteAsset, layerId: string): SpriteAsset {
+  return {
+    ...asset,
+    layers: asset.layers.map(l => 
+      l.id === layerId ? { ...l, isLocked: !l.isLocked } : l
+    )
+  };
+}
+
+/**
+ * Renames a layer.
+ */
+export function renameLayer(asset: SpriteAsset, layerId: string, newName: string): SpriteAsset {
+  return {
+    ...asset,
+    layers: asset.layers.map(l => 
+      l.id === layerId ? { ...l, name: newName } : l
+    )
+  };
+}
+
+/**
+ * Reorders layers in the asset.
+ */
+export function reorderLayers(asset: SpriteAsset, fromIdx: number, toIdx: number): SpriteAsset {
+  const newLayers = [...asset.layers];
+  const [moved] = newLayers.splice(fromIdx, 1);
+  newLayers.splice(toIdx, 0, moved);
+  return { ...asset, layers: newLayers };
 }

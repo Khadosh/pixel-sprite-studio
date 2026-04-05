@@ -12,6 +12,7 @@ export interface SpriteLayer {
   isLocked: boolean;
   opacity: number; // 0.0 to 1.0
   frames: Frame[]; // Frame content for this layer
+  paletteIds?: number[]; // Added for layer-specific palette filtering
 }
 
 /** Defines a named animation as a sequence of frame indices. */

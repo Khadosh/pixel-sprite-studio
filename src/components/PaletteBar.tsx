@@ -8,6 +8,7 @@ interface PaletteBarProps {
   onChangeColor: (key: number, color: string) => void;
   onAddColor?: () => void;
   onRemoveColor?: (key: number) => void;
+  onRenameColor?: (key: number, name: string) => void;
 }
 
 export default function PaletteBar({
@@ -18,6 +19,7 @@ export default function PaletteBar({
   onChangeColor,
   onAddColor,
   onRemoveColor,
+  onRenameColor,
 }: PaletteBarProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -47,7 +49,16 @@ export default function PaletteBar({
                 }`}
                 style={{ backgroundColor: color }}
               />
-              <span className={`flex-1 text-[10px] font-mono transition-colors truncate ${isActive ? 'text-purple-300 font-bold' : 'text-muted-foreground'}`}>
+              <span 
+                className={`flex-1 text-[10px] font-mono transition-colors truncate ${isActive ? 'text-purple-300 font-bold hover:underline cursor-text' : 'text-muted-foreground'}`}
+                onClick={(e) => {
+                  if (isActive && onRenameColor) {
+                    e.stopPropagation();
+                    const newName = prompt('Enter color name:', colorNames[k] || key);
+                    if (newName !== null) onRenameColor(k, newName);
+                  }
+                }}
+              >
                 {colorNames[k] || key}
               </span>
               
