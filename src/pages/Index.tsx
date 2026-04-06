@@ -107,14 +107,14 @@ export default function Index() {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <SpriteSheetCanvas onCanvasReady={(c) => { exportCanvasRef.current = c; }} />
+                <SpriteSheetCanvas asset={characterAsset} onCanvasReady={(c) => { exportCanvasRef.current = c; }} />
               </div>
             </div>
           </div>
 
           <div className="w-full lg:w-64">
             <div className="bg-card rounded-lg border border-border p-4">
-              <SpritePreview />
+              <SpritePreview asset={characterAsset} />
             </div>
           </div>
         </div>
