@@ -1,42 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft } from 'lucide-react';
 
+type AuthView = 'login' | 'signup' | 'forgot-password' | 'reset-password';
+
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [view, setView] = useState<AuthView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isRecoveryMode, setRecoveryMode } = useAuth();
+
+  useEffect(() => {
+    if (isRecoveryMode) {
+      setView('reset-password');
+    }
+  }, [isRecoveryMode]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (view === 'login') {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
         navigate('/dashboard');
-      } else {
+      } else if (view === 'signup') {
         const { error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
         toast({
-          title: 'Registro exitoso',
-          description: 'Revisa tu correo para confirmar tu cuenta (o ingresa directamente si no está configurado).',
+          title: '¡Registro exitoso!',
+          description: 'Revisa tu correo para confirmar tu cuenta.',
         });
+      } else if (view === 'forgot-password') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        if (error) throw error;
+        toast({
+          title: 'Correo enviado',
+          description: 'Si la cuenta existe, recibirás un enlace para recuperar tu contraseña.',
+        });
+        setView('login');
+      } else if (view === 'reset-password') {
+        const { error } = await supabase.auth.updateUser({
+          password: password,
+        });
+        if (error) throw error;
+        toast({
+          title: 'Contraseña actualizada',
+          description: 'Tu contraseña ha sido cambiada con éxito. Ya puedes iniciar sesión.',
+        });
+        setRecoveryMode(false);
+        setView('login');
       }
     } catch (error: any) {
       toast({
@@ -46,6 +77,24 @@ export default function Auth() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getTitle = () => {
+    switch (view) {
+      case 'signup': return 'Crea tu cuenta';
+      case 'forgot-password': return 'Recuperar contraseña';
+      case 'reset-password': return 'Nueva contraseña';
+      default: return '¡Bienvenido de nuevo!';
+    }
+  };
+
+  const getSubtitle = () => {
+    switch (view) {
+      case 'signup': return 'Únete a la comunidad de artistas pixel y guarda tus proyectos.';
+      case 'forgot-password': return 'Ingresa tu email y te enviaremos un enlace de recuperación.';
+      case 'reset-password': return 'Ingresa tu nueva contraseña para acceder a tu cuenta.';
+      default: return 'Inicia sesión para acceder a tu estudio de sprites.';
     }
   };
 
@@ -62,7 +111,7 @@ export default function Auth() {
         className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
       >
         <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-        Back to Home
+        Volver al inicio
       </button>
 
       <div className="w-full max-w-md bg-card border border-border p-8 rounded-lg shadow-xl relative z-10">
@@ -70,49 +119,83 @@ export default function Auth() {
           <h1 className="font-pixel text-primary text-xl mb-2">
             PIXEL SPRITE STUDIO
           </h1>
-          <p className="text-muted-foreground font-mono text-sm">
-            {isLogin ? 'Welcome back! Login to access your projects.' : 'Create an account to start creating pixel art projects.'}
+          <h2 className="text-foreground font-mono text-lg font-bold mb-1 uppercase tracking-tight">
+            {getTitle()}
+          </h2>
+          <p className="text-muted-foreground font-mono text-xs">
+            {getSubtitle()}
           </p>
         </div>
 
         <form onSubmit={handleAuth} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="pixel@hero.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-secondary/50 font-mono"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="bg-secondary/50 font-mono"
-            />
-          </div>
+          {view !== 'reset-password' && (
+            <div className="space-y-2">
+              <Label htmlFor="email" className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="pixel@hero.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-secondary/50 font-mono"
+              />
+            </div>
+          )}
+          
+          {view !== 'forgot-password' && (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password" className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+                  {view === 'reset-password' ? 'Nueva Contraseña' : 'Contraseña'}
+                </Label>
+                {view === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => setView('forgot-password')}
+                    className="text-[10px] font-mono text-muted-foreground hover:text-primary transition-colors uppercase"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                )}
+              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-secondary/50 font-mono"
+              />
+            </div>
+          )}
 
           <Button type="submit" className="w-full font-pixel text-xs py-5 bg-primary hover:bg-primary/80 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]" disabled={loading}>
-            {loading ? 'PROCESANDO...' : isLogin ? 'INICIAR SESION' : 'REGISTRARSE'}
+            {loading ? 'PROCESANDO...' : 
+             view === 'forgot-password' ? 'ENVIAR ENLACE' : 
+             view === 'reset-password' ? 'ACTUALIZAR CONTRASEÑA' : 
+             view === 'signup' ? 'REGISTRARSE' : 'INICIAR SESION'}
           </Button>
         </form>
 
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
-          >
-            {isLogin ? "¿No tienes cuenta? Regístrate aquí" : "¿Ya tienes cuenta? Inicia sesión"}
-          </button>
+        <div className="mt-8 text-center flex flex-col gap-3">
+          {view === 'login' && (
+            <button
+              onClick={() => setView('signup')}
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
+            >
+              ¿No tienes cuenta? Regístrate aquí
+            </button>
+          )}
+          {(view === 'signup' || view === 'forgot-password' || (view === 'reset-password' && !isRecoveryMode)) && (
+            <button
+              onClick={() => setView('login')}
+              className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors"
+            >
+              ¿Ya tienes cuenta? Inicia sesión
+            </button>
+          )}
         </div>
       </div>
     </div>

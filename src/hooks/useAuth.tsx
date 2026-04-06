@@ -6,7 +6,9 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
+  isRecoveryMode: boolean;
   signOut: () => Promise<void>;
+  setRecoveryMode: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,6 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   useEffect(() => {
     // Buscar la sesión actual al cargar
@@ -27,9 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Escuchar cambios de autenticación
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -40,7 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, isLoading, signOut }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      isLoading, 
+      isRecoveryMode, 
+      signOut, 
+      setRecoveryMode: setIsRecoveryMode 
+    }}>
       {children}
     </AuthContext.Provider>
   );
