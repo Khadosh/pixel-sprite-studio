@@ -18,6 +18,7 @@ interface SpritePixelEditorProps {
   onionSkinPrevFrame?: number[][];
   onionSkinNextFrame?: number[][];
   draftFrame?: number[][] | null;
+  moveOffset?: { dr: number; dc: number; activeLayerId?: string | null } | null;
 }
 
 export default function SpritePixelEditor({
@@ -30,6 +31,7 @@ export default function SpritePixelEditor({
   onionSkinPrevFrame,
   onionSkinNextFrame,
   draftFrame,
+  moveOffset,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
@@ -97,7 +99,7 @@ export default function SpritePixelEditor({
     if (onionSkinNextFrame) drawGhost(onionSkinNextFrame, 0.35, '#4aff4a');
 
     // Helper to draw a specific frame matrix
-    const drawFrameData = (data: number[][], treatZeroAsTransparent: boolean) => {
+    const drawFrameData = (data: number[][], treatZeroAsTransparent: boolean, dr = 0, dc = 0) => {
       for (let row = 0; row < asset.size; row++) {
         for (let col = 0; col < asset.size; col++) {
           const val = data[row][col];
@@ -105,19 +107,25 @@ export default function SpritePixelEditor({
           if (treatZeroAsTransparent && val === 0) continue; 
           
           if (val === 0) {
-            // Eraser tool effectively drawing 0 (transparent) on draft: 
-            // We draw a visual cue like a dark checkered red or just clear it. 
-            // We can draw a grey square to denote it's being erased
             ctx.fillStyle = '#ff000055';
           } else {
             const color = asset.palette[val];
             if (!color || color === 'transparent') continue;
             ctx.fillStyle = color;
           }
-          ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+          
+          const tr = row + dr;
+          const tc = col + dc;
+          if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
+            ctx.fillRect(tc * PIXEL_SCALE, tr * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+          }
         }
       }
     }
+
+    const dr = moveOffset?.dr || 0;
+    const dc = moveOffset?.dc || 0;
+    const targetLayerId = moveOffset?.activeLayerId;
 
     // Draw layers
     if (asset.layers && asset.layers.length > 0) {
@@ -126,21 +134,29 @@ export default function SpritePixelEditor({
         const layerFrame = layer.frames[frameIndex];
         if (!layerFrame) return;
 
-        // Dim non-active layers
         const isActive = layer.id === activeLayerId;
         ctx.globalAlpha = isActive ? 1.0 : 0.4;
         
-        drawFrameData(layerFrame, true);
+        // Only apply offset if:
+        // 1. targetLayerId is not specified (moves all layers)
+        // 2. targetLayerId matches this layer
+        const applyOffset = (dr !== 0 || dc !== 0) && (
+          targetLayerId === undefined || targetLayerId === null || targetLayerId === layer.id
+        );
+
+        const curDr = applyOffset ? dr : 0;
+        const curDc = applyOffset ? dc : 0;
+
+        if (isActive && draftFrame) {
+          drawFrameData(draftFrame, true, curDr, curDc);
+        } else {
+          drawFrameData(layerFrame, true, curDr, curDc);
+        }
       });
       ctx.globalAlpha = 1.0;
     } else if (asset.frames?.[frameIndex]) {
       // Legacy fallback
       drawFrameData(asset.frames[frameIndex], true);
-    }
-    
-    // Draw draft frame overlay (most likely for the active layer)
-    if (draftFrame) {
-      drawFrameData(draftFrame, false);
     }
 
     // Grid lines
@@ -156,7 +172,7 @@ export default function SpritePixelEditor({
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
     }
-  }, [asset, activeLayerId, draftFrame, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
+  }, [asset, activeLayerId, draftFrame, moveOffset, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     // Only accept left click

@@ -160,3 +160,58 @@ export function generateCast(base: Frame, glowColor: number): [Frame, Frame] {
 export function generateHurt(base: Frame): [Frame, Frame] {
   return [shiftRight(base, 1), shiftRight(base, 2)];
 }
+/** Flip horizontal */
+export function flipHorizontal(frame: Frame): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      out[r][c] = frame[r][size - 1 - c];
+    }
+  }
+  return out;
+}
+
+/** Flip vertical */
+export function flipVertical(frame: Frame): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      out[r][c] = frame[size - 1 - r][c];
+    }
+  }
+  return out;
+}
+
+/** Rotate 90 degrees clockwise */
+export function rotate90(frame: Frame): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
+  const out = Array.from({ length: size }, () => Array(size).fill(0));
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      out[c][size - 1 - r] = frame[r][c];
+    }
+  }
+  return out;
+}
+
+/** Shift/Translate a frame by delta row/col. Clips at edges. */
+export function shiftFrame(frame: Frame, dr: number, dc: number): Frame {
+  if (frame.length === 0) return cloneFrame(frame);
+  const size = frame.length;
+  const out = Array.from({ length: size }, () => Array(size).fill(0));
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const srcR = r - dr;
+      const srcC = c - dc;
+      if (srcR >= 0 && srcR < size && srcC >= 0 && srcC < size) {
+        out[r][c] = frame[srcR][srcC];
+      }
+    }
+  }
+  return out;
+}

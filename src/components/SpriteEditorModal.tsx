@@ -8,24 +8,19 @@ import type { SpriteAsset } from '@/lib/types';
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
 import PaletteBar from '@/components/PaletteBar';
-import EditorToolbar from '@/components/EditorToolbar';
+import EditorToolbar, { EditorScope } from '@/components/EditorToolbar';
 import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';
-import { generateAnimationsClientSide, moveFrame } from '@/lib/spriteAnimations';
-import { useGenerateAnimation } from '@/hooks/useGenerateAnimation';
 import { 
-  ensureLayerSupport, 
-  compositeFrame, 
-  addEmptyFrameToAllLayers, 
-  removeFrameFromAllLayers, 
-  duplicateFrameInAllLayers,
-  addNewLayer,
-  removeLayer,
-  toggleLayerVisibility,
-  toggleLayerLock,
-  renameLayer,
-  reorderLayers
+  compositeFrame, ensureLayerSupport, addNewLayer, removeLayer, 
+  reorderLayers, renameLayer, toggleLayerVisibility, toggleLayerLock 
 } from '@/lib/layerUtils';
+import { 
+  generateAnimationsClientSide, 
+  duplicateFrameInAllLayers, removeFrameFromAllLayers, addEmptyFrameToAllLayers, moveFrame 
+} from '@/lib/spriteAnimations';
+import { flipHorizontal, flipVertical, rotate90 } from '@/lib/spriteTransforms';
+import { useGenerateAnimation } from '@/hooks/useGenerateAnimation';
 import {
   DndContext,
   closestCenter,
@@ -147,6 +142,9 @@ export default function SpriteEditorModal({
   const [isEditingName, setIsEditingName] = useState(false);
   const [onionSkin, setOnionSkin] = useState(false);
   const [showAllColors, setShowAllColors] = useState(false);
+  const [scope, setScope] = useState<EditorScope>('layer');
+  const [layerClipboard, setLayerClipboard] = useState<number[][] | null>(null);
+  const [frameClipboard, setFrameClipboard] = useState<Record<string, number[][]> | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -220,9 +218,92 @@ export default function SpriteEditorModal({
     mirrorX, setMirrorX, draftFrame,
     handlePointerDown, handlePointerMove, handlePointerUp,
     undo, pushUndo, canUndo,
+    overwriteLayerFrame,
+    moveOffset,
   } = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     setEditedAsset(updated);
-  });
+  }, scope);
+
+  const handleCopy = useCallback(() => {
+    if (scope === 'layer') {
+      const frame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
+      if (frame) setLayerClipboard(frame.map(r => [...r]));
+    } else {
+      const clipboard: Record<string, number[][]> = {};
+      editedAsset.layers.forEach(l => {
+        clipboard[l.id] = l.frames[editingFrameIndex].map(r => [...r]);
+      });
+      setFrameClipboard(clipboard);
+    }
+  }, [scope, editedAsset, activeLayerId, editingFrameIndex]);
+
+  const handlePaste = useCallback(() => {
+    if (scope === 'layer') {
+      if (layerClipboard) overwriteLayerFrame(layerClipboard.map(r => [...r]));
+    } else {
+      if (frameClipboard) {
+        setEditedAsset(prev => {
+          const newLayers = prev.layers.map(l => {
+            if (frameClipboard[l.id]) {
+              const newFrames = [...l.frames];
+              newFrames[editingFrameIndex] = frameClipboard[l.id].map(r => [...r]);
+              return { ...l, frames: newFrames };
+            }
+            return l;
+          });
+          return { ...prev, layers: newLayers };
+        });
+      }
+    }
+  }, [scope, layerClipboard, frameClipboard, overwriteLayerFrame, editingFrameIndex]);
+
+  const handleFlipH = useCallback(() => {
+    if (scope === 'layer') {
+      const frame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
+      if (frame) overwriteLayerFrame(flipHorizontal(frame));
+    } else {
+      setEditedAsset(prev => ({
+        ...prev,
+        layers: prev.layers.map(l => {
+          const newFrames = [...l.frames];
+          newFrames[editingFrameIndex] = flipHorizontal(l.frames[editingFrameIndex]);
+          return { ...l, frames: newFrames };
+        })
+      }));
+    }
+  }, [scope, editedAsset, activeLayerId, editingFrameIndex, overwriteLayerFrame]);
+
+  const handleFlipV = useCallback(() => {
+    if (scope === 'layer') {
+      const frame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
+      if (frame) overwriteLayerFrame(flipVertical(frame));
+    } else {
+      setEditedAsset(prev => ({
+        ...prev,
+        layers: prev.layers.map(l => {
+          const newFrames = [...l.frames];
+          newFrames[editingFrameIndex] = flipVertical(l.frames[editingFrameIndex]);
+          return { ...l, frames: newFrames };
+        })
+      }));
+    }
+  }, [scope, editedAsset, activeLayerId, editingFrameIndex, overwriteLayerFrame]);
+
+  const handleRotate = useCallback(() => {
+    if (scope === 'layer') {
+      const frame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
+      if (frame) overwriteLayerFrame(rotate90(frame));
+    } else {
+      setEditedAsset(prev => ({
+        ...prev,
+        layers: prev.layers.map(l => {
+          const newFrames = [...l.frames];
+          newFrames[editingFrameIndex] = rotate90(l.frames[editingFrameIndex]);
+          return { ...l, frames: newFrames };
+        })
+      }));
+    }
+  }, [scope, editedAsset, activeLayerId, editingFrameIndex, overwriteLayerFrame]);
 
   const setActiveColorKey = useCallback((key: number) => {
     setEditorColorKey(key);
@@ -254,6 +335,7 @@ export default function SpriteEditorModal({
         case 'e': setTool('eraser'); break;
         case 'i': setTool('picker'); break;
         case 'g': setTool('fill'); break;
+        case 'v': setTool('move'); break;
         case 'm': setMirrorX(prev => !prev); break;
         case 'z': 
           if (e.ctrlKey || e.metaKey) {
@@ -299,12 +381,6 @@ export default function SpriteEditorModal({
   const handleInsertEmptyFrame = useCallback((idx: number) => {
     setEditedAsset(prev => addEmptyFrameToAllLayers(prev, idx));
   }, []);
-
-  const handleMoveFrame = useCallback((fromIdx: number, toIdx: number) => {
-    if (editingFrameIndex === fromIdx) setEditingFrameIndex(toIdx);
-    else if (editingFrameIndex === toIdx) setEditingFrameIndex(fromIdx);
-    setEditedAsset(prev => moveFrame(prev, fromIdx, toIdx));
-  }, [editingFrameIndex]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -681,9 +757,16 @@ export default function SpriteEditorModal({
                 canUndo={canUndo}
                 onUndo={undo}
                 onionSkin={onionSkin}
-                onToggleOnionSkin={() => setOnionSkin(p => !p)}
+                onToggleOnionSkin={() => setOnionSkin(!onionSkin)}
                 mirrorX={mirrorX}
-                onToggleMirrorX={() => setMirrorX(p => !p)}
+                onToggleMirrorX={() => setMirrorX(!mirrorX)}
+                scope={scope}
+                onScopeChange={setScope}
+                onCopy={handleCopy}
+                onPaste={handlePaste}
+                onFlipH={handleFlipH}
+                onFlipV={handleFlipV}
+                onRotate={handleRotate}
               />
             </div>
             {/* CANVAS AREA */}
@@ -699,6 +782,7 @@ export default function SpriteEditorModal({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 draftFrame={draftFrame}
+                moveOffset={moveOffset}
                 onionSkinPrevFrame={onionGhostFrames.prev}
                 onionSkinNextFrame={onionGhostFrames.next}
               />

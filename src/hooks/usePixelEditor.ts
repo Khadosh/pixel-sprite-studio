@@ -2,19 +2,23 @@ import { useState, useRef, useCallback } from 'react';
 import type { Frame, SpriteAsset } from '@/lib/types';
 import type { BrushSize } from '@/components/EditorToolbar';
 
-export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle';
+import { shiftFrame } from '@/lib/spriteTransforms';
+
+export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'move';
 
 export function usePixelEditor(
   asset: SpriteAsset,
   frameIndex: number,
   activeLayerId: string | null,
   onAssetChange: (a: SpriteAsset) => void,
+  scope: 'layer' | 'frame' = 'layer'
 ) {
   const [tool, setTool] = useState<EditorTool>('pencil');
   const [activeColorKey, setActiveColorKey] = useState(1);
   const [brushSize, setBrushSize] = useState<BrushSize>(1);
   const [mirrorX, setMirrorX] = useState(false);
   const [draftFrame, setDraftFrame] = useState<Frame | null>(null);
+  const [moveOffset, setMoveOffset] = useState<{ dr: number; dc: number; activeLayerId?: string | null } | null>(null);
 
   const undoStack = useRef<Frame[]>([]);
   const [undoLen, setUndoLen] = useState(0);
@@ -167,6 +171,14 @@ export function usePixelEditor(
     const frame = getActiveLayerFrame();
     if (!frame) return;
     
+    if (tool === 'move') {
+      strokeStart.current = { r, c };
+      isDrawing.current = true;
+      const f = getActiveLayerFrame();
+      if (f) strokeMutableFrame.current = f.map(row => [...row]);
+      return;
+    }
+
     if (tool === 'picker') {
       const colorId = frame[r][c];
       if (colorId !== 0) setActiveColorKey(colorId);
@@ -198,6 +210,13 @@ export function usePixelEditor(
   }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush]);
 
   const handlePointerMove = useCallback((r: number, c: number) => {
+    if (tool === 'move' && strokeStart.current) {
+      const dr = r - strokeStart.current.r;
+      const dc = c - strokeStart.current.c;
+      setMoveOffset({ dr, dc, activeLayerId: scope === 'layer' ? activeLayerId : null });
+      return;
+    }
+
     const frame = getActiveLayerFrame();
     if (!isDrawing.current || !strokeStart.current || !frame) return;
 
@@ -218,9 +237,41 @@ export function usePixelEditor(
     }
   }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, getLinePixels, getShapePixels]);
 
+  const overwriteLayerFrame = useCallback((newFrame: Frame) => {
+    pushUndo(); // Save current state before overwriting
+    updateActiveLayerFrame(newFrame);
+  }, [updateActiveLayerFrame, pushUndo]);
+
   const handlePointerUp = useCallback(() => {
     if (!isDrawing.current) return;
-    isDrawing.current = false;
+
+    if (tool === 'move' && strokeStart.current) {
+      const dr = moveOffset?.dr || 0;
+      const dc = moveOffset?.dc || 0;
+      const initial = strokeMutableFrame.current;
+      
+      if (initial && (dr !== 0 || dc !== 0)) {
+        if (scope === 'layer') {
+          overwriteLayerFrame(shiftFrame(initial, dr, dc));
+        } else {
+          // Move ALL layers
+          pushUndo();
+          onAssetChange({
+            ...asset,
+            layers: asset.layers.map(l => {
+              const newFrames = [...l.frames];
+              newFrames[frameIndex] = shiftFrame(l.frames[frameIndex], dr, dc);
+              return { ...l, frames: newFrames };
+            })
+          });
+        }
+      }
+      isDrawing.current = false;
+      strokeStart.current = null;
+      strokeMutableFrame.current = null;
+      setMoveOffset(null);
+      return;
+    }
 
     if ((tool === 'rect' || tool === 'circle' || tool === 'line') && draftFrame) {
       const baseFrame = getActiveLayerFrame();
@@ -236,9 +287,10 @@ export function usePixelEditor(
       setDraftFrame(null);
     }
     
+    isDrawing.current = false;
     strokeMutableFrame.current = null;
     strokeStart.current = null;
-  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame]);
+  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, moveOffset, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo]);
   
   return {
     tool, setTool,
@@ -248,5 +300,7 @@ export function usePixelEditor(
     draftFrame,
     handlePointerDown, handlePointerMove, handlePointerUp,
     undo, pushUndo, canUndo: undoLen > 0,
+    overwriteLayerFrame,
+    moveOffset,
   };
 }

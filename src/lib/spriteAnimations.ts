@@ -168,10 +168,9 @@ export function addExternalAnimation(
 }
 
 /**
- * [REPLACED BY layerUtils version but kept for compatibility]
  * Duplicates the frame index in all layers.
  */
-export function duplicateFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset {
+export function duplicateFrameInAllLayers(asset: SpriteAsset, targetIdx: number): SpriteAsset {
   const newLayers = asset.layers.map(layer => {
     const newFrames = [...layer.frames];
     const frameToCopy = newFrames[targetIdx].map(row => [...row]);
@@ -191,9 +190,9 @@ export function duplicateFrame(asset: SpriteAsset, targetIdx: number): SpriteAss
 }
 
 /**
- * [REPLACED BY layerUtils version with local insert logic]
+ * Adds an empty frame after the specified index in all layers.
  */
-export function insertEmptyFrame(asset: SpriteAsset, afterIdx: number): SpriteAsset {
+export function addEmptyFrameToAllLayers(asset: SpriteAsset, afterIdx: number): SpriteAsset {
   const size = asset.size;
   const newLayers = asset.layers.map(layer => {
     const newFrames = [...layer.frames];
@@ -214,9 +213,9 @@ export function insertEmptyFrame(asset: SpriteAsset, afterIdx: number): SpriteAs
 }
 
 /**
- * [REPLACED BY layerUtils version]
+ * Removes a frame index from all layers.
  */
-export function deleteFrame(asset: SpriteAsset, targetIdx: number): SpriteAsset {
+export function removeFrameFromAllLayers(asset: SpriteAsset, targetIdx: number): SpriteAsset {
   const firstLayer = asset.layers[0];
   if (firstLayer.frames.length <= 1) return asset;
 

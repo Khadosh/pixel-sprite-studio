@@ -1,9 +1,15 @@
-import { Pencil, Eraser, Undo2, Layers, PaintBucket, Pipette, Minus, Square, Circle, SplitSquareHorizontal } from 'lucide-react';
+import { 
+  Pencil, Eraser, Undo2, Layers, PaintBucket, Pipette, 
+  Minus, Square, Circle, SplitSquareHorizontal,
+  Copy, ClipboardList, FlipHorizontal, FlipVertical, RotateCw, Monitor,
+  Move, LucideIcon
+} from 'lucide-react';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React from 'react';
 
 export type BrushSize = 1 | 4 | 16;
+export type EditorScope = 'layer' | 'frame';
 
 interface EditorToolbarProps {
   tool: EditorTool;
@@ -16,6 +22,13 @@ interface EditorToolbarProps {
   onToggleOnionSkin: () => void;
   mirrorX: boolean;
   onToggleMirrorX: () => void;
+  scope: EditorScope;
+  onScopeChange: (s: EditorScope) => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  onFlipH: () => void;
+  onFlipV: () => void;
+  onRotate: () => void;
 }
 
 const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
@@ -24,7 +37,8 @@ const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
   { value: 16, label: '4x4', tooltip: 'Pincel 4px' },
 ];
 
-const TOOLS: { id: EditorTool; icon: React.FC<any>; tooltip: string }[] = [
+const TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
+  { id: 'move', icon: Move, tooltip: 'Mover/Panear Diseño (V)' },
   { id: 'picker', icon: Pipette, tooltip: 'Cuentagotas (I)' },
   { id: 'pencil', icon: Pencil, tooltip: 'Lápiz (B)' },
   { id: 'eraser', icon: Eraser, tooltip: 'Borra Píxeles (E)' },
@@ -39,7 +53,9 @@ export default function EditorToolbar({
   brushSize, onBrushSizeChange, 
   canUndo, onUndo, 
   onionSkin, onToggleOnionSkin,
-  mirrorX, onToggleMirrorX
+  mirrorX, onToggleMirrorX,
+  scope, onScopeChange,
+  onCopy, onPaste, onFlipH, onFlipV, onRotate
 }: EditorToolbarProps) {
   const btnBase = 'p-2 rounded border transition-all';
   const btnActive = 'border-purple-500 bg-purple-600/30 text-purple-300';
@@ -102,6 +118,76 @@ export default function EditorToolbar({
             Simetría Horizontal (M)
           </TooltipContent>
         </Tooltip>
+
+        <div className="w-px h-6 bg-border mx-1 shrink-0" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button 
+              onClick={() => onScopeChange(scope === 'layer' ? 'frame' : 'layer')}
+              className={`${btnBase} flex items-center gap-1.5 px-2 bg-secondary/50 border-border text-muted-foreground hover:text-foreground`}
+            >
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: scope === 'layer' ? '#a855f7' : '#3b82f6' }} />
+              <span className="text-[8px] font-pixel uppercase tracking-tighter">
+                {scope}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[10px] font-pixel">
+            Alcance: {scope === 'layer' ? 'SÓLO CAPA' : 'TODO EL FRAME'}
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="flex items-center gap-0.5 ml-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onCopy} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
+                <Copy size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">COPIAR ({scope})</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onPaste} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
+                <ClipboardList size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">PEGAR ({scope})</TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="w-px h-4 bg-border/50 mx-1" />
+
+        <div className="flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onFlipH} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
+                <FlipHorizontal size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">MIRROR H ({scope})</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onFlipV} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
+                <FlipVertical size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">MIRROR V ({scope})</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={onRotate} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
+                <RotateCw size={13} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">ROTATE 90° ({scope})</TooltipContent>
+          </Tooltip>
+        </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
