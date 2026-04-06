@@ -19,6 +19,27 @@ export default function Index() {
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const { palette, setPaletteColor, resetPalette } = usePalette();
 
+  const characterAsset = useMemo<SpriteAsset>(() => {
+    const allFrames = ANIMATIONS.flatMap(a => a.frames);
+    let idx = 0;
+    const animations = ANIMATIONS.map(a => {
+      const frameIndices = a.frames.map(() => idx++);
+      return { name: a.name, label: a.label, frameIndices, fps: 5 };
+    });
+    return {
+      id: 'pixel-character',
+      name: 'Pixel Character',
+      description: 'Classic pixel art character with multiple animations.',
+      category: 'character',
+      size: FRAME_SIZE,
+      palette: PALETTE,
+      colorNames: { 1: 'Outline', 2: 'Skin', 3: 'Hair', 4: 'Shirt', 5: 'Pants', 6: 'Shoes', 7: 'Sword', 8: 'Eyes', 9: 'Hurt' },
+      frames: allFrames,
+      animations,
+      tags: ['character'],
+    };
+  }, []);
+
   const handleExportPNG = useCallback(() => {
     const maxFrames = Math.max(...ANIMATIONS.map(a => a.frames.length));
     const w = maxFrames * (CELL_SIZE + GRID_GAP) - GRID_GAP;
