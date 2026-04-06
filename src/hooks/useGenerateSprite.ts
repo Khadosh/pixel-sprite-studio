@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
+import { ensureLayerSupport } from '@/lib/layerUtils';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -38,7 +39,7 @@ export function useGenerateSprite() {
         throw new Error(data?.detail || data?.error || `HTTP ${res.status}`);
       }
 
-      const sprite = data as SpriteAsset;
+      const sprite = ensureLayerSupport(data as SpriteAsset);
       setState({ isGenerating: false, error: null, result: sprite });
       return sprite;
     } catch (err: any) {

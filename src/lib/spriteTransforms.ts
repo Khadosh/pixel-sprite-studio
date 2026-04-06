@@ -215,3 +215,51 @@ export function shiftFrame(frame: Frame, dr: number, dc: number): Frame {
   }
   return out;
 }
+
+/** Calculate the center of mass of non-transparent pixels. Returns null if empty. */
+export function getCenterOfMass(frame: Frame): { r: number, c: number } | null {
+  const size = frame.length;
+  let sumR = 0;
+  let sumC = 0;
+  let count = 0;
+
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (frame[r][c] !== 0) {
+        sumR += r;
+        sumC += c;
+        count++;
+      }
+    }
+  }
+
+  if (count === 0) return null;
+  return { r: sumR / count, c: sumC / count };
+}
+
+/** Rotate a frame by an arbitrary angle (degrees) around a specific center. */
+export function rotateFrameFree(frame: Frame, angleDeg: number, center: { r: number, c: number }): Frame {
+  const size = frame.length;
+  const out = Array.from({ length: size }, () => Array(size).fill(0));
+  const angleRad = (angleDeg * Math.PI) / 180;
+
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
+
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      // Coordinates relative to center
+      const dr = r - center.r;
+      const dc = c - center.c;
+
+      // Inverse rotation to find source pixels (Nearest Neighbor)
+      const srcC = Math.round(center.c + (dc * cos + dr * sin));
+      const srcR = Math.round(center.r + (-dc * sin + dr * cos));
+
+      if (srcR >= 0 && srcR < size && srcC >= 0 && srcC < size) {
+        out[r][c] = frame[srcR][srcC];
+      }
+    }
+  }
+  return out;
+}

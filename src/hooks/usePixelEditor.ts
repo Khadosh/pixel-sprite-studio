@@ -2,9 +2,10 @@ import { useState, useRef, useCallback } from 'react';
 import type { Frame, SpriteAsset } from '@/lib/types';
 import type { BrushSize } from '@/components/EditorToolbar';
 
-import { shiftFrame } from '@/lib/spriteTransforms';
+import { shiftFrame, getCenterOfMass, rotateFrameFree } from '@/lib/spriteTransforms';
+import { compositeFrame } from '@/lib/layerUtils';
 
-export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'move';
+export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'move' | 'rotate';
 
 export function usePixelEditor(
   asset: SpriteAsset,
@@ -19,6 +20,9 @@ export function usePixelEditor(
   const [mirrorX, setMirrorX] = useState(false);
   const [draftFrame, setDraftFrame] = useState<Frame | null>(null);
   const [moveOffset, setMoveOffset] = useState<{ dr: number; dc: number; activeLayerId?: string | null } | null>(null);
+  const [rotationAngle, setRotationAngle] = useState<number | null>(null);
+  const [rotationCenter, setRotationCenter] = useState<{ r: number; c: number; activeLayerId?: string | null } | null>(null);
+  const [initialRotationAngle, setInitialRotationAngle] = useState<number>(0);
 
   const undoStack = useRef<Frame[]>([]);
   const [undoLen, setUndoLen] = useState(0);
@@ -179,6 +183,22 @@ export function usePixelEditor(
       return;
     }
 
+    if (tool === 'rotate') {
+      isDrawing.current = true;
+      const baseFrame = scope === 'frame' ? compositeFrame(asset, frameIndex) : getActiveLayerFrame();
+      const center = baseFrame ? getCenterOfMass(baseFrame) : { r: 7.5, c: 7.5 };
+      const actualCenter = center || { r: 7.5, c: 7.5 };
+      
+      setRotationCenter({ ...actualCenter, activeLayerId: scope === 'layer' ? activeLayerId : null });
+      const angle = Math.atan2(r - actualCenter.r, c - actualCenter.c);
+      setInitialRotationAngle(angle);
+      setRotationAngle(0);
+
+      const f = getActiveLayerFrame();
+      if (f) strokeMutableFrame.current = f.map(row => [...row]);
+      return;
+    }
+
     if (tool === 'picker') {
       const colorId = frame[r][c];
       if (colorId !== 0) setActiveColorKey(colorId);
@@ -207,13 +227,20 @@ export function usePixelEditor(
       applyPixelsToFrame(emptyDraft, expandBrush(r, c, value, asset.size), asset.size);
       setDraftFrame(emptyDraft);
     }
-  }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush]);
+  }, [tool, activeColorKey, asset, frameIndex, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush, scope]);
 
   const handlePointerMove = useCallback((r: number, c: number) => {
     if (tool === 'move' && strokeStart.current) {
       const dr = r - strokeStart.current.r;
       const dc = c - strokeStart.current.c;
       setMoveOffset({ dr, dc, activeLayerId: scope === 'layer' ? activeLayerId : null });
+      return;
+    }
+
+    if (tool === 'rotate' && rotationCenter) {
+      const currentAngle = Math.atan2(r - rotationCenter.r, c - rotationCenter.c);
+      const diff = ((currentAngle - initialRotationAngle) * 180) / Math.PI;
+      setRotationAngle(diff);
       return;
     }
 
@@ -235,7 +262,7 @@ export function usePixelEditor(
       applyPixelsToFrame(shapeDraft, pixels, asset.size);
       setDraftFrame(shapeDraft);
     }
-  }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, getLinePixels, getShapePixels]);
+  }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, getLinePixels, getShapePixels, activeLayerId, scope, rotationCenter, initialRotationAngle]);
 
   const overwriteLayerFrame = useCallback((newFrame: Frame) => {
     pushUndo(); // Save current state before overwriting
@@ -244,6 +271,31 @@ export function usePixelEditor(
 
   const handlePointerUp = useCallback(() => {
     if (!isDrawing.current) return;
+
+    if (tool === 'rotate' && rotationCenter && rotationAngle !== null) {
+      const initial = strokeMutableFrame.current;
+      if (initial) {
+        if (scope === 'layer') {
+          overwriteLayerFrame(rotateFrameFree(initial, rotationAngle, rotationCenter));
+        } else {
+          // Rotate ALL layers
+          pushUndo();
+          onAssetChange({
+            ...asset,
+            layers: asset.layers.map(l => {
+              const newFrames = [...l.frames];
+              newFrames[frameIndex] = rotateFrameFree(l.frames[frameIndex], rotationAngle, rotationCenter);
+              return { ...l, frames: newFrames };
+            })
+          });
+        }
+      }
+      isDrawing.current = false;
+      setRotationAngle(null);
+      setRotationCenter(null);
+      strokeMutableFrame.current = null;
+      return;
+    }
 
     if (tool === 'move' && strokeStart.current) {
       const dr = moveOffset?.dr || 0;
@@ -290,7 +342,7 @@ export function usePixelEditor(
     isDrawing.current = false;
     strokeMutableFrame.current = null;
     strokeStart.current = null;
-  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, moveOffset, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo]);
+  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, moveOffset, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo, rotationAngle, rotationCenter]);
   
   return {
     tool, setTool,
@@ -302,5 +354,7 @@ export function usePixelEditor(
     undo, pushUndo, canUndo: undoLen > 0,
     overwriteLayerFrame,
     moveOffset,
+    rotationAngle,
+    rotationCenter,
   };
 }

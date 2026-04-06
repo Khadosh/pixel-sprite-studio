@@ -37,15 +37,22 @@ const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
   { value: 16, label: '4x4', tooltip: 'Pincel 4px' },
 ];
 
-const TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
-  { id: 'move', icon: Move, tooltip: 'Mover/Panear Diseño (V)' },
-  { id: 'picker', icon: Pipette, tooltip: 'Cuentagotas (I)' },
+const PAINT_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
   { id: 'pencil', icon: Pencil, tooltip: 'Lápiz (B)' },
-  { id: 'eraser', icon: Eraser, tooltip: 'Borra Píxeles (E)' },
-  { id: 'fill', icon: PaintBucket, tooltip: 'Balde de Pintura (G)' },
-  { id: 'line', icon: Minus, tooltip: 'Línea Recta [Arrastrar]' },
-  { id: 'rect', icon: Square, tooltip: 'Rectángulo Hueco [Arrastrar]' },
-  { id: 'circle', icon: Circle, tooltip: 'Círculo Hueco [Arrastrar]' },
+  { id: 'eraser', icon: Eraser, tooltip: 'Borrador (E)' },
+  { id: 'fill', icon: PaintBucket, tooltip: 'Relleno (G)' },
+  { id: 'picker', icon: Pipette, tooltip: 'Cuentagotas (I)' },
+];
+
+const SHAPE_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
+  { id: 'line', icon: Minus, tooltip: 'Línea' },
+  { id: 'rect', icon: Square, tooltip: 'Rectángulo' },
+  { id: 'circle', icon: Circle, tooltip: 'Círculo' },
+];
+
+const TRANSFORM_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
+  { id: 'move', icon: Move, tooltip: 'Mover (V)' },
+  { id: 'rotate', icon: RotateCw, tooltip: 'Rotación Libre (R)' },
 ];
 
 export default function EditorToolbar({ 
@@ -62,83 +69,56 @@ export default function EditorToolbar({
   const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
   const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
 
+  const ToolButton = ({ t, currentTool, onToolChange }: { 
+    t: { id: EditorTool; icon: LucideIcon; tooltip: string }, 
+    currentTool: EditorTool, 
+    onToolChange: (t: EditorTool) => void 
+  }) => (
+    <Tooltip key={t.id}>
+      <TooltipTrigger asChild>
+        <button 
+          onClick={() => onToolChange(t.id)} 
+          className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
+        >
+          <t.icon size={14} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+        {t.tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1">
         
-        {TOOLS.map(t => {
-          const Icon = t.icon;
-          return (
-            <Tooltip key={t.id}>
-              <TooltipTrigger asChild>
-                <button 
-                  onClick={() => onToolChange(t.id)} 
-                  className={`${btnBase} ${tool === t.id ? btnActive : btnInactive}`}
-                >
-                  <Icon size={14} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-                {t.tooltip}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
+        <div className="flex items-center gap-1">
+          {PAINT_TOOLS.map(t => (
+            <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
+          ))}
+        </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-        {BRUSH_SIZES.map(s => (
-          <Tooltip key={s.value}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onBrushSizeChange(s.value)}
-                className={`${sizeBtn} ${brushSize === s.value ? btnActive : btnInactive}`}
-              >
-                {s.label}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-              {s.tooltip}
-            </TooltipContent>
-          </Tooltip>
-        ))}
+        <div className="flex items-center gap-1">
+          {SHAPE_TOOLS.map(t => (
+            <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
+          ))}
+        </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={onToggleMirrorX}
-              className={`${btnBase} ${mirrorX ? btnActive : btnInactive}`}
-            >
-              <SplitSquareHorizontal size={14} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-            Simetría Horizontal (M)
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-1">
+          {TRANSFORM_TOOLS.map(t => (
+            <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
+          ))}
+        </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button 
-              onClick={() => onScopeChange(scope === 'layer' ? 'frame' : 'layer')}
-              className={`${btnBase} flex items-center gap-1.5 px-2 bg-secondary/50 border-border text-muted-foreground hover:text-foreground`}
-            >
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: scope === 'layer' ? '#a855f7' : '#3b82f6' }} />
-              <span className="text-[8px] font-pixel uppercase tracking-tighter">
-                {scope}
-              </span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-[10px] font-pixel">
-            Alcance: {scope === 'layer' ? 'SÓLO CAPA' : 'TODO EL FRAME'}
-          </TooltipContent>
-        </Tooltip>
-
-        <div className="flex items-center gap-0.5 ml-1">
+        {/* Global Actions Group */}
+        <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onCopy} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
@@ -156,18 +136,16 @@ export default function EditorToolbar({
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">PEGAR ({scope})</TooltipContent>
           </Tooltip>
-        </div>
 
-        <div className="w-px h-4 bg-border/50 mx-1" />
+          <div className="w-px h-3 bg-border/40 mx-0.5" />
 
-        <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onFlipH} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
                 <FlipHorizontal size={13} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[10px] font-pixel">MIRROR H ({scope})</TooltipContent>
+            <TooltipContent side="top" className="text-[10px] font-pixel">FLIP H ({scope})</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -176,7 +154,7 @@ export default function EditorToolbar({
                 <FlipVertical size={13} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[10px] font-pixel">MIRROR V ({scope})</TooltipContent>
+            <TooltipContent side="top" className="text-[10px] font-pixel">FLIP V ({scope})</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -185,42 +163,95 @@ export default function EditorToolbar({
                 <RotateCw size={13} />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-[10px] font-pixel">ROTATE 90° ({scope})</TooltipContent>
+            <TooltipContent side="top" className="text-[10px] font-pixel">ROTAR 90° ({scope})</TooltipContent>
           </Tooltip>
         </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
-            >
-              <Undo2 size={14} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-            Deshacer Trázo (Ctrl+Z)
-          </TooltipContent>
-        </Tooltip>
+        {/* Brush Settings Group */}
+        <div className="flex items-center gap-1">
+          {BRUSH_SIZES.map(s => (
+            <Tooltip key={s.value}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onBrushSizeChange(s.value)}
+                  className={`${sizeBtn} ${brushSize === s.value ? btnActive : btnInactive}`}
+                >
+                  {s.label}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+                {s.tooltip}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggleMirrorX}
+                className={`${btnBase} ${mirrorX ? btnActive : btnInactive}`}
+              >
+                <SplitSquareHorizontal size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+              Simetría (M)
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={onToggleOnionSkin}
-              className={`${btnBase} ${onionSkin ? btnActive : btnInactive}`}
-            >
-              <Layers size={14} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-            Alternar Papel Cebolla
-          </TooltipContent>
-        </Tooltip>
+        {/* Global Utilities Group */}
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={() => onScopeChange(scope === 'layer' ? 'frame' : 'layer')}
+                className={`${btnBase} flex items-center gap-1.5 px-2 bg-secondary/30 border-border text-muted-foreground hover:text-foreground`}
+              >
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: scope === 'layer' ? '#a855f7' : '#3b82f6' }} />
+                <span className="text-[8px] font-pixel uppercase tracking-tighter">
+                  {scope}
+                </span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">
+              Alcance: {scope === 'layer' ? 'SÓLO CAPA' : 'TODO EL FRAME'}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onUndo}
+                disabled={!canUndo}
+                className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
+              >
+                <Undo2 size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+              Deshacer (Ctrl+Z)
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggleOnionSkin}
+                className={`${btnBase} ${onionSkin ? btnActive : btnInactive}`}
+              >
+                <Layers size={14} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+              Onion Skin
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
       </div>
     </TooltipProvider>

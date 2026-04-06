@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { addExternalAnimation } from '@/lib/spriteAnimations';
+import { compositeFrame } from '@/lib/layerUtils';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -27,7 +28,7 @@ export function useGenerateAnimation() {
     let currentAsset = { ...asset };
 
     try {
-      const baseFrame = currentAsset.frames[0];
+      const baseFrame = compositeFrame(currentAsset, 0);
       const palette = currentAsset.palette;
       const colorNames = currentAsset.colorNames;
       const size = currentAsset.size;

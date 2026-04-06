@@ -1,4 +1,5 @@
 import type { SpriteAsset, AnimationDef, SpriteLayer, Frame } from '@/lib/types';
+import { ensureLayerSupport } from '@/lib/layerUtils';
 import {
   generateIdle,
   generateWalk,
@@ -129,15 +130,16 @@ export function addExternalAnimation(
     throw new Error('addExternalAnimation expects exactly 3 new frames');
   }
 
-  const startIndex = asset.layers[0].frames.length;
-  const newLayers = asset.layers.map((layer, idx) => {
+  const layeredAsset = ensureLayerSupport(asset);
+  const startIndex = layeredAsset.layers[0].frames.length;
+  const newLayers = layeredAsset.layers.map((layer, idx) => {
     const frames = [...layer.frames];
     if (idx === 0) {
       frames.push(...newFrames);
     } else {
       // Add empty frames to other layers to maintain alignment
       for (let i = 0; i < 3; i++) {
-        frames.push(Array.from({ length: asset.size }, () => Array(asset.size).fill(0)));
+        frames.push(Array.from({ length: layeredAsset.size }, () => Array(layeredAsset.size).fill(0)));
       }
     }
     return { ...layer, frames };
@@ -151,7 +153,7 @@ export function addExternalAnimation(
     fps,
   };
 
-  const animations = [...asset.animations];
+  const animations = [...layeredAsset.animations];
   const existingIdx = animations.findIndex(a => a.name === animationName);
   
   if (existingIdx >= 0) {
@@ -161,7 +163,7 @@ export function addExternalAnimation(
   }
 
   return {
-    ...asset,
+    ...layeredAsset,
     layers: newLayers,
     animations,
   };

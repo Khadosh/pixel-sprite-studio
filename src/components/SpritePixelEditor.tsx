@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
+import { rotateFrameFree } from '@/lib/spriteTransforms';
 
 const PIXEL_SCALE = 20;
 const CHECKER_SIZE = 5;
@@ -19,6 +20,8 @@ interface SpritePixelEditorProps {
   onionSkinNextFrame?: number[][];
   draftFrame?: number[][] | null;
   moveOffset?: { dr: number; dc: number; activeLayerId?: string | null } | null;
+  rotationAngle?: number | null;
+  rotationCenter?: { r: number; c: number; activeLayerId?: string | null } | null;
 }
 
 export default function SpritePixelEditor({
@@ -32,6 +35,8 @@ export default function SpritePixelEditor({
   onionSkinNextFrame,
   draftFrame,
   moveOffset,
+  rotationAngle,
+  rotationCenter,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
@@ -125,7 +130,13 @@ export default function SpritePixelEditor({
 
     const dr = moveOffset?.dr || 0;
     const dc = moveOffset?.dc || 0;
-    const targetLayerId = moveOffset?.activeLayerId;
+    const dra = rotationAngle || 0;
+    const rCenter = rotationCenter;
+
+    // Determine which layer(s) should be affected by the current preview
+    // If null, all layers are affected. If string, only that one.
+    // If undefined, no preview tool is active.
+    const previewTargetId = moveOffset ? moveOffset.activeLayerId : (rotationCenter ? rotationCenter.activeLayerId : undefined);
 
     // Draw layers
     if (asset.layers && asset.layers.length > 0) {
@@ -136,22 +147,26 @@ export default function SpritePixelEditor({
 
         const isActive = layer.id === activeLayerId;
         ctx.globalAlpha = isActive ? 1.0 : 0.4;
-        
-        // Only apply offset if:
-        // 1. targetLayerId is not specified (moves all layers)
-        // 2. targetLayerId matches this layer
-        const applyOffset = (dr !== 0 || dc !== 0) && (
-          targetLayerId === undefined || targetLayerId === null || targetLayerId === layer.id
+
+        const applyMove = (dr !== 0 || dc !== 0) && (
+          previewTargetId === undefined || previewTargetId === null || previewTargetId === layer.id
+        );
+        const applyRot = (dra !== 0 && rCenter) && (
+          previewTargetId === undefined || previewTargetId === null || previewTargetId === layer.id
         );
 
-        const curDr = applyOffset ? dr : 0;
-        const curDc = applyOffset ? dc : 0;
+        const curDr = applyMove ? dr : 0;
+        const curDc = applyMove ? dc : 0;
 
-        if (isActive && draftFrame) {
-          drawFrameData(draftFrame, true, curDr, curDc);
-        } else {
-          drawFrameData(layerFrame, true, curDr, curDc);
+        let frameToDraw = isActive && draftFrame ? draftFrame : layerFrame;
+
+        if (applyRot && rCenter) {
+          // Compute the ACTUAL rotated pixels for a pixel-perfect preview
+          // This ensures the user sees exactly what will be saved.
+          frameToDraw = rotateFrameFree(frameToDraw, dra, rCenter);
         }
+
+        drawFrameData(frameToDraw, true, curDr, curDc);
       });
       ctx.globalAlpha = 1.0;
     } else if (asset.frames?.[frameIndex]) {
@@ -172,7 +187,7 @@ export default function SpritePixelEditor({
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
     }
-  }, [asset, activeLayerId, draftFrame, moveOffset, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
+  }, [asset, activeLayerId, draftFrame, moveOffset, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     // Only accept left click

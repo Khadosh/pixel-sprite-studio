@@ -220,6 +220,8 @@ export default function SpriteEditorModal({
     undo, pushUndo, canUndo,
     overwriteLayerFrame,
     moveOffset,
+    rotationAngle,
+    rotationCenter,
   } = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     setEditedAsset(updated);
   }, scope);
@@ -336,6 +338,7 @@ export default function SpriteEditorModal({
         case 'i': setTool('picker'); break;
         case 'g': setTool('fill'); break;
         case 'v': setTool('move'); break;
+        case 'r': setTool('rotate'); break;
         case 'm': setMirrorX(prev => !prev); break;
         case 'z': 
           if (e.ctrlKey || e.metaKey) {
@@ -783,6 +786,8 @@ export default function SpriteEditorModal({
                 onPointerUp={handlePointerUp}
                 draftFrame={draftFrame}
                 moveOffset={moveOffset}
+                rotationAngle={rotationAngle}
+                rotationCenter={rotationCenter}
                 onionSkinPrevFrame={onionGhostFrames.prev}
                 onionSkinNextFrame={onionGhostFrames.next}
               />
