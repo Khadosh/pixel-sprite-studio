@@ -1,9 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useMemo } from 'react';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { ANIMATIONS, FRAME_SIZE } from '@/lib/pixelCharacter';
+import { ANIMATIONS, FRAME_SIZE, PALETTE } from '@/lib/pixelCharacter';
 import { usePalette } from '@/hooks/usePalette';
 import { Download, RotateCcw } from 'lucide-react';
+import type { SpriteAsset } from '@/lib/types';
 
 const PIXEL_SCALE = 4;
 const CELL_SIZE = FRAME_SIZE * PIXEL_SCALE;
