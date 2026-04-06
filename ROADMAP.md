@@ -74,13 +74,13 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 ---
 
-## Fase 3 — Layer System 🚀
-*Prioridad: ALTA — Siguiente paso*
+## Fase 3 — Layer System ✅
+*Completada 2026-04-05*
 
-- [ ] Tipo `SpriteLayer` con frames propios, visibilidad, lock, opacity
-- [ ] Layer panel: lista, toggle, reorder
-- [ ] Agregar/eliminar/duplicar capa
-- [ ] Dibujar solo en capa activa
+- [x] Tipo `SpriteLayer` con frames propios, visibilidad, lock, opacity
+- [x] Layer panel: lista, toggle, reorder
+- [x] Agregar/eliminar/duplicar capa
+- [x] Dibujar solo en capa activa (Scope selector: Layer vs Frame)
 - [ ] Merge capas (Flatten)
 
 ---
@@ -110,7 +110,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 | Feature | Complejidad | Impacto |
 |:--------|:-----------|:--------|
 | Selection tool (mover, copiar, rotar área) | 🟡 Media | Alto |
-| Move tool (mover contenido sin cambiar canvas) | 🟡 Media | Medio |
+| Move & Rotate tools (interactivo) | ✅ Hecho | Medio |
 | Tiling preview (ver sprite repetido) | 🟡 Media | Medio |
 | Reference image overlay | 🟡 Media | Medio |
 | Sprite sheet import (PNG → frames) | 🟡 Media | Alto |

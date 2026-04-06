@@ -17,72 +17,50 @@ export function generateAnimationsClientSide(
   asset: SpriteAsset,
   animationNames: string[],
 ): SpriteAsset {
-  // Use first layer for transform metrics (like base frames)
-  const firstLayer = asset.layers[0];
-  const baseFrame = firstLayer.frames[0];
+  // Create a deep copy of the layers to modify them
+  const newLayers: SpriteLayer[] = asset.layers.map(layer => ({
+    ...layer,
+    frames: layer.frames.map(f => f.map(r => [...r]))
+  }));
   
   const paletteKeys = Object.keys(asset.palette).map(Number).filter(k => k > 0);
   const glowColor = Math.max(...paletteKeys);
 
-  // New layers with their new frames
-  const newLayers: SpriteLayer[] = asset.layers.map(layer => {
-    return {
-      ...layer,
-      frames: [layer.frames[0].map(r => [...r])]
-    };
-  });
+  // We start with the existing animations
+  const animDefs: AnimationDef[] = asset.animations.map(a => ({ ...a }));
 
-  const animDefs: AnimationDef[] = [];
-  const existingAnimMap = new Map(asset.animations.map(a => [a.name, a]));
-  const allAnimNamesToProcess = [...new Set([...asset.animations.map(a => a.name), ...animationNames])];
-
-  for (const animName of allAnimNamesToProcess) {
-    if (animationNames.includes(animName)) {
-      // Regenerate for all layers
-      const startIndex = newLayers[0].frames.length;
+  for (const animName of animationNames) {
+    // Generate for all layers based on their own frame 0
+    // Note: We use the *cloned* frame 0 from newLayers
+    const startIndex = newLayers[0].frames.length;
+    
+    newLayers.forEach(layer => {
+      // f0 and f1 are the new frames based on this layer's base frame
+      const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor);
       
-      newLayers.forEach(layer => {
-        const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor);
-        layer.frames.push(
-          f0, 
-          f1, 
-          f0.map(r => [...r]), 
-          f1.map(r => [...r])
-        );
-      });
+      // Add 4 frames for the 4-frame animation sequence
+      layer.frames.push(
+        f0, 
+        f1, 
+        f0.map(r => [...r]), 
+        f1.map(r => [...r])
+      );
+    });
 
-      const fps = animName === 'idle' ? 3 : animName === 'cast' ? 4 : 5;
-      animDefs.push({
-        name: animName,
-        label: animName.toUpperCase(),
-        frameIndices: [startIndex, startIndex + 1, startIndex + 2, startIndex + 3],
-        fps,
-      });
+    const fps = animName === 'idle' ? 3 : animName === 'cast' ? 4 : 5;
+    const newAnimDef: AnimationDef = {
+      name: animName,
+      label: animName.toUpperCase(),
+      frameIndices: [startIndex, startIndex + 1, startIndex + 2, startIndex + 3],
+      fps,
+    };
+
+    // Replace if exists, else push
+    const existingIdx = animDefs.findIndex(a => a.name === animName);
+    if (existingIdx >= 0) {
+      animDefs[existingIdx] = newAnimDef;
     } else {
-      // Keep existing
-      const oldAnim = existingAnimMap.get(animName);
-      if (oldAnim) {
-        const newIndices: number[] = [];
-        const indexMapping = new Map<number, number>();
-
-        for (const oldIdx of oldAnim.frameIndices) {
-          if (!indexMapping.has(oldIdx)) {
-            const nextIdx = newLayers[0].frames.length;
-            indexMapping.set(oldIdx, nextIdx);
-            newLayers.forEach(l => {
-              // Extract from original asset layers or frames
-              const frameToCopy = l.frames[oldIdx] || asset.frames?.[oldIdx] || Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
-              l.frames.push(frameToCopy.map(r => [...r]));
-            });
-          }
-          newIndices.push(indexMapping.get(oldIdx)!);
-        }
-
-        animDefs.push({
-          ...oldAnim,
-          frameIndices: newIndices,
-        });
-      }
+      animDefs.push(newAnimDef);
     }
   }
 

@@ -133,9 +133,7 @@ export default function SpriteEditorModal({
   const [editedAsset, setEditedAsset] = useState<SpriteAsset>(() => ensureLayerSupport(initialAsset));
   const [activeLayerId, setActiveLayerId] = useState<string | null>(() => editedAsset.layers[0]?.id || null);
   
-  const [selectedAnims, setSelectedAnims] = useState<string[]>(() => {
-    return initialAsset.animations.map(a => a.name);
-  });
+  const [selectedAnims, setSelectedAnims] = useState<string[]>([]);
   const [editingFrameIndex, setEditingFrameIndex] = useState(0);
   const [viewingAnimation, setViewingAnimation] = useState<string>('base');
   const [assetName, setAssetName] = useState(initialAsset.name);
@@ -369,6 +367,14 @@ export default function SpriteEditorModal({
       setViewingAnimation('base');
       setEditingFrameIndex(0);
     }
+  };
+
+  const selectAllAnims = () => {
+    setSelectedAnims(AVAILABLE_ANIMS.map(a => a.value));
+  };
+
+  const clearSelection = () => {
+    setSelectedAnims([]);
   };
 
   const handleDuplicateFrame = useCallback((idx: number) => {
@@ -803,20 +809,30 @@ export default function SpriteEditorModal({
               </PaletteProvider>
             </div>
             <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
-              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">ANIMACIONES</span>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">ANIMACIONES</span>
+                <div className="flex gap-2">
+                  <button onClick={selectAllAnims} className="text-[7px] font-pixel text-purple-400 hover:text-purple-300">ALL</button>
+                  <button onClick={clearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NONE</button>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_ANIMS.map(anim => {
                   const active = selectedAnims.includes(anim.value);
+                  const exists = editedAsset.animations.some(a => a.name === anim.value);
                   return (
                     <button
                       key={anim.value}
                       type="button"
                       onClick={() => toggleAnim(anim.value)}
-                      className={`px-3 py-1.5 text-[10px] font-pixel rounded border transition-all ${active
+                      className={`px-3 py-1.5 text-[10px] font-pixel rounded border transition-all flex items-center gap-1.5 ${active
                         ? 'bg-purple-600/30 border-purple-500 text-purple-300'
                         : 'bg-secondary/30 border-border text-muted-foreground hover:border-purple-500/50'
                         }`}
                     >
+                      {exists && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" />
+                      )}
                       {anim.label.toUpperCase()}
                     </button>
                   );
