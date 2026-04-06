@@ -7,9 +7,11 @@ import type { Frame, SpriteAsset, SpriteLayer } from './types';
 export function compositeFrame(asset: SpriteAsset, frameIndex: number): Frame {
   const size = asset.size;
   const result: Frame = Array.from({ length: size }, () => Array(size).fill(0));
+  
+  const layers = asset.layers ?? (asset.frames ? [{ id: 'base', name: 'Base', isVisible: true, isLocked: false, opacity: 1, frames: asset.frames }] : []);
 
   // Iterate from bottom to top (index 0 is bottom)
-  for (const layer of asset.layers) {
+  for (const layer of layers) {
     if (!layer.isVisible || layer.opacity === 0) continue;
     
     const frame = layer.frames[frameIndex];
