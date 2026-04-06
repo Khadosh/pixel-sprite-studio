@@ -103,16 +103,29 @@ export function addExternalAnimation(
   asset: SpriteAsset,
   animationName: string,
   newFrames: number[][][],
+  targetLayerId?: string | null,
 ): SpriteAsset {
   if (newFrames.length !== 3) {
     throw new Error('addExternalAnimation expects exactly 3 new frames');
   }
 
   const layeredAsset = ensureLayerSupport(asset);
+  
+  // Find which layer to inject into
+  let targetIdx = 0;
+  if (targetLayerId) {
+    const found = layeredAsset.layers.findIndex(l => l.id === targetLayerId);
+    if (found >= 0) targetIdx = found;
+  } else {
+    // Fallback: search for "Base" or "Main"
+    const baseIdx = layeredAsset.layers.findIndex(l => l.name.toLowerCase().includes('base') || l.name.toLowerCase().includes('main'));
+    if (baseIdx >= 0) targetIdx = baseIdx;
+  }
+
   const startIndex = layeredAsset.layers[0].frames.length;
   const newLayers = layeredAsset.layers.map((layer, idx) => {
     const frames = [...layer.frames];
-    if (idx === 0) {
+    if (idx === targetIdx) {
       frames.push(...newFrames);
     } else {
       // Add empty frames to other layers to maintain alignment

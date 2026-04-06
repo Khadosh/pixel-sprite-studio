@@ -23,6 +23,7 @@ export function useGenerateAnimation() {
     asset: SpriteAsset,
     animationNames: string[],
     onProgress: (updatedAsset: SpriteAsset) => void,
+    targetLayerId?: string | null,
   ) => {
     setState({ isGenerating: true, currentAnimation: null, error: null });
     let currentAsset = { ...asset };
@@ -63,7 +64,7 @@ export function useGenerateAnimation() {
         }
 
         // Merge generated frames into asset
-        currentAsset = addExternalAnimation(currentAsset, animName, data.frames);
+        currentAsset = addExternalAnimation(currentAsset, animName, data.frames, targetLayerId);
         
         // Callback to update UI incrementally
         onProgress(currentAsset);

@@ -111,6 +111,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 |:--------|:-----------|:--------|
 | Selection tool (mover, copiar, rotar área) | 🟡 Media | Alto |
 | Move & Rotate tools (interactivo) | ✅ Hecho | Medio |
+| Smart Multi-layer AI Splitting (Color/Pos) | 🔵 Idea | Medio |
 | Tiling preview (ver sprite repetido) | 🟡 Media | Medio |
 | Reference image overlay | 🟡 Media | Medio |
 | Sprite sheet import (PNG → frames) | 🟡 Media | Alto |

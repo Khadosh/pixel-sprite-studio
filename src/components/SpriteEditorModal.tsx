@@ -426,11 +426,7 @@ export default function SpriteEditorModal({
     if (selectedAnims.length === 0) return;
     await generateAnimationsSequence(editedAsset, selectedAnims, (updatedAsset) => {
       setEditedAsset(updatedAsset);
-      if (updatedAsset.animations.length > 0) {
-        setViewingAnimation(updatedAsset.animations[updatedAsset.animations.length - 1].name);
-        setEditingFrameIndex(updatedAsset.animations[updatedAsset.animations.length - 1].frameIndices[0]);
-      }
-    });
+    }, activeLayerId);
   };
 
   const handleChangeColor = useCallback((key: number, color: string) => {
