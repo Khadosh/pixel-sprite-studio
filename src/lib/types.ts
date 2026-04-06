@@ -48,8 +48,8 @@ export interface SpriteAsset {
   /** [DEPRECATED] All unique frames for this asset. Moved to layers. */
   frames?: Frame[];
   
-  /** All layers for this asset */
-  layers: SpriteLayer[];
+  /** All layers for this asset (auto-populated from frames if missing) */
+  layers?: SpriteLayer[];
 
   /** Animation definitions. Empty array = static asset (single frame). */
   animations: AnimationDef[];

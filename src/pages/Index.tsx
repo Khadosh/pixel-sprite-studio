@@ -1,9 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useMemo } from 'react';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { ANIMATIONS, FRAME_SIZE } from '@/lib/pixelCharacter';
+import { ANIMATIONS, FRAME_SIZE, PALETTE } from '@/lib/pixelCharacter';
 import { usePalette } from '@/hooks/usePalette';
 import { Download, RotateCcw } from 'lucide-react';
+import type { SpriteAsset } from '@/lib/types';
 
 const PIXEL_SCALE = 4;
 const CELL_SIZE = FRAME_SIZE * PIXEL_SCALE;
@@ -17,6 +18,27 @@ const COLOR_NAMES: Record<string, string> = {
 export default function Index() {
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const { palette, setPaletteColor, resetPalette } = usePalette();
+
+  const characterAsset = useMemo<SpriteAsset>(() => {
+    const allFrames = ANIMATIONS.flatMap(a => a.frames);
+    let idx = 0;
+    const animations = ANIMATIONS.map(a => {
+      const frameIndices = a.frames.map(() => idx++);
+      return { name: a.name, label: a.label, frameIndices, fps: 5 };
+    });
+    return {
+      id: 'pixel-character',
+      name: 'Pixel Character',
+      description: 'Classic pixel art character with multiple animations.',
+      category: 'character',
+      size: FRAME_SIZE,
+      palette: PALETTE,
+      colorNames: { 1: 'Outline', 2: 'Skin', 3: 'Hair', 4: 'Shirt', 5: 'Pants', 6: 'Shoes', 7: 'Sword', 8: 'Eyes', 9: 'Hurt' },
+      frames: allFrames,
+      animations,
+      tags: ['character'],
+    };
+  }, []);
 
   const handleExportPNG = useCallback(() => {
     const maxFrames = Math.max(...ANIMATIONS.map(a => a.frames.length));
@@ -85,14 +107,14 @@ export default function Index() {
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <SpriteSheetCanvas onCanvasReady={(c) => { exportCanvasRef.current = c; }} />
+                <SpriteSheetCanvas asset={characterAsset} onCanvasReady={(c) => { exportCanvasRef.current = c; }} />
               </div>
             </div>
           </div>
 
           <div className="w-full lg:w-64">
             <div className="bg-card rounded-lg border border-border p-4">
-              <SpritePreview />
+              <SpritePreview asset={characterAsset} />
             </div>
           </div>
         </div>
