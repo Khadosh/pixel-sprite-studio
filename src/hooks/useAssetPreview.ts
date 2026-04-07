@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Frame, SpriteAsset } from '@/lib/types';
 import { compositeFrame } from '@/lib/layerUtils';
 
@@ -12,11 +12,13 @@ export function useAssetPreview(asset: SpriteAsset, animationName: string | null
   const [isPlaying, setIsPlaying] = useState(true);
   const [fps, setFps] = useState<number>(5);
 
-  const currentAnimation = animationName === 'base'
-    ? null
-    : animationName
-      ? asset.animations.find(a => a.name === animationName) || null
-      : asset.animations.length > 0 ? asset.animations[0] : null;
+  const currentAnimation = useMemo(() => {
+    if (animationName === 'base') return null;
+    if (animationName) {
+      return asset.animations.find(a => a.name === animationName) || null;
+    }
+    return asset.animations.length > 0 ? asset.animations[0] : null;
+  }, [asset.animations, animationName]);
 
   // Sync FPS with animation's default when it changes, unless overridden
   useEffect(() => {
@@ -43,18 +45,19 @@ export function useAssetPreview(asset: SpriteAsset, animationName: string | null
     return () => clearInterval(interval);
   }, [currentAnimation, isPlaying, fps]);
 
-  // Determine current frame
-  let currentFrame: Frame;
-  if (currentAnimation) {
-    const frameIdx = currentAnimation.frameIndices[frameStep];
-    currentFrame = asset.layers && asset.layers.length > 0 
-      ? compositeFrame(asset, frameIdx) 
-      : (asset.frames?.[frameIdx] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
-  } else {
-    currentFrame = asset.layers && asset.layers.length > 0 
-      ? compositeFrame(asset, 0) 
-      : (asset.frames?.[0] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
-  }
+  // Determine current frame (Memoized for performance)
+  const currentFrame = useMemo((): Frame => {
+    if (currentAnimation) {
+      const frameIdx = currentAnimation.frameIndices[frameStep];
+      return asset.layers && asset.layers.length > 0 
+        ? compositeFrame(asset, frameIdx) 
+        : (asset.frames?.[frameIdx] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
+    } else {
+      return asset.layers && asset.layers.length > 0 
+        ? compositeFrame(asset, 0) 
+        : (asset.frames?.[0] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
+    }
+  }, [asset, currentAnimation, frameStep]);
 
   return {
     currentFrame,

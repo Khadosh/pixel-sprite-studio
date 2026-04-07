@@ -55,7 +55,7 @@ const TRANSFORM_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] =
   { id: 'rotate', icon: RotateCw, tooltip: 'Rotación Libre (R)' },
 ];
 
-export default function EditorToolbar({ 
+export default React.memo(function EditorToolbar({ 
   tool, onToolChange, 
   brushSize, onBrushSizeChange, 
   canUndo, onUndo, 
@@ -256,4 +256,4 @@ export default function EditorToolbar({
       </div>
     </TooltipProvider>
   );
-}
+});

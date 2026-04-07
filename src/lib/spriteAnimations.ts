@@ -1,4 +1,4 @@
-import type { SpriteAsset, AnimationDef, SpriteLayer, Frame } from '@/lib/types';
+import type { SpriteAsset, AnimationDef, SpriteLayer, Frame, AdvancedCastSettings, CastElement } from '@/lib/types';
 import { ensureLayerSupport } from '@/lib/layerUtils';
 import {
   generateIdle,
@@ -7,38 +7,41 @@ import {
   generateHurt,
   shiftDown,
   shiftRight,
+  findBounds,
+  getCenterOfMass,
+  drawCircle,
+  drawBurst,
+  inferMainColorIndex,
 } from '@/lib/spriteTransforms';
 
 /**
  * Takes a SpriteAsset and generates animation frames client-side.
- * Returns a new SpriteAsset with all layers updated and animation definitions.
  */
 export function generateAnimationsClientSide(
   asset: SpriteAsset,
   animationNames: string[],
+  castSettings?: AdvancedCastSettings,
 ): SpriteAsset {
-  // Create a deep copy of the layers to modify them
-  const newLayers: SpriteLayer[] = asset.layers.map(layer => ({
-    ...layer,
-    frames: layer.frames.map(f => f.map(r => [...r]))
-  }));
-  
-  const paletteKeys = Object.keys(asset.palette).map(Number).filter(k => k > 0);
-  const glowColor = Math.max(...paletteKeys);
-
-  // We start with the existing animations
-  const animDefs: AnimationDef[] = asset.animations.map(a => ({ ...a }));
+  let currentAsset = ensureLayerSupport(asset);
 
   for (const animName of animationNames) {
-    // Generate for all layers based on their own frame 0
-    // Note: We use the *cloned* frame 0 from newLayers
-    const startIndex = newLayers[0].frames.length;
+    if (animName === 'cast' && castSettings) {
+      currentAsset = generateAdvancedCastSequence(currentAsset, castSettings);
+      continue;
+    }
+
+    // Existing simple generation...
+    const newLayers: SpriteLayer[] = currentAsset.layers.map(layer => ({
+      ...layer,
+      frames: layer.frames.map(f => f.map(r => [...r]))
+    }));
     
+    const paletteKeys = Object.keys(currentAsset.palette).map(Number).filter(k => k > 0);
+    const glowColor = Math.max(...paletteKeys);
+
+    const startIndex = newLayers[0].frames.length;
     newLayers.forEach(layer => {
-      // f0 and f1 are the new frames based on this layer's base frame
       const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor);
-      
-      // Add only unique frames for the animation sequence
       layer.frames.push(f0, f1);
     });
 
@@ -50,20 +53,150 @@ export function generateAnimationsClientSide(
       fps,
     };
 
-    // Replace if exists, else push
-    const existingIdx = animDefs.findIndex(a => a.name === animName);
+    const existingIdx = currentAsset.animations.findIndex(a => a.name === animName);
+    const newAnimations = [...currentAsset.animations];
     if (existingIdx >= 0) {
-      animDefs[existingIdx] = newAnimDef;
+      newAnimations[existingIdx] = newAnimDef;
     } else {
-      animDefs.push(newAnimDef);
+      newAnimations.push(newAnimDef);
     }
+
+    currentAsset = { ...currentAsset, layers: newLayers, animations: newAnimations };
   }
 
-  return {
-    ...asset,
-    layers: newLayers,
-    animations: animDefs,
+  return currentAsset;
+}
+
+/**
+ * Creates an advanced 6-frame cast animation with buildup, impact, and dissipation.
+ */
+export function generateAdvancedCastSequence(
+  asset: SpriteAsset,
+  settings: AdvancedCastSettings
+): SpriteAsset {
+  const size = asset.size;
+  const layers = [...asset.layers];
+  
+  // 1. Ensure/Find the "Cast Effect" layer
+  let effectLayerIdx = layers.findIndex(l => l.name.toLowerCase().includes('effect'));
+  if (effectLayerIdx === -1) {
+    const newLayer: SpriteLayer = {
+      id: `layer-effect-${Date.now()}`,
+      name: 'Cast Effect',
+      isVisible: true,
+      isLocked: false,
+      opacity: 1,
+      frames: Array.from({ length: layers[0].frames.length }, () => 
+        Array.from({ length: size }, () => Array(size).fill(0))
+      ),
+    };
+    layers.push(newLayer);
+    effectLayerIdx = layers.length - 1;
+  }
+
+  const baseLayerIdx = layers.findIndex(l => l.name.toLowerCase().includes('base')) || 0;
+  const baseFrame = layers[baseLayerIdx].frames[0];
+  const startIndex = layers[0].frames.length;
+  
+  // 2. Identify colors
+  const mainColorIdx = inferMainColorIndex(baseFrame);
+  const effectColorIdx = getElementalColorIdx(asset, settings.element) || mainColorIdx;
+  
+  const bounds = findBounds(baseFrame);
+  const com = getCenterOfMass(baseFrame) || { r: size / 2, c: size / 2 };
+  
+  // Define 6 frames for all layers
+  for (let i = 0; i < 6; i++) {
+    layers.forEach((layer, lIdx) => {
+      const isBase = lIdx === baseLayerIdx;
+      const isEffect = lIdx === effectLayerIdx;
+      
+      let nextFrame: Frame;
+      
+      if (isBase) {
+        // Character recoil logic
+        if (i < 2) { // Buildup: slight squash
+           nextFrame = generateIdle(baseFrame)[1]; // Use the squash frame from idle
+        } else if (i < 4) { // Impact: stretch
+           nextFrame = shiftDown(baseFrame, -1); // 1px jump/stretch
+        } else { // Recovery: normal
+           nextFrame = baseFrame.map(r => [...r]);
+        }
+      } else if (isEffect) {
+        // Spell effect logic
+        nextFrame = Array.from({ length: size }, () => Array(size).fill(0));
+        const effectOrigin = { r: com.r - 2, c: com.c + 4 }; // Slightly in front/up
+
+        if (i > 0) { // No effect on frame 0
+          if (settings.shape === 'circle') {
+             const radius = i < 3 ? i : Math.max(0, 6 - i); // Grow then shrink
+             nextFrame = drawCircle(nextFrame, effectOrigin.r, effectOrigin.c, radius, effectColorIdx);
+          } else if (settings.shape === 'burst' || settings.shape === 'random') {
+             const intensity = i === 3 || i === 4 ? 1.0 : (i / 6);
+             nextFrame = drawBurst(nextFrame, effectOrigin.r, effectOrigin.c, intensity, effectColorIdx);
+          }
+        }
+      } else {
+        // PRESERVE OTHER LAYERS (Eyes, Clothes, etc.)
+        // Apply the same squash/stretch as base to keep everything aligned
+        const layerBaseFrame = layer.frames[0] || Array.from({ length: size }, () => Array(size).fill(0));
+        if (i < 2) {
+          nextFrame = generateIdle(layerBaseFrame)[1];
+        } else if (i < 4) {
+          nextFrame = shiftDown(layerBaseFrame, -1);
+        } else {
+          nextFrame = layerBaseFrame.map(r => [...r]);
+        }
+      }
+      
+      // We must push a NEW array reference to avoid mutation issues
+      layer.frames = [...layer.frames, nextFrame];
+    });
+  }
+
+  const newAnimDef: AnimationDef = {
+    name: 'cast',
+    label: 'CAST',
+    frameIndices: Array.from({ length: 6 }, (_, i) => startIndex + i),
+    fps: 8, // Impactful speed
   };
+
+  const animations = [...asset.animations];
+  const existingIdx = animations.findIndex(a => a.name === 'cast');
+  if (existingIdx >= 0) animations[existingIdx] = newAnimDef;
+  else animations.push(newAnimDef);
+
+  return { ...asset, layers, animations };
+}
+
+function getElementalColorIdx(asset: SpriteAsset, element: CastElement): number | null {
+  const palette = asset.palette;
+  const entries = Object.entries(palette).map(([k, v]) => ({ key: Number(k), hex: v.toLowerCase() })).filter(e => e.key > 0);
+  if (entries.length === 0) return null;
+
+  // Simple hex matching for common elemental colors
+  const matches: Record<CastElement, string[]> = {
+    fire: ['#ff', '#ee', '#dd', '#cc', '#bb'], // Looking for high Red
+    water: ['#0000ff', '#0077ff', '#00aaff', '#33ccff', '#00ffff'],
+    electric: ['#ffff00', '#ffff88', '#ffffff', '#aa00ff', '#ff00ff'],
+    nature: ['#00ff00', '#00bb00', '#228b22', '#32cd32', '#008000'],
+    ice: ['#e0ffff', '#afeeee', '#f0ffff', '#00ffff', '#ffffff'],
+    generic: [],
+  };
+
+  if (element === 'generic' || !matches[element]) {
+    return Math.max(...entries.map(e => e.key));
+  }
+
+  // Find the 'best' match in the character's palette for this element
+  const elementHexes = matches[element];
+  for (const hex of elementHexes) {
+    const found = entries.find(e => e.hex.startsWith(hex.substring(0, 4))); // Match prefix for fuzzy hex matching
+    if (found) return found.key;
+  }
+
+  // Fallback: pick the brightest highlight (highest index)
+  return Math.max(...entries.map(e => e.key));
 }
 
 function generateFramePair(

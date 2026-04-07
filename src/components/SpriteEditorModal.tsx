@@ -1,12 +1,14 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
-import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Eye, EyeOff, Lock, Unlock, Layers, ChevronUp, ChevronDown, CheckSquare, Square, Info, Play, Pause, Plus as PlusIcon, Minus as MinusIcon } from 'lucide-react';
+import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Eye, EyeOff, Lock, Unlock, Layers, ChevronUp, ChevronDown, CheckSquare, Square, Info, Play, Pause, Plus as PlusIcon, Minus as MinusIcon, Settings } from 'lucide-react';
 import { useAssetPreview } from '@/hooks/useAssetPreview';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { SpriteAsset } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { SpriteAsset, AdvancedCastSettings, CastElement, CastShape } from '@/lib/types';
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
 import PaletteBar from '@/components/PaletteBar';
@@ -129,6 +131,389 @@ function SortableFrameThumb({ frameIndex, children }: { frameIndex: number; chil
   );
 }
 
+// --- MEMOIZED SUB-COMPONENTS TO PREVENT ANIMATION TICK RE-RENDERS ---
+
+interface LayersListProps {
+  layers: SpriteAsset['layers'];
+  activeLayerId: string | null;
+  setActiveLayerId: (id: string) => void;
+  onAddLayer: () => void;
+  onToggleVisibility: (id: string) => void;
+  onRenameLayer: (id: string, name: string) => void;
+  onMoveLayer: (idx: number, dir: 'up' | 'down') => void;
+  onRemoveLayer: (id: string) => void;
+}
+
+const LayersList = React.memo(({
+  layers, activeLayerId, setActiveLayerId, onAddLayer,
+  onToggleVisibility, onRenameLayer, onMoveLayer, onRemoveLayer
+}: LayersListProps) => {
+  return (
+    <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 shrink-0">
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-pixel text-[10px] text-muted-foreground tracking-wider uppercase">LAYERS</span>
+        <Button 
+          size="icon" 
+          variant="ghost" 
+          className="h-6 w-6 text-purple-400 hover:text-purple-300 hover:bg-purple-600/20"
+          onClick={onAddLayer}
+        >
+          <Plus size={14} />
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-1 flex-1">
+        {[...layers].reverse().map((layer, revIdx) => {
+          const idx = layers.length - 1 - revIdx;
+          const isActive = layer.id === activeLayerId;
+
+          return (
+            <div 
+              key={layer.id}
+              onClick={() => setActiveLayerId(layer.id)}
+              className={`group flex items-center gap-2 p-2 rounded border cursor-pointer transition-all ${
+                isActive 
+                  ? 'bg-purple-600/20 border-purple-500/50 text-foreground' 
+                  : 'bg-background/20 border-transparent hover:bg-secondary/40 text-muted-foreground'
+              }`}
+            >
+              <button 
+                className={`hover:text-primary transition-colors ${!layer.isVisible && 'text-muted-foreground/30'}`}
+                onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.id); }}
+              >
+                {layer.isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+              </button>
+              
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <Layers size={10} className="shrink-0 opacity-40" />
+                <span className="truncate font-pixel text-[10px]">
+                  {layer.name}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    const newName = prompt('Enter new layer name:', layer.name);
+                    if (newName) onRenameLayer(layer.id, newName);
+                  }}
+                >
+                  <Edit2 size={12} />
+                </button>
+                <button 
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onMoveLayer(idx, 'up'); }}
+                  disabled={idx === layers.length - 1}
+                >
+                  <ChevronUp size={12} />
+                </button>
+                <button 
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onMoveLayer(idx, 'down'); }}
+                  disabled={idx === 0}
+                >
+                  <ChevronDown size={12} />
+                </button>
+                <button 
+                  className="text-red-500/70 hover:text-red-400"
+                  onClick={(e) => { e.stopPropagation(); onRemoveLayer(layer.id); }}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+interface AnimationLibraryProps {
+  animations: SpriteAsset['animations'];
+  viewingAnimation: string;
+  selectedAnims: string[];
+  onSelectViewing: (name: string) => void;
+  onToggleAnim: (name: string) => void;
+  onQuickMatch: () => void;
+  onGenerateAI: () => void;
+  isGenerating: boolean;
+  onSelectAllAnims: () => void;
+  onClearSelection: () => void;
+  castSettings: AdvancedCastSettings;
+  setCastSettings: React.Dispatch<React.SetStateAction<AdvancedCastSettings>>;
+  animError: string | null;
+}
+
+const AnimationLibrary = React.memo(({
+  animations, viewingAnimation, selectedAnims, onSelectViewing, onToggleAnim,
+  onQuickMatch, onGenerateAI, isGenerating, onSelectAllAnims, onClearSelection,
+  castSettings, setCastSettings, animError
+}: AnimationLibraryProps) => {
+  return (
+    <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">LIBRERIA DE ANIMACIONES</span>
+        <div className="flex gap-2">
+          <button onClick={onSelectAllAnims} className="text-[7px] font-pixel text-purple-400 hover:text-purple-300">TODO</button>
+          <button onClick={onClearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NADA</button>
+        </div>
+      </div>
+      
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => onSelectViewing('base')}
+          className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between ${viewingAnimation === 'base'
+            ? 'bg-purple-600/20 border-purple-500 text-purple-300'
+            : 'bg-secondary/10 border-border text-muted-foreground hover:border-purple-500/30'
+            }`}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
+            <span>BASE (ESTATICO)</span>
+          </div>
+        </button>
+
+        {AVAILABLE_ANIMS.map(anim => {
+          const isViewing = viewingAnimation === anim.value;
+          const isSelectedForGen = selectedAnims.includes(anim.value);
+          const exists = animations.some(a => a.name === anim.value);
+          
+          return (
+            <div 
+              key={anim.value}
+              className={`group flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer ${isViewing 
+                ? 'bg-purple-600/30 border-purple-500' 
+                : 'bg-secondary/10 border-border hover:border-purple-500/30'
+              }`}
+              onClick={() => onSelectViewing(anim.value)}
+            >
+              <div className="flex-1 flex items-center gap-2 overflow-hidden">
+                {exists ? (
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)] shrink-0" />
+                ) : (
+                  <div className="w-1.5 h-1.5 rounded-full border border-muted-foreground/50 shrink-0" />
+                )}
+                <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-purple-200' : 'text-muted-foreground'}`}>
+                  {anim.label.toUpperCase()}
+                </span>
+                
+                {anim.value === 'cast' && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 hover:bg-white/10 rounded-full text-muted-foreground hover:text-purple-400 transition-colors"
+                      >
+                        <Settings size={12} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 bg-[#1a1a2e] border-purple-500/30 p-3 space-y-3" side="left" align="center" style={{ zIndex: 100 }}>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-pixel text-purple-400 uppercase tracking-tighter">Elemento</label>
+                        <Select 
+                          value={castSettings.element} 
+                          onValueChange={(val: CastElement) => setCastSettings(prev => ({ ...prev, element: val }))}
+                        >
+                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-purple-500/20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#1a1a2e] border-purple-500/40 z-[110]">
+                            <SelectItem value="generic" className="text-[9px] font-pixel">GENERIC</SelectItem>
+                            <SelectItem value="fire" className="text-[9px] font-pixel text-orange-400">FIRE</SelectItem>
+                            <SelectItem value="water" className="text-[9px] font-pixel text-blue-400">WATER</SelectItem>
+                            <SelectItem value="electric" className="text-[9px] font-pixel text-yellow-300">ELECTRIC</SelectItem>
+                            <SelectItem value="nature" className="text-[9px] font-pixel text-green-400">NATURE</SelectItem>
+                            <SelectItem value="ice" className="text-[9px] font-pixel text-cyan-200">ICE</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-pixel text-purple-400 uppercase tracking-tighter">Forma</label>
+                        <Select 
+                          value={castSettings.shape} 
+                          onValueChange={(val: CastShape) => setCastSettings(prev => ({ ...prev, shape: val }))}
+                        >
+                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-purple-500/20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#1a1a2e] border-purple-500/40 z-[110]">
+                            <SelectItem value="burst" className="text-[9px] font-pixel">BURST</SelectItem>
+                            <SelectItem value="circle" className="text-[9px] font-pixel">CIRCLE</SelectItem>
+                            <SelectItem value="random" className="text-[9px] font-pixel">RANDOM</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+              
+              <div 
+                className="flex items-center justify-center p-1 hover:bg-white/5 rounded transition-colors group-hover:bg-white/10"
+                onClick={(e) => { e.stopPropagation(); onToggleAnim(anim.value); }}
+              >
+                <Checkbox 
+                  checked={isSelectedForGen}
+                  className={`h-4 w-4 border-muted-foreground/30 rounded-sm ${isSelectedForGen ? 'bg-purple-500 border-purple-500' : 'bg-transparent'}`}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-2 w-full pt-1">
+        <Button
+          onClick={onQuickMatch}
+          disabled={selectedAnims.length === 0 || isGenerating}
+          className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border h-8"
+        >
+          QUICK MATCH
+        </Button>
+        <Button
+          onClick={onGenerateAI}
+          disabled={selectedAnims.length === 0 || isGenerating}
+          className="w-full font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 h-8"
+        >
+          <Sparkles size={12} className="mr-1" />
+          {isGenerating ? `GENERANDO...` : 'GENERAR CON IA'}
+        </Button>
+      </div>
+      {animError && (
+        <div className="text-red-400 text-[10px] mt-1 break-words font-mono">{animError}</div>
+      )}
+    </div>
+  );
+});
+
+interface TimelineStripProps {
+  asset: SpriteAsset;
+  viewingAnimation: string;
+  editingFrameIndex: number;
+  frameLabels: string[];
+  visibleFramesIndices: number[];
+  onSelectFrame: (idx: number) => void;
+  onDuplicateFrame: (idx: number) => void;
+  onDeleteFrame: (idx: number) => void;
+  onInsertEmptyFrame: (idx: number) => void;
+  onDragEnd: (event: DragEndEvent) => void;
+  sensors: any;
+}
+
+const TimelineStrip = React.memo(({
+  asset, viewingAnimation, editingFrameIndex, frameLabels, visibleFramesIndices,
+  onSelectFrame, onDuplicateFrame, onDeleteFrame, onInsertEmptyFrame, onDragEnd, sensors
+}: TimelineStripProps) => {
+  return (
+    <div className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col bg-secondary/20 p-2 rounded-lg border border-border">
+      {visibleFramesIndices.length > 0 ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={visibleFramesIndices.map(i => i.toString())} strategy={horizontalListSortingStrategy}>
+            <div className="flex gap-4 overflow-x-auto custom-scrollbar flex-1 pb-1 px-2 items-center min-h-[90px]">
+              {visibleFramesIndices.map((frameIndex) => (
+                <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
+                  <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                      <div>
+                        <FrameThumb
+                          frame={compositeFrame(asset, frameIndex)}
+                          palette={asset.palette}
+                          size={asset.size}
+                          isActive={frameIndex === editingFrameIndex}
+                          label={frameLabels[frameIndex]}
+                          onClick={() => onSelectFrame(frameIndex)}
+                        />
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem onClick={() => onDuplicateFrame(frameIndex)}>
+                        Duplicar Frame
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => onInsertEmptyFrame(frameIndex)}>
+                        Insertar Vacío (Después)
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem disabled={frameIndex === 0} onClick={() => onDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
+                        Eliminar Frame
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
+                </SortableFrameThumb>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      ) : (
+        <span className="font-pixel text-[10px] text-muted-foreground">SIN FRAMES</span>
+      )}
+    </div>
+  );
+});
+
+// --- Isolated animation preview panel to avoid re-rendering the entire modal on each frame tick ---
+interface AnimationPreviewPanelHandle {
+  setIsPlaying: (playing: boolean) => void;
+}
+
+interface AnimationPreviewPanelProps {
+  asset: SpriteAsset;
+  viewingAnimation: string;
+}
+
+const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanelHandle, AnimationPreviewPanelProps>(
+  ({ asset, viewingAnimation }, ref) => {
+    const { currentFrame, isPlaying, setIsPlaying, fps, setFps } = useAssetPreview(asset, viewingAnimation);
+
+    useImperativeHandle(ref, () => ({
+      setIsPlaying,
+    }), [setIsPlaying]);
+
+    return (
+      <div className="flex-shrink-0 bg-secondary/30 p-2 rounded-lg border border-border flex items-center gap-4 h-[90px]">
+        <div className="flex flex-col gap-1 items-center justify-center pt-1">
+          <div className="flex items-center justify-center bg-black/20 rounded-md p-1.5 border border-border/50 shadow-inner">
+            <PaletteProvider defaultPalette={asset.palette}>
+              <SpritePreview
+                asset={asset}
+                animationName={viewingAnimation}
+                scale={4}
+                showLabel={false}
+                currentFrameOverride={currentFrame}
+              />
+            </PaletteProvider>
+          </div>
+          <div className="h-[12px] w-full" />
+        </div>
+
+        <div className="flex flex-col gap-2 border-l border-border/50 pl-4 py-1">
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all hover:scale-105 ${isPlaying ? 'bg-purple-600/20 text-purple-400 border-purple-500/50' : 'bg-background text-muted-foreground border-border'}`}
+            title={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          </button>
+
+          <div className="flex items-center gap-3 bg-black/40 rounded-lg p-2 border border-border/50 h-10">
+            <div className="flex flex-col leading-none">
+              <span className="font-mono text-[10px] font-bold text-primary">{fps}</span>
+              <span className="font-pixel text-[6px] text-muted-foreground uppercase opacity-50">fps</span>
+            </div>
+            <div className="flex flex-col">
+              <button onClick={() => setFps(Math.min(24, fps + 1))} className="text-muted-foreground hover:text-foreground transition-colors"><PlusIcon size={12} /></button>
+              <button onClick={() => setFps(Math.max(1, fps - 1))} className="text-muted-foreground hover:text-foreground transition-colors"><MinusIcon size={12} /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+));
+
 export default function SpriteEditorModal({
   open, onOpenChange, initialAsset, onSave, generatePrompt, onRegenerate, isGenerating
 }: SpriteEditorModalProps) {
@@ -145,6 +530,10 @@ export default function SpriteEditorModal({
   const [scope, setScope] = useState<EditorScope>('layer');
   const [layerClipboard, setLayerClipboard] = useState<number[][] | null>(null);
   const [frameClipboard, setFrameClipboard] = useState<Record<string, number[][]> | null>(null);
+  const [castSettings, setCastSettings] = useState<AdvancedCastSettings>({
+    shape: 'burst',
+    element: 'generic',
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -211,8 +600,7 @@ export default function SpriteEditorModal({
 
   const { isGenerating: isAnimGenerating, currentAnimation: genAnim, error: animError, generateAnimationsSequence } = useGenerateAnimation();
 
-  const previewState = useAssetPreview(editedAsset, viewingAnimation);
-  const { isPlaying, setIsPlaying, fps, setFps } = previewState;
+  const previewPanelRef = useRef<AnimationPreviewPanelHandle>(null);
 
   const {
     tool, setTool,
@@ -362,15 +750,22 @@ export default function SpriteEditorModal({
   };
 
   const handleGenerateAnimations = () => {
-    const withAnims = generateAnimationsClientSide(editedAsset, selectedAnims);
+    const withAnims = generateAnimationsClientSide(editedAsset, selectedAnims, castSettings);
     setEditedAsset(withAnims);
 
     if (withAnims.animations.length > 0) {
-      setViewingAnimation(withAnims.animations[0].name);
-      setEditingFrameIndex(withAnims.animations[0].frameIndices[0]);
-    } else {
-      setViewingAnimation('base');
-      setEditingFrameIndex(0);
+      // Prioritize "cast" if it was generated
+      const priority = selectedAnims.includes('cast') ? 'cast' : selectedAnims[0];
+      const targetAnim = withAnims.animations.find(a => a.name === priority);
+      
+      if (targetAnim) {
+        setViewingAnimation(targetAnim.name);
+        // Jump to the first frame with high visual impact! 
+        const impactOffset = targetAnim.name === 'cast' ? 3 : 1;
+        const targetFrame = targetAnim.frameIndices[impactOffset] || targetAnim.frameIndices[0];
+        setEditingFrameIndex(targetFrame);
+        previewPanelRef.current?.setIsPlaying(true); // Auto-play to show the motion
+      }
     }
   };
 
@@ -673,86 +1068,16 @@ export default function SpriteEditorModal({
           
           {/* LEFT: Layers & Palette */}
           <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 overflow-hidden pr-1">
-            {/* LAYERS */}
-            <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider uppercase">LAYERS</span>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-6 w-6 text-purple-400 hover:text-purple-300 hover:bg-purple-600/20"
-                  onClick={handleAddLayer}
-                >
-                  <Plus size={14} />
-                </Button>
-              </div>
-
-              <div className="flex flex-col gap-1 flex-1">
-                {[...editedAsset.layers].reverse().map((layer, revIdx) => {
-                  const idx = editedAsset.layers.length - 1 - revIdx;
-                  const isActive = layer.id === activeLayerId;
-
-                  return (
-                    <div 
-                      key={layer.id}
-                      onClick={() => setActiveLayerId(layer.id)}
-                      className={`group flex items-center gap-2 p-2 rounded border cursor-pointer transition-all ${
-                        isActive 
-                          ? 'bg-purple-600/20 border-purple-500/50 text-foreground' 
-                          : 'bg-background/20 border-transparent hover:bg-secondary/40 text-muted-foreground'
-                      }`}
-                    >
-                      <button 
-                        className={`hover:text-primary transition-colors ${!layer.isVisible && 'text-muted-foreground/30'}`}
-                        onClick={(e) => { e.stopPropagation(); handleToggleLayerVisibility(layer.id); }}
-                      >
-                        {layer.isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
-                      </button>
-                      
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <Layers size={10} className="shrink-0 opacity-40" />
-                        <span className="truncate font-pixel text-[10px]">
-                          {layer.name}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            const newName = prompt('Enter new layer name:', layer.name);
-                            if (newName) handleRenameLayer(layer.id, newName);
-                          }}
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button 
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'up'); }}
-                          disabled={idx === editedAsset.layers.length - 1}
-                        >
-                          <ChevronUp size={12} />
-                        </button>
-                        <button 
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'down'); }}
-                          disabled={idx === 0}
-                        >
-                          <ChevronDown size={12} />
-                        </button>
-                        <button 
-                          className="text-red-500/70 hover:text-red-400"
-                          onClick={(e) => { e.stopPropagation(); handleRemoveLayer(layer.id); }}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <LayersList
+              layers={editedAsset.layers}
+              activeLayerId={activeLayerId}
+              setActiveLayerId={setActiveLayerId}
+              onAddLayer={handleAddLayer}
+              onToggleVisibility={handleToggleLayerVisibility}
+              onRenameLayer={handleRenameLayer}
+              onMoveLayer={handleMoveLayer}
+              onRemoveLayer={handleRemoveLayer}
+            />
 
             {/* PALETTE */}
             <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 overflow-hidden flex-1 mb-2">
@@ -828,186 +1153,54 @@ export default function SpriteEditorModal({
 
           {/* RIGHT: Preview & Animation Controls */}
           <div className="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pl-1 custom-scrollbar">
-            <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">LIBRERIA DE ANIMACIONES</span>
-                <div className="flex gap-2">
-                  <button onClick={selectAllAnims} className="text-[7px] font-pixel text-purple-400 hover:text-purple-300">TODO</button>
-                  <button onClick={clearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NADA</button>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                {/* Special case for BASE frame */}
-                <button
-                  type="button"
-                  onClick={() => { setViewingAnimation('base'); setEditingFrameIndex(0); }}
-                  className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between ${viewingAnimation === 'base'
-                    ? 'bg-purple-600/20 border-purple-500 text-purple-300'
-                    : 'bg-secondary/10 border-border text-muted-foreground hover:border-purple-500/30'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
-                    <span>BASE (ESTATICO)</span>
-                  </div>
-                </button>
-
-                {AVAILABLE_ANIMS.map(anim => {
-                  const isViewing = viewingAnimation === anim.value;
-                  const isSelectedForGen = selectedAnims.includes(anim.value);
-                  const exists = editedAsset.animations.some(a => a.name === anim.value);
-                  
-                  return (
-                    <div 
-                      key={anim.value}
-                      className={`group flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer ${isViewing 
-                        ? 'bg-purple-600/30 border-purple-500' 
-                        : 'bg-secondary/10 border-border hover:border-purple-500/30'
-                      }`}
-                      onClick={() => {
-                        setViewingAnimation(anim.value);
-                        const animDef = editedAsset.animations.find(a => a.name === anim.value);
-                        if (animDef) setEditingFrameIndex(animDef.frameIndices[0]);
-                      }}
-                    >
-                      <div className="flex-1 flex items-center gap-2 overflow-hidden">
-                        {exists ? (
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)] shrink-0" />
-                        ) : (
-                          <div className="w-1.5 h-1.5 rounded-full border border-muted-foreground/50 shrink-0" />
-                        )}
-                        <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-purple-200' : 'text-muted-foreground'}`}>
-                          {anim.label.toUpperCase()}
-                        </span>
-                      </div>
-                      
-                  <div 
-                        className="flex items-center justify-center p-1 hover:bg-white/5 rounded transition-colors group-hover:bg-white/10"
-                        onClick={(e) => { e.stopPropagation(); toggleAnim(anim.value); }}
-                        title="Seleccionar para generación"
-                      >
-                        <Checkbox 
-                          checked={isSelectedForGen}
-                          className={`h-4 w-4 border-muted-foreground/30 rounded-sm ${isSelectedForGen ? 'bg-purple-500 border-purple-500' : 'bg-transparent'}`}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex flex-col gap-2 w-full pt-1">
-                <Button
-                  onClick={handleGenerateAnimations}
-                  disabled={selectedAnims.length === 0 || isAnimGenerating}
-                  className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border h-8"
-                  title="Generación instantánea por matemática"
-                >
-                  QUICK MATCH
-                </Button>
-                <Button
-                  onClick={handleGenerateAnimationsAI}
-                  disabled={selectedAnims.length === 0 || isAnimGenerating}
-                  className="w-full font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 h-8"
-                  title="Generación de alta calidad usando IA"
-                >
-                  <Sparkles size={12} className="mr-1" />
-                  {isAnimGenerating ? `GENERANDO...` : 'GENERAR CON IA'}
-                </Button>
-              </div>
-              {animError && (
-                <div className="text-red-400 text-[10px] mt-1 break-words font-mono">{animError}</div>
-              )}
-            </div>
+            <AnimationLibrary
+              animations={editedAsset.animations}
+              viewingAnimation={viewingAnimation}
+              selectedAnims={selectedAnims}
+              onSelectViewing={(name) => {
+                setViewingAnimation(name);
+                if (name === 'base') setEditingFrameIndex(0);
+                else {
+                  const animDef = editedAsset.animations.find(a => a.name === name);
+                  if (animDef) setEditingFrameIndex(animDef.frameIndices[0]);
+                }
+              }}
+              onToggleAnim={toggleAnim}
+              onQuickMatch={handleGenerateAnimations}
+              onGenerateAI={handleGenerateAnimationsAI}
+              isGenerating={isAnimGenerating}
+              onSelectAllAnims={selectAllAnims}
+              onClearSelection={clearSelection}
+              castSettings={castSettings}
+              setCastSettings={setCastSettings}
+              animError={animError}
+            />
           </div>
         </div>
 
         {/* FOOTER: Timeline + Save Actions */}
         <div className="flex flex-row items-center justify-between pt-3 border-t border-border gap-4 flex-shrink-0">
           {/* Timeline Strip */}
-          <div className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col bg-secondary/20 p-2 rounded-lg border border-border">
-            {frameCount > 0 ? (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={visibleFramesIndices.map(i => i.toString())} strategy={horizontalListSortingStrategy}>
-                  <div className="flex gap-4 overflow-x-auto custom-scrollbar flex-1 pb-1 px-2 items-center min-h-[90px]">
-                    {visibleFramesIndices.map((frameIndex) => (
-                      <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
-                          <ContextMenu>
-                            <ContextMenuTrigger asChild>
-                              <div>
-                                <FrameThumb
-                                  frame={compositeFrame(editedAsset, frameIndex)}
-                                  palette={editedAsset.palette}
-                                  size={editedAsset.size}
-                                  isActive={frameIndex === editingFrameIndex}
-                                  label={frameLabels[frameIndex]}
-                                  onClick={() => setEditingFrameIndex(frameIndex)}
-                                />
-                              </div>
-                            </ContextMenuTrigger>
-                            <ContextMenuContent>
-                              <ContextMenuItem onClick={() => handleDuplicateFrame(frameIndex)}>
-                                Duplicar Frame
-                              </ContextMenuItem>
-                              <ContextMenuItem onClick={() => handleInsertEmptyFrame(frameIndex)}>
-                                Insertar Vacío (Después)
-                              </ContextMenuItem>
-                              <ContextMenuSeparator />
-                              <ContextMenuItem disabled={frameIndex === 0} onClick={() => handleDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
-                                Eliminar Frame
-                              </ContextMenuItem>
-                            </ContextMenuContent>
-                          </ContextMenu>
-                      </SortableFrameThumb>
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            ) : (
-              <span className="font-pixel text-[10px] text-muted-foreground">SIN FRAMES</span>
-            )}
-          </div>
+          <TimelineStrip
+            asset={editedAsset}
+            viewingAnimation={viewingAnimation}
+            editingFrameIndex={editingFrameIndex}
+            frameLabels={frameLabels}
+            visibleFramesIndices={visibleFramesIndices}
+            onSelectFrame={setEditingFrameIndex}
+            onDuplicateFrame={handleDuplicateFrame}
+            onDeleteFrame={handleDeleteFrame}
+            onInsertEmptyFrame={handleInsertEmptyFrame}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+          />
 
           {/* Right: Integrated Animation Preview + Controls */}
-          <div className="flex-shrink-0 bg-secondary/30 p-2 rounded-lg border border-border flex items-center gap-4 h-[90px]">
-            <div className="flex flex-col gap-1 items-center justify-center pt-1">
-              <div className="flex items-center justify-center bg-black/20 rounded-md p-1.5 border border-border/50 shadow-inner">
-                <PaletteProvider defaultPalette={editedAsset.palette}>
-                  <SpritePreview 
-                    asset={editedAsset} 
-                    animationName={viewingAnimation} 
-                    scale={4} 
-                    showLabel={false} 
-                    currentFrameOverride={previewState.currentFrame}
-                  />
-                </PaletteProvider>
-              </div>
-              {/* Spacer to match FrameThumb label height */}
-              <div className="h-[12px] w-full" />
-            </div>
-            
-            <div className="flex flex-col gap-2 border-l border-border/50 pl-4 py-1">
-              <button 
-                onClick={() => setIsPlaying(!isPlaying)}
-                className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all hover:scale-105 ${isPlaying ? 'bg-purple-600/20 text-purple-400 border-purple-500/50' : 'bg-background text-muted-foreground border-border'}`}
-                title={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-              </button>
-              
-              <div className="flex items-center gap-3 bg-black/40 rounded-lg p-2 border border-border/50 h-10">
-                <div className="flex flex-col leading-none">
-                  <span className="font-mono text-[10px] font-bold text-primary">{fps}</span>
-                  <span className="font-pixel text-[6px] text-muted-foreground uppercase opacity-50">fps</span>
-                </div>
-                <div className="flex flex-col">
-                  <button onClick={() => setFps(Math.min(24, fps + 1))} className="text-muted-foreground hover:text-foreground transition-colors"><PlusIcon size={12} /></button>
-                  <button onClick={() => setFps(Math.max(1, fps - 1))} className="text-muted-foreground hover:text-foreground transition-colors"><MinusIcon size={12} /></button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AnimationPreviewPanel
+            ref={previewPanelRef}
+            asset={editedAsset}
+            viewingAnimation={viewingAnimation}
+          />
         </div>
       </DialogContent>
     </Dialog>

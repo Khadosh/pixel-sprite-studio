@@ -57,6 +57,16 @@ export interface SpriteAsset {
   tags?: string[];
 }
 
+/** Configuration for advanced procedural cast animations */
+export type CastShape = 'circle' | 'burst' | 'beam' | 'random';
+export type CastElement = 'fire' | 'water' | 'electric' | 'nature' | 'ice' | 'generic';
+
+export interface AdvancedCastSettings {
+  shape: CastShape;
+  element: CastElement;
+  color?: string; // Optional hex override
+}
+
 /** Category metadata for the catalog UI */
 export interface CategoryInfo {
   id: SpriteAsset['category'] | 'all';

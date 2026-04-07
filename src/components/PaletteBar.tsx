@@ -1,3 +1,4 @@
+import React from 'react';
 import { Plus, X } from 'lucide-react';
 
 interface PaletteBarProps {
@@ -11,7 +12,7 @@ interface PaletteBarProps {
   onRenameColor?: (key: number, name: string) => void;
 }
 
-export default function PaletteBar({
+export default React.memo(function PaletteBar({
   palette,
   colorNames,
   activeColorKey,
@@ -96,4 +97,4 @@ export default function PaletteBar({
       )}
     </div>
   );
-}
+});

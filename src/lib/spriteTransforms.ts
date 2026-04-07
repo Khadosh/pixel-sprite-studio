@@ -11,14 +11,13 @@ function cloneFrame(frame: Frame): Frame {
 export function shiftDown(frame: Frame, px: number): Frame {
   if (frame.length === 0) return cloneFrame(frame);
   const size = frame.length;
-  const out = cloneFrame(frame);
-  // Work bottom-up to avoid overwriting
-  for (let r = size - 1; r >= 0; r--) {
+  const out = Array.from({ length: size }, () => Array(size).fill(0));
+  
+  for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      if (r - px >= 0) {
-        out[r][c] = frame[r - px][c];
-      } else {
-        out[r][c] = 0;
+      const srcR = r - px;
+      if (srcR >= 0 && srcR < size) {
+        out[r][c] = frame[srcR][c];
       }
     }
   }
@@ -29,13 +28,13 @@ export function shiftDown(frame: Frame, px: number): Frame {
 export function shiftRight(frame: Frame, px: number): Frame {
   if (frame.length === 0) return cloneFrame(frame);
   const size = frame.length;
-  const out = cloneFrame(frame);
+  const out = Array.from({ length: size }, () => Array(size).fill(0));
+
   for (let r = 0; r < size; r++) {
-    for (let c = size - 1; c >= 0; c--) {
-      if (c - px >= 0) {
-        out[r][c] = frame[r][c - px];
-      } else {
-        out[r][c] = 0;
+    for (let c = 0; c < size; c++) {
+      const srcC = c - px;
+      if (srcC >= 0 && srcC < size) {
+        out[r][c] = frame[r][srcC];
       }
     }
   }
@@ -109,7 +108,7 @@ function squash(frame: Frame, rowsToDrop: number[], colRange?: { start: number, 
  * Find the bounding box of all non-zero pixels.
  * Returns { top, bottom, left, right } or null if frame is empty.
  */
-function findBounds(frame: Frame) {
+export function findBounds(frame: Frame) {
   const size = frame.length;
   let top = size, bottom = -1, left = size, right = -1;
   for (let r = 0; r < size; r++) {
@@ -331,6 +330,72 @@ export function rotateFrameFree(frame: Frame, angleDeg: number, center: { r: num
 
       if (srcR >= 0 && srcR < size && srcC >= 0 && srcC < size) {
         out[r][c] = frame[srcR][srcC];
+      }
+    }
+  }
+  return out;
+}
+
+// ─── Spell Effect Primitives ───
+
+/** Scans a frame to find the most frequent non-zero palette index. */
+export function inferMainColorIndex(frame: Frame): number {
+  const counts: Record<number, number> = {};
+  for (const row of frame) {
+    for (const val of row) {
+      if (val !== 0) {
+        counts[val] = (counts[val] || 0) + 1;
+      }
+    }
+  }
+  let maxCount = 0;
+  let mainIndex = 1;
+  for (const [idx, count] of Object.entries(counts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      mainIndex = Number(idx);
+    }
+  }
+  return mainIndex;
+}
+
+/** Draws a pixel circle onto an existing frame. */
+export function drawCircle(frame: Frame, cr: number, cc: number, radius: number, colorIdx: number): Frame {
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  const r2 = radius * radius;
+  
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const dist2 = Math.pow(r - cr, 2) + Math.pow(c - cc, 2);
+      // Fill circle (rough pixelated)
+      if (dist2 <= r2) {
+        out[r][c] = colorIdx;
+      }
+    }
+  }
+  return out;
+}
+
+/** Draws radiating lines from a center point. intensity 0.0 to 1.0 */
+export function drawBurst(frame: Frame, cr: number, cc: number, intensity: number, colorIdx: number): Frame {
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  if (intensity <= 0) return out;
+
+  const numLines = Math.floor(8 + intensity * 12);
+  const maxLen = size / 2 * intensity;
+
+  for (let i = 0; i < numLines; i++) {
+    const angle = (i / numLines) * Math.PI * 2;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    
+    for (let step = 0; step < maxLen; step++) {
+      const r = Math.round(cr + step * sin);
+      const c = Math.round(cc + step * cos);
+      if (r >= 0 && r < size && c >= 0 && c < size) {
+        out[r][c] = colorIdx;
       }
     }
   }

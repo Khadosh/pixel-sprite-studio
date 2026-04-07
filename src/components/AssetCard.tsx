@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { SpriteAsset } from '@/lib/types';
 import SpriteSheetCanvas from './SpriteSheetCanvas';
+import { PaletteProvider } from '@/hooks/usePalette';
 
 const CATEGORY_COLORS: Record<string, string> = {
   character: '#22c55e',
@@ -40,12 +41,14 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
       {/* Preview area: Professional dark background to match canvas */}
       <div className="w-full flex-1 flex items-center justify-center p-4 bg-[#050508] min-h-[160px] overflow-hidden border-b border-white/5">
         <div className="transform transition-all duration-700 group-hover:scale-105 group-hover:brightness-110">
-           <SpriteSheetCanvas 
-            asset={asset} 
-            // Scale logic: characters get slightly smaller scale to fit labels comfortably
-            scale={asset.animations.length > 4 ? 2 : 3} 
-            showLabels={true} 
-          />
+           <PaletteProvider defaultPalette={asset.palette}>
+             <SpriteSheetCanvas
+              asset={asset}
+              // Scale logic: characters get slightly smaller scale to fit labels comfortably
+              scale={asset.animations.length > 4 ? 2 : 3}
+              showLabels={true}
+            />
+           </PaletteProvider>
         </div>
       </div>
 
