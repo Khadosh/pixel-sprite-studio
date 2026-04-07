@@ -18,9 +18,12 @@ export function compositeFrame(asset: SpriteAsset, frameIndex: number): Frame {
     if (!frame) continue;
 
     for (let r = 0; r < size; r++) {
+      const row = frame[r];
+      if (!row) continue;
+
       for (let c = 0; c < size; c++) {
-        const val = frame[r][c];
-        if (val !== 0) {
+        const val = row[c];
+        if (val !== undefined && val !== 0) {
           // In a simple palette system, we just take the top-most non-zero value.
           // In the future, if we want real alpha blending, we'd need to convert to RGBA.
           result[r][c] = val;
@@ -30,6 +33,25 @@ export function compositeFrame(asset: SpriteAsset, frameIndex: number): Frame {
   }
 
   return result;
+}
+
+/**
+ * Upscales a frame by 2x: each pixel becomes a 2×2 block.
+ * Useful for converting 16x16 assets to 32x32.
+ */
+export function upscale2x(frame: Frame): Frame {
+  const out: Frame = [];
+  for (let r = 0; r < frame.length; r++) {
+    const rowA: number[] = [];
+    const rowB: number[] = [];
+    for (let c = 0; c < frame[r].length; c++) {
+      const v = frame[r][c];
+      rowA.push(v, v);
+      rowB.push(v, v);
+    }
+    out.push(rowA, rowB);
+  }
+  return out;
 }
 
 /**

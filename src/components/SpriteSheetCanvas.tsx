@@ -124,9 +124,12 @@ export default function SpriteSheetCanvas({
         if (!frame) return;
 
         for (let fRow = 0; fRow < asset.size; fRow++) {
+          const row = frame[fRow];
+          if (!row) continue;
+
           for (let fCol = 0; fCol < asset.size; fCol++) {
-            const val = frame[fRow][fCol];
-            if (!val || val === 0) continue;
+            const val = row[fCol];
+            if (val === undefined || !val || val === 0) continue;
             const color = palette[val];
             if (!color || color === 'transparent') continue;
             ctx.fillStyle = color;

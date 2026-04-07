@@ -1,5 +1,6 @@
 import type { Frame, SpriteAsset } from '@/lib/types';
 import { generateIdle, generateWalk, generateCast, generateHurt } from '@/lib/spriteTransforms';
+import { upscale2x } from '@/lib/layerUtils';
 
 // Same base frame as the hand-crafted xianxia wizard idle0
 // 0=transparent  1=outline  2=dark-robe  3=mid-robe  4=light-robe
@@ -25,21 +26,6 @@ const baseFrame16: Frame = [
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
 ];
 
-/** Upscale a frame by 2x: each pixel becomes a 2×2 block. */
-function upscale2x(frame: Frame): Frame {
-  const out: Frame = [];
-  for (let r = 0; r < frame.length; r++) {
-    const rowA: number[] = [];
-    const rowB: number[] = [];
-    for (let c = 0; c < frame[r].length; c++) {
-      const v = frame[r][c];
-      rowA.push(v, v);
-      rowB.push(v, v);
-    }
-    out.push(rowA, rowB);
-  }
-  return out;
-}
 
 const baseFrame: Frame = upscale2x(baseFrame16);
 

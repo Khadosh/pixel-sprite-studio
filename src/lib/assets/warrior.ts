@@ -1,4 +1,5 @@
 import type { Frame, SpriteAsset } from '@/lib/types';
+import { upscale2x } from '@/lib/layerUtils';
 
 // Shorthand aliases for readability in frame grids
 const E = 0, O = 1, S = 2, H = 3, T = 4, P = 5, B = 6, W = 7, Y = 8, R = 9;
@@ -393,7 +394,7 @@ const death2: Frame = [
   [E,E,E,E,E,E,E,E,O,O,O,O,E,E,E,E,E,E,O,O,O,O,E,E,E,E,E,E,E,E,E,E],
 ];
 
-const death3: Frame = [
+const death3: Frame = upscale2x([
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
@@ -410,9 +411,9 @@ const death3: Frame = [
   [E,E,E,O,O,O,O,O,O,O,O,O,O,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
-];
+]);
 
-const death4: Frame = [
+const death4: Frame = upscale2x([
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
@@ -429,10 +430,10 @@ const death4: Frame = [
   [E,E,E,O,O,O,O,O,O,O,O,O,O,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
-];
+]);
 
 // ---- JUMP frames ----
-const jump1: Frame = [
+const jump1: Frame = upscale2x([
   [E,E,E,E,E,O,O,O,O,O,E,E,E,E,E,E],
   [E,E,E,E,O,H,H,H,H,H,O,E,E,E,E,E],
   [E,E,E,E,O,H,H,H,H,H,O,E,E,E,E,E],
@@ -449,9 +450,9 @@ const jump1: Frame = [
   [E,E,E,E,O,O,E,E,E,O,O,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
-];
+]);
 
-const jump2: Frame = [
+const jump2: Frame = upscale2x([
   [E,E,E,E,E,O,O,O,O,O,E,E,E,E,E,E],
   [E,E,E,E,O,H,H,H,H,H,O,E,E,E,E,E],
   [E,E,E,E,O,H,H,H,H,H,O,E,E,E,E,E],
@@ -468,7 +469,7 @@ const jump2: Frame = [
   [E,E,E,O,O,E,E,E,E,E,O,O,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
-];
+]);
 
 // All unique frames indexed for animation references
 const allFrames: Frame[] = [
