@@ -1,10 +1,6 @@
-import { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { SpriteAsset } from '@/lib/types';
-import { useAssetPreview } from '@/hooks/useAssetPreview';
-
-const CARD_PIXEL_SCALE = 4;
-const CHECKER_SIZE = 8;
+import SpriteSheetCanvas from './SpriteSheetCanvas';
 
 const CATEGORY_COLORS: Record<string, string> = {
   character: '#22c55e',
@@ -29,49 +25,7 @@ interface AssetCardProps {
 
 export default function AssetCard({ asset, projectId }: AssetCardProps) {
   const navigate = useNavigate();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { currentFrame } = useAssetPreview(asset);
-
-  const canvasSize = asset.size * CARD_PIXEL_SCALE;
   const frameCount = asset.layers?.[0]?.frames.length || asset.frames?.length || 0;
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-
-    // Draw checkerboard background
-    for (let y = 0; y < canvasSize; y += CHECKER_SIZE) {
-      for (let x = 0; x < canvasSize; x += CHECKER_SIZE) {
-        const isEven = ((x / CHECKER_SIZE) + (y / CHECKER_SIZE)) % 2 === 0;
-        ctx.fillStyle = isEven ? '#1a1a2e' : '#22223a';
-        ctx.fillRect(x, y, CHECKER_SIZE, CHECKER_SIZE);
-      }
-    }
-
-    // Draw sprite
-    if (currentFrame) {
-      for (let row = 0; row < asset.size; row++) {
-        for (let col = 0; col < asset.size; col++) {
-          const val = currentFrame[row]?.[col];
-          if (!val || val === 0) continue;
-          const color = asset.palette[val];
-          if (!color || color === 'transparent') continue;
-          ctx.fillStyle = color;
-          ctx.fillRect(
-            col * CARD_PIXEL_SCALE,
-            row * CARD_PIXEL_SCALE,
-            CARD_PIXEL_SCALE,
-            CARD_PIXEL_SCALE
-          );
-        }
-      }
-    }
-  }, [asset, currentFrame, canvasSize]);
-
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
 
   return (
@@ -81,27 +35,28 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
         const query = projectId ? `?projectId=${projectId}` : '';
         navigate(`/asset/${asset.id}${query}`);
       }}
-      className="group w-full text-left bg-card rounded-lg border border-border hover:border-primary/60 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.15)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden cursor-pointer"
+      className="group w-full text-left bg-card rounded-lg border border-border hover:border-primary/60 transition-all duration-500 hover:shadow-[0_0_30px_rgba(34,197,94,0.1)] hover:scale-[1.01] active:scale-[0.99] overflow-hidden cursor-pointer flex flex-col"
     >
-      {/* Preview canvas */}
-      <div className="flex items-center justify-center p-4 pb-3">
-        <canvas
-          ref={canvasRef}
-          width={canvasSize}
-          height={canvasSize}
-          className="rounded border border-border/50 group-hover:border-primary/30 transition-colors"
-          style={{ imageRendering: 'pixelated' }}
-        />
+      {/* Preview area: Professional dark background to match canvas */}
+      <div className="w-full flex-1 flex items-center justify-center p-4 bg-[#050508] min-h-[160px] overflow-hidden border-b border-white/5">
+        <div className="transform transition-all duration-700 group-hover:scale-105 group-hover:brightness-110">
+           <SpriteSheetCanvas 
+            asset={asset} 
+            // Scale logic: characters get slightly smaller scale to fit labels comfortably
+            scale={asset.animations.length > 4 ? 2 : 3} 
+            showLabels={true} 
+          />
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="px-4 pb-4 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <h3 className="font-pixel text-[10px] text-foreground tracking-wider group-hover:text-primary transition-colors">
+      {/* Info panel */}
+      <div className="p-4 bg-card">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-pixel text-[10px] text-foreground tracking-wider group-hover:text-primary transition-colors truncate pr-2">
             {asset.name.toUpperCase()}
           </h3>
           <span
-            className="inline-flex items-center px-2 py-0.5 text-[8px] font-pixel rounded-full border"
+            className="inline-flex items-center px-2 py-0.5 text-[7px] font-pixel rounded-sm border shrink-0 opacity-80"
             style={{
               color: categoryColor,
               borderColor: `${categoryColor}40`,
@@ -111,22 +66,24 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
             {CATEGORY_LABELS[asset.category]}
           </span>
         </div>
-        <p className="text-[10px] text-muted-foreground font-mono leading-relaxed line-clamp-2">
-          {asset.description}
+        
+        <p className="text-[9px] text-muted-foreground font-mono leading-relaxed line-clamp-2 h-[2.4em] opacity-60 italic">
+          {asset.description || 'No description provided.'}
         </p>
-        <div className="flex items-center gap-2 pt-1">
-          <span className="text-[8px] text-muted-foreground font-mono">
-            {asset.size}x{asset.size}px
-          </span>
-          <span className="text-[8px] text-muted-foreground">•</span>
-          <span className="text-[8px] text-muted-foreground font-mono">
-            {frameCount} frame{frameCount !== 1 ? 's' : ''}
+
+        <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-3">
+          <div className="flex items-center gap-1.5 font-mono text-[7px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded border border-white/5">
+            <span>{asset.size}x{asset.size}</span>
+          </div>
+          <span className="text-[7px] text-muted-foreground/30 font-mono">•</span>
+          <span className="text-[7px] text-muted-foreground/80 font-mono">
+            {frameCount} FRAMES
           </span>
           {asset.animations.length > 0 && (
             <>
-              <span className="text-[8px] text-muted-foreground">•</span>
-              <span className="text-[8px] text-muted-foreground font-mono">
-                {asset.animations.length} anim{asset.animations.length !== 1 ? 's' : ''}
+              <span className="text-[7px] text-muted-foreground/30 font-mono">•</span>
+              <span className="text-[7px] text-muted-foreground/80 font-mono text-emerald-500/80">
+                {asset.animations.length} ANIMATIONS
               </span>
             </>
           )}
