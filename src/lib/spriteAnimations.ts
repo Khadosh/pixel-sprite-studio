@@ -38,20 +38,15 @@ export function generateAnimationsClientSide(
       // f0 and f1 are the new frames based on this layer's base frame
       const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor);
       
-      // Add 4 frames for the 4-frame animation sequence
-      layer.frames.push(
-        f0, 
-        f1, 
-        f0.map(r => [...r]), 
-        f1.map(r => [...r])
-      );
+      // Add only unique frames for the animation sequence
+      layer.frames.push(f0, f1);
     });
 
     const fps = animName === 'idle' ? 3 : animName === 'cast' ? 4 : 5;
     const newAnimDef: AnimationDef = {
       name: animName,
       label: animName.toUpperCase(),
-      frameIndices: [startIndex, startIndex + 1, startIndex + 2, startIndex + 3],
+      frameIndices: [startIndex, startIndex + 1, startIndex, startIndex + 1],
       fps,
     };
 

@@ -61,6 +61,51 @@ function shiftRowsHorizontal(frame: Frame, startRow: number, endRow: number, px:
 }
 
 /**
+ * Compresses the frame by "removing" specific rows and shifting everything above them down.
+ * @param frame The base frame
+ * @param rowsToDrop Array of row indices to remove (should be sorted descending for easiest logic)
+ * @param colRange Optional range of columns to restrict the effect to
+ * @param topBoundary Optional row index above which NO shifting or clearing occurs
+ */
+function squash(frame: Frame, rowsToDrop: number[], colRange?: { start: number, end: number }, topBoundary: number = -1): Frame {
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  
+  // Sort rows to drop descending to process from bottom up
+  const sortedDrops = [...rowsToDrop].sort((a, b) => b - a);
+
+  for (const dropR of sortedDrops) {
+    // Everything at dropR and below stays or is overwritten
+    // Everything above dropR moves down by 1, but STOP at topBoundary
+    for (let r = dropR; r > Math.max(0, topBoundary + 1); r--) {
+      for (let c = 0; c < size; c++) {
+        // If colRange is provided, only affect those columns
+        if (colRange && (c < colRange.start || c > colRange.end)) continue;
+        out[r][c] = out[r - 1][c];
+      }
+    }
+    
+    // Clear the row just above the compression IF it's not the top boundary
+    // to avoid duplicating the boundary pixels
+    const clearRow = Math.max(0, topBoundary + 1);
+    if (dropR >= clearRow) {
+      for (let c = 0; c < size; c++) {
+        if (colRange && (c < colRange.start || c > colRange.end)) continue;
+        // Only clear if we actually shifted something down from this row
+        // If topBoundary is used, we are essentially "stretching" the boundary pixel
+        // if we don't clear it. But if we do clear it, we get a gap.
+        // The user suggested 3 parts horizontally, let's keep it connected.
+        if (topBoundary === -1) {
+          out[0][c] = 0;
+        }
+      }
+    }
+  }
+  
+  return out;
+}
+
+/**
  * Find the bounding box of all non-zero pixels.
  * Returns { top, bottom, left, right } or null if frame is empty.
  */
@@ -130,24 +175,52 @@ function addGlow(frame: Frame, glowColor: number): Frame {
 
 // ─── Public animation generators ───
 
-/** Idle: frame0 = base, frame1 = shifted 1px down (breathing bob) */
+/** Idle: frame0 = base, frame1 = squashed bottom and middle (squash & stretch breathing) */
 export function generateIdle(base: Frame): [Frame, Frame] {
-  return [cloneFrame(base), shiftDown(base, 1)];
+  const bounds = findBounds(base);
+  const com = getCenterOfMass(base);
+  if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
+
+  // Bottom 3 rows: bounds.bottom, bounds.bottom-1, bounds.bottom-2. Drop middle one.
+  const bottomDrop = bounds.bottom - 1;
+  // Middle row: around center of mass r
+  const midDrop = Math.floor(com.r);
+
+  // Apply squash (order doesn't strictly matter as long as indices are unique)
+  const rowsToDrop = [bottomDrop, midDrop].filter(r => r > bounds.top && r < bounds.bottom);
+  
+  return [cloneFrame(base), squash(base, rowsToDrop)];
 }
 
-/** Walk: shift only the bottom 2 rows (feet) left/right for a subtle step */
+/** Walk: squash torso and legs one side at a time, keeping the head fixed to avoid distortion */
 export function generateWalk(base: Frame): [Frame, Frame] {
   const bounds = findBounds(base);
-  if (!bounds) return [cloneFrame(base), cloneFrame(base)];
+  const com = getCenterOfMass(base);
+  if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
 
-  // The last part of the sprite depends on size. We assume bottom 2-3 rows are feet.
-  // For 16px it's 2 rows, for 32px it might be 3-4. We use ~15% of size.
-  const feetRows = Math.max(2, Math.floor(base.length * 0.15));
-  const feetStart = Math.max(bounds.bottom - (feetRows - 1), bounds.top);
+  const centerCol = Math.floor(com.c);
+  const bodyHeight = bounds.bottom - bounds.top + 1;
+  
+  // Divide into 3 vertical bands
+  const headEndRow = Math.floor(bounds.top + bodyHeight * 0.35);
+  const torsoEndRow = Math.floor(bounds.top + bodyHeight * 0.7);
 
+  // Identify rows to drop: one in torso, one in legs
+  const midDrop = Math.floor((headEndRow + torsoEndRow) / 2);
+  const legDrop = Math.floor((torsoEndRow + bounds.bottom) / 2);
+  
+  // Ensure drops are unique and valid
+  const rowsToDrop = [midDrop, legDrop].filter(r => r > headEndRow && r < bounds.bottom);
+  
+  // Split columns into vertical halves
+  const leftHalfRange = { start: bounds.left, end: centerCol };
+  const rightHalfRange = { start: centerCol + 1, end: bounds.right };
+
+  // Frame 1: Squash left side torso/legs, anchor head
+  // Frame 2: Squash right side torso/legs, anchor head
   return [
-    shiftRowsHorizontal(base, feetStart, bounds.bottom, -1),
-    shiftRowsHorizontal(base, feetStart, bounds.bottom, 1),
+    squash(base, rowsToDrop, leftHalfRange, headEndRow),
+    squash(base, rowsToDrop, rightHalfRange, headEndRow),
   ];
 }
 
