@@ -1,65 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, Project } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { FolderGit2, LogOut, Plus, Search } from 'lucide-react';
+import { FolderGit2, LogOut, Plus } from 'lucide-react';
+import { useProjects, useCreateProject } from '@/hooks/useProjectQueries';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: projects = [], isLoading } = useProjects();
+  const createProjectMutation = useCreateProject();
+  
   const [newProjectName, setNewProjectName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProjects(data || []);
-    } catch (error: any) {
-      toast({ title: 'Error cargando proyectos', description: error.message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProjectName.trim()) return;
+    if (!newProjectName.trim() || createProjectMutation.isPending) return;
 
-    try {
-      setIsCreating(true);
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([{ name: newProjectName.trim(), user_id: user?.id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setProjects([data, ...projects]);
-      setNewProjectName('');
-      toast({ title: 'Proyecto creado', description: 'Tu nuevo proyecto está listo.' });
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } finally {
-      setIsCreating(false);
-    }
+    createProjectMutation.mutate(newProjectName.trim(), {
+      onSuccess: () => {
+        setNewProjectName('');
+        toast({ title: 'Proyecto creado', description: 'Tu nuevo proyecto está listo.' });
+      },
+      onError: (error: any) => {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      }
+    });
   };
 
   const handleSignOut = async () => {
@@ -107,7 +77,7 @@ export default function Dashboard() {
                 className="bg-secondary/50 font-mono w-full md:w-64"
                 maxLength={40}
               />
-              <Button type="submit" disabled={isCreating || !newProjectName.trim()} className="bg-primary text-primary-foreground font-pixel text-[10px] whitespace-nowrap border border-primary hover:brightness-110">
+              <Button type="submit" disabled={createProjectMutation.isPending || !newProjectName.trim()} className="bg-primary text-primary-foreground font-pixel text-[10px] whitespace-nowrap border border-primary hover:brightness-110">
                 <Plus size={14} className="mr-1" />
                 NUEVO
               </Button>
@@ -117,7 +87,7 @@ export default function Dashboard() {
 
         {/* Projects Grid */}
         <section>
-          {loading ? (
+          {isLoading ? (
             <div className="text-center py-20 font-pixel text-muted-foreground text-xs animate-pulse">
               CARGANDO PROYECTOS...
             </div>

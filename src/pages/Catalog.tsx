@@ -1,10 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ASSET_CATALOG, getAssetsByCategory } from '@/lib/assets';
-import type { SpriteAsset } from '@/lib/types';
 import AssetCard from '@/components/AssetCard';
 import CategoryFilter from '@/components/CategoryFilter';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useAssets, useAssetCategoryCounts } from '@/hooks/useAssetQueries';
 
 export default function Catalog() {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -12,19 +11,10 @@ export default function Catalog() {
   const projectId = searchParams.get('projectId');
   const navigate = useNavigate();
 
-  const filteredAssets = useMemo(
-    () => getAssetsByCategory(activeCategory),
-    [activeCategory]
-  );
+  const { data: filteredAssets = [], isLoading: isAssetsLoading } = useAssets(activeCategory);
+  const { data: assetCounts = {}, isLoading: isCountsLoading } = useAssetCategoryCounts();
 
-  // Count assets per category
-  const assetCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    ASSET_CATALOG.forEach((a: SpriteAsset) => {
-      counts[a.category] = (counts[a.category] ?? 0) + 1;
-    });
-    return counts;
-  }, []);
+  const totalAssets = Object.values(assetCounts).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,7 +56,7 @@ export default function Catalog() {
 
         {/* Stats bar */}
         <div className="flex items-center justify-center gap-6 text-[10px] font-mono text-muted-foreground">
-          <span>{ASSET_CATALOG.length} assets</span>
+          <span>{totalAssets} assets</span>
           <span className="text-border">|</span>
           <span>16×16 px</span>
           <span className="text-border">|</span>
@@ -75,15 +65,24 @@ export default function Catalog() {
 
         {/* Category filters */}
         <div className="flex justify-center">
-          <CategoryFilter
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            assetCounts={assetCounts}
-          />
+          {isCountsLoading ? (
+            <Loader2 className="animate-spin text-primary" size={24} />
+          ) : (
+            <CategoryFilter
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+              assetCounts={assetCounts}
+            />
+          )}
         </div>
 
         {/* Asset grid */}
-        {filteredAssets.length > 0 ? (
+        {isAssetsLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+             <Loader2 className="animate-spin text-primary" size={32} />
+             <p className="font-pixel text-[10px] text-muted-foreground animate-pulse">CARGANDO ASSETS...</p>
+          </div>
+        ) : filteredAssets.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredAssets.map(asset => (
               <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
@@ -103,7 +102,7 @@ export default function Catalog() {
 
         {/* Footer */}
         <footer className="text-center text-[10px] text-muted-foreground font-mono pb-4 space-y-1">
-          <p>{ASSET_CATALOG.length} assets • {Object.keys(assetCounts).length} categories • 16×16 px</p>
+          <p>{totalAssets} assets • {Object.keys(assetCounts).length} categories • 16×16 px</p>
           <p className="text-muted-foreground/50">Pixel Sprite Studio — Asset Catalog</p>
         </footer>
       </div>

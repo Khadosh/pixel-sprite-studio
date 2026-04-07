@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase, Project, ProjectSprite } from '@/lib/supabase';
+import { ProjectSprite } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSprite } from '@/hooks/useGenerateSprite';
 import SpriteEditorModal from '@/components/SpriteEditorModal';
 import type { SpriteAsset } from '@/lib/types';
+import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
 
 export default function ProjectWorkspace() {
   const { id } = useParams<{ id: string }>();
@@ -18,9 +19,12 @@ export default function ProjectWorkspace() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [sprites, setSprites] = useState<ProjectSprite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: project, isLoading: isProjectLoading, error: projectError } = useProject(id);
+  const { data: sprites = [], isLoading: isSpritesLoading } = useProjectSprites(id);
+  
+  const createSpriteMutation = useCreateSprite();
+  const updateSpriteMutation = useUpdateSprite();
+  const deleteSpriteMutation = useDeleteSprite();
 
   // Generation state
   const [generatePrompt, setGeneratePrompt] = useState('');
@@ -33,10 +37,6 @@ export default function ProjectWorkspace() {
   const [editorIsNew, setEditorIsNew] = useState(false); // true = saving new, false = updating existing
   const [editingSpriteId, setEditingSpriteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id && user) fetchProjectData();
-  }, [id, user]);
-
   // When generation completes, open editor
   useEffect(() => {
     if (generatedSprite) {
@@ -47,37 +47,26 @@ export default function ProjectWorkspace() {
     }
   }, [generatedSprite]);
 
-  const fetchProjectData = async () => {
-    try {
-      setLoading(true);
-      const { data: projData, error: projError } = await supabase
-        .from('projects').select('*').eq('id', id).single();
-      if (projError) throw projError;
-      setProject(projData);
-
-      const { data: spriteData, error: spriteError } = await supabase
-        .from('project_sprites').select('*').eq('project_id', id)
-        .order('created_at', { ascending: false });
-      if (spriteError) throw spriteError;
-      setSprites(spriteData || []);
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+  // Handle project loading error
+  useEffect(() => {
+    if (projectError) {
+      toast({ title: 'Error', description: (projectError as Error).message, variant: 'destructive' });
       navigate('/dashboard');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [projectError, toast, navigate]);
 
   const handleDeleteSprite = async (e: React.MouseEvent, spriteId: string) => {
     e.stopPropagation();
-    try {
-      const { error } = await supabase.from('project_sprites').delete().eq('id', spriteId);
-      if (error) throw error;
-      setSprites(sprites.filter(s => s.id !== spriteId));
-      toast({ title: 'Eliminado' });
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    }
+    if (!id) return;
+    
+    deleteSpriteMutation.mutate({ id: spriteId, projectId: id }, {
+      onSuccess: () => {
+        toast({ title: 'Eliminado' });
+      },
+      onError: (error: any) => {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      }
+    });
   };
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -94,33 +83,29 @@ export default function ProjectWorkspace() {
   };
 
   const handleEditorSave = async (asset: SpriteAsset) => {
-    try {
-      if (editorIsNew) {
-        // Insert new sprite
-        const { data, error } = await supabase
-          .from('project_sprites')
-          .insert([{ project_id: id, asset_data: asset }])
-          .select().single();
-        if (error) throw error;
-        setSprites([data, ...sprites]);
-        clearGenerated();
-        setGeneratePrompt('');
-        setShowGenerator(false);
-        toast({ title: 'Sprite guardado', description: 'El sprite se guardó en tu proyecto.' });
-      } else if (editingSpriteId) {
-        // Update existing sprite
-        const { error } = await supabase
-          .from('project_sprites')
-          .update({ asset_data: asset })
-          .eq('id', editingSpriteId);
-        if (error) throw error;
-        setSprites(prev => prev.map(s =>
-          s.id === editingSpriteId ? { ...s, asset_data: asset } : s,
-        ));
-        toast({ title: 'Sprite actualizado' });
-      }
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    if (!id) return;
+
+    if (editorIsNew) {
+      createSpriteMutation.mutate({ projectId: id, asset }, {
+        onSuccess: () => {
+          clearGenerated();
+          setGeneratePrompt('');
+          setShowGenerator(false);
+          toast({ title: 'Sprite guardado', description: 'El sprite se guardó en tu proyecto.' });
+        },
+        onError: (error: any) => {
+          toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        }
+      });
+    } else if (editingSpriteId) {
+      updateSpriteMutation.mutate({ id: editingSpriteId, projectId: id, asset }, {
+        onSuccess: () => {
+          toast({ title: 'Sprite actualizado' });
+        },
+        onError: (error: any) => {
+          toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        }
+      });
     }
 
     setEditorOpen(false);
@@ -128,7 +113,7 @@ export default function ProjectWorkspace() {
     setEditingSpriteId(null);
   };
 
-  if (loading) {
+  if (isProjectLoading || isSpritesLoading) {
     return <div className="min-h-screen bg-background flex flex-col items-center justify-center text-primary font-pixel text-xs">CARGANDO WORKSPACE...</div>;
   }
 

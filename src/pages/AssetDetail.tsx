@@ -1,15 +1,14 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getAssetById } from '@/lib/assets';
 import { PaletteProvider, usePalette } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { Download, RotateCcw, ArrowLeft, Save } from 'lucide-react';
+import { Download, RotateCcw, ArrowLeft, Save, Loader2 } from 'lucide-react';
 import type { SpriteAsset } from '@/lib/types';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useAsset } from '@/hooks/useAssetQueries';
+import { useCreateSprite } from '@/hooks/useProjectQueries';
 
 const PIXEL_SCALE = 4;
 const GRID_GAP = 1;
@@ -28,7 +27,8 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get('projectId');
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+  
+  const createSpriteMutation = useCreateSprite();
 
   const CELL_SIZE = asset.size * PIXEL_SCALE;
 
@@ -84,25 +84,21 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
 
   const handleSaveToProject = async () => {
     if (!projectId) return;
-    try {
-      setIsSaving(true);
-      const assetDataToSave = {
-        ...asset,
-        palette: { ...palette } // Guardar la paleta actual
-      };
 
-      const { error } = await supabase
-        .from('project_sprites')
-        .insert([{ project_id: projectId, asset_data: assetDataToSave }]);
+    const assetDataToSave = {
+      ...asset,
+      palette: { ...palette } // Guardar la paleta actual
+    };
 
-      if (error) throw error;
-      toast({ title: 'Guardado', description: 'El sprite se ha guardado en tu proyecto exitosamente.' });
-      navigate(`/project/${projectId}`);
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } finally {
-      setIsSaving(false);
-    }
+    createSpriteMutation.mutate({ projectId, asset: assetDataToSave }, {
+      onSuccess: () => {
+        toast({ title: 'Guardado', description: 'El sprite se ha guardado en tu proyecto exitosamente.' });
+        navigate(`/project/${projectId}`);
+      },
+      onError: (error: any) => {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      }
+    });
   };
 
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
@@ -168,91 +164,100 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                   {projectId && (
                     <button
                       onClick={handleSaveToProject}
-                      disabled={isSaving}
+                      disabled={createSpriteMutation.isPending}
                       className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-green-600 text-white rounded border border-green-500 hover:brightness-110 transition-all disabled:opacity-50"
                     >
-                      <Save size={14} />
-                      {isSaving ? 'GUARDANDO...' : 'GUARDAR EN PROYECTO'}
+                      {createSpriteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                      {createSpriteMutation.isPending ? 'GUARDANDO...' : 'GUARDAR EN PROYECTO'}
                     </button>
                   )}
                   <button
                     onClick={handleExportPNG}
                     className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-primary text-primary-foreground rounded border border-primary hover:brightness-110 transition-all"
                   >
-                    <Download size={14} />
-                    EXPORT PNG
-                  </button>
+                      <Download size={14} />
+                      EXPORT PNG
+                    </button>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <SpriteSheetCanvas asset={asset} />
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <SpriteSheetCanvas asset={asset} />
+            </div>
+  
+            {/* Preview panel */}
+            <div className="w-full lg:w-64">
+              <div className="bg-card rounded-lg border border-border p-4">
+                <SpritePreview asset={asset} />
               </div>
             </div>
           </div>
-
-          {/* Preview panel */}
-          <div className="w-full lg:w-64">
-            <div className="bg-card rounded-lg border border-border p-4">
-              <SpritePreview asset={asset} />
+  
+          {/* Palette Editor */}
+          <div className="bg-card rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
+                PALETTE
+              </span>
+              <button
+                onClick={resetPalette}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-pixel text-muted-foreground bg-secondary rounded border border-border hover:border-primary/50 transition-colors"
+              >
+                <RotateCcw size={10} />
+                RESET
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(palette)
+                .filter(([k]) => k !== '0')
+                .map(([key, color]) => (
+                  <label key={key} className="flex items-center gap-2 cursor-pointer group">
+                    <div className="relative">
+                      <div
+                        className="w-6 h-6 rounded-sm border border-border group-hover:border-primary/60 transition-colors"
+                        style={{ backgroundColor: color }}
+                      />
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => setPaletteColor(Number(key), e.target.value)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground font-mono group-hover:text-foreground transition-colors">
+                      {asset.colorNames[Number(key)] || key}
+                    </span>
+                  </label>
+                ))}
             </div>
           </div>
+  
+          {/* Footer */}
+          <footer className="text-center text-[10px] text-muted-foreground font-mono pb-4">
+            {asset.name} • {frameCount} frames • {asset.size}×{asset.size} px • transparent PNG export
+          </footer>
         </div>
-
-        {/* Palette Editor */}
-        <div className="bg-card rounded-lg border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
-              PALETTE
-            </span>
-            <button
-              onClick={resetPalette}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-pixel text-muted-foreground bg-secondary rounded border border-border hover:border-primary/50 transition-colors"
-            >
-              <RotateCcw size={10} />
-              RESET
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(palette)
-              .filter(([k]) => k !== '0')
-              .map(([key, color]) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer group">
-                  <div className="relative">
-                    <div
-                      className="w-6 h-6 rounded-sm border border-border group-hover:border-primary/60 transition-colors"
-                      style={{ backgroundColor: color }}
-                    />
-                    <input
-                      type="color"
-                      value={color}
-                      onChange={(e) => setPaletteColor(Number(key), e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground font-mono group-hover:text-foreground transition-colors">
-                    {asset.colorNames[Number(key)] || key}
-                  </span>
-                </label>
-              ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="text-center text-[10px] text-muted-foreground font-mono pb-4">
-          {asset.name} • {frameCount} frames • {asset.size}×{asset.size} px • transparent PNG export
-        </footer>
       </div>
-    </div>
-  );
-}
-
-export default function AssetDetail() {
-  const { assetId } = useParams<{ assetId: string }>();
-  const navigate = useNavigate();
-
-  const asset = useMemo(() => getAssetById(assetId ?? ''), [assetId]);
-
-  if (!asset) {
+    );
+  }
+  
+  export default function AssetDetail() {
+    const { assetId } = useParams<{ assetId: string }>();
+    const navigate = useNavigate();
+  
+    const { data: asset, isLoading, error } = useAsset(assetId);
+  
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+          <Loader2 className="animate-spin text-primary" size={32} />
+          <p className="font-pixel text-[10px] text-muted-foreground animate-pulse">CARGANDO ASSET...</p>
+        </div>
+      );
+    }
+  
+    if (error || !asset) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
