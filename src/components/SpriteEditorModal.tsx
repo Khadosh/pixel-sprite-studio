@@ -343,6 +343,9 @@ const AnimationLibrary = React.memo(({
                           <SelectContent className="bg-[#1a1a2e] border-purple-500/40 z-[110]">
                             <SelectItem value="burst" className="text-[9px] font-pixel">BURST</SelectItem>
                             <SelectItem value="circle" className="text-[9px] font-pixel">CIRCLE</SelectItem>
+                            <SelectItem value="beam" className="text-[9px] font-pixel">BEAM</SelectItem>
+                            <SelectItem value="spark" className="text-[9px] font-pixel">SPARKS</SelectItem>
+                            <SelectItem value="pulse" className="text-[9px] font-pixel">PULSE</SelectItem>
                             <SelectItem value="random" className="text-[9px] font-pixel">RANDOM</SelectItem>
                           </SelectContent>
                         </Select>

@@ -58,7 +58,7 @@ export interface SpriteAsset {
 }
 
 /** Configuration for advanced procedural cast animations */
-export type CastShape = 'circle' | 'burst' | 'beam' | 'random';
+export type CastShape = 'circle' | 'burst' | 'beam' | 'spark' | 'pulse' | 'random';
 export type CastElement = 'fire' | 'water' | 'electric' | 'nature' | 'ice' | 'generic';
 
 export interface AdvancedCastSettings {

@@ -1,4 +1,4 @@
-import type { SpriteAsset, AnimationDef, SpriteLayer, Frame, AdvancedCastSettings, CastElement } from '@/lib/types';
+import type { SpriteAsset, AnimationDef, SpriteLayer, Frame, AdvancedCastSettings, CastElement, CastShape } from '@/lib/types';
 import { ensureLayerSupport } from '@/lib/layerUtils';
 import {
   generateIdle,
@@ -11,6 +11,9 @@ import {
   getCenterOfMass,
   drawCircle,
   drawBurst,
+  drawBeam,
+  drawSparks,
+  drawPulse,
   inferMainColorIndex,
 } from '@/lib/spriteTransforms';
 
@@ -98,12 +101,31 @@ export function generateAdvancedCastSequence(
   const baseFrame = layers[baseLayerIdx].frames[0];
   const startIndex = layers[0].frames.length;
   
-  // 2. Identify colors
-  const mainColorIdx = inferMainColorIndex(baseFrame);
-  const effectColorIdx = getElementalColorIdx(asset, settings.element) || mainColorIdx;
+  // 2. Identify colors (Triplet: { main, light, dark })
+  const { updatedAsset, colors } = getElementalColors(asset, settings.element);
+  const { main, light, dark } = colors;
   
   const bounds = findBounds(baseFrame);
   const com = getCenterOfMass(baseFrame) || { r: size / 2, c: size / 2 };
+
+  // 3. Finalize Effect Layer Palette
+  if (layers[effectLayerIdx]) {
+    layers[effectLayerIdx] = {
+      ...layers[effectLayerIdx],
+      paletteIds: [main, light, dark] // Only these colors in the effect layer
+    };
+  }
+
+  // 4. Randomization (if selected)
+  let shape = settings.shape;
+  let randomizedOrigin = { r: com.r - 2, c: com.c + 4 };
+  if (shape === 'random') {
+    const shapes: CastShape[] = ['circle', 'burst', 'beam', 'spark', 'pulse'];
+    shape = shapes[Math.floor(Math.random() * shapes.length)];
+    // Slight shift in origin
+    randomizedOrigin.r += (Math.random() - 0.5) * 4;
+    randomizedOrigin.c += (Math.random() - 0.5) * 4;
+  }
   
   // Define 6 frames for all layers
   for (let i = 0; i < 6; i++) {
@@ -116,29 +138,42 @@ export function generateAdvancedCastSequence(
       if (isBase) {
         // Character recoil logic
         if (i < 2) { // Buildup: slight squash
-           nextFrame = generateIdle(baseFrame)[1]; // Use the squash frame from idle
+           nextFrame = generateIdle(baseFrame)[1]; 
         } else if (i < 4) { // Impact: stretch
-           nextFrame = shiftDown(baseFrame, -1); // 1px jump/stretch
+           nextFrame = shiftDown(baseFrame, -1); 
         } else { // Recovery: normal
            nextFrame = baseFrame.map(r => [...r]);
         }
       } else if (isEffect) {
         // Spell effect logic
         nextFrame = Array.from({ length: size }, () => Array(size).fill(0));
-        const effectOrigin = { r: com.r - 2, c: com.c + 4 }; // Slightly in front/up
+        const effectOrigin = randomizedOrigin;
 
         if (i > 0) { // No effect on frame 0
-          if (settings.shape === 'circle') {
-             const radius = i < 3 ? i : Math.max(0, 6 - i); // Grow then shrink
-             nextFrame = drawCircle(nextFrame, effectOrigin.r, effectOrigin.c, radius, effectColorIdx);
-          } else if (settings.shape === 'burst' || settings.shape === 'random') {
-             const intensity = i === 3 || i === 4 ? 1.0 : (i / 6);
-             nextFrame = drawBurst(nextFrame, effectOrigin.r, effectOrigin.c, intensity, effectColorIdx);
+          const intensity = i < 4 ? i / 3 : Math.max(0, (6 - i) / 3);
+          
+          switch (shape) {
+            case 'circle': {
+              const radius = i < 4 ? i * 1.5 : Math.max(0, (6 - i) * 1.5);
+              nextFrame = drawCircle(nextFrame, effectOrigin.r, effectOrigin.c, radius, main, { light, dark });
+              break;
+            }
+            case 'burst':
+              nextFrame = drawBurst(nextFrame, effectOrigin.r, effectOrigin.c, intensity, main, { light, dark });
+              break;
+            case 'beam':
+              nextFrame = drawBeam(nextFrame, effectOrigin.r, effectOrigin.c, intensity, main, { light, dark });
+              break;
+            case 'spark':
+              nextFrame = drawSparks(nextFrame, effectOrigin.r, effectOrigin.c, intensity, main, { light, dark });
+              break;
+            case 'pulse':
+              nextFrame = drawPulse(nextFrame, effectOrigin.r, effectOrigin.c, intensity, main, { light, dark });
+              break;
           }
         }
       } else {
         // PRESERVE OTHER LAYERS (Eyes, Clothes, etc.)
-        // Apply the same squash/stretch as base to keep everything aligned
         const layerBaseFrame = layer.frames[0] || Array.from({ length: size }, () => Array(size).fill(0));
         if (i < 2) {
           nextFrame = generateIdle(layerBaseFrame)[1];
@@ -149,7 +184,6 @@ export function generateAdvancedCastSequence(
         }
       }
       
-      // We must push a NEW array reference to avoid mutation issues
       layer.frames = [...layer.frames, nextFrame];
     });
   }
@@ -158,45 +192,64 @@ export function generateAdvancedCastSequence(
     name: 'cast',
     label: 'CAST',
     frameIndices: Array.from({ length: 6 }, (_, i) => startIndex + i),
-    fps: 8, // Impactful speed
+    fps: 8,
   };
 
-  const animations = [...asset.animations];
+  const animations = [...updatedAsset.animations];
   const existingIdx = animations.findIndex(a => a.name === 'cast');
   if (existingIdx >= 0) animations[existingIdx] = newAnimDef;
   else animations.push(newAnimDef);
 
-  return { ...asset, layers, animations };
+  return { ...updatedAsset, layers, animations };
 }
 
-function getElementalColorIdx(asset: SpriteAsset, element: CastElement): number | null {
-  const palette = asset.palette;
+const ELEMENT_PALETTES: Record<Exclude<CastElement, 'generic'>, string[]> = {
+  fire: ['#662200', '#ff4d00', '#ffcc00'], // Dark Brown-Red, Orange, Yellow
+  water: ['#003366', '#0099ff', '#99ffff'], // Dark Blue, Blue, Cyan
+  electric: ['#4b0082', '#ffff00', '#ffffff'], // Purple, Yellow, White
+  nature: ['#003300', '#33cc33', '#ccffcc'], // Dark Green, Green, Light Green
+  ice: ['#006666', '#99ffff', '#ffffff'], // Dark Cyan, Cyan, White
+};
+
+/**
+ * Returns a shaded triplet of color indices for an element.
+ * Automatically adds the colors to the asset's palette if they are missing.
+ */
+function getElementalColors(asset: SpriteAsset, element: CastElement): { updatedAsset: SpriteAsset, colors: { main: number, light: number, dark: number } } {
+  const palette = { ...asset.palette };
   const entries = Object.entries(palette).map(([k, v]) => ({ key: Number(k), hex: v.toLowerCase() })).filter(e => e.key > 0);
-  if (entries.length === 0) return null;
+  
+  if (element === 'generic' || !ELEMENT_PALETTES[element]) {
+    const main = Math.max(...entries.map(e => e.key), 1);
+    return { updatedAsset: asset, colors: { main, light: main, dark: main } };
+  }
 
-  // Simple hex matching for common elemental colors
-  const matches: Record<CastElement, string[]> = {
-    fire: ['#ff', '#ee', '#dd', '#cc', '#bb'], // Looking for high Red
-    water: ['#0000ff', '#0077ff', '#00aaff', '#33ccff', '#00ffff'],
-    electric: ['#ffff00', '#ffff88', '#ffffff', '#aa00ff', '#ff00ff'],
-    nature: ['#00ff00', '#00bb00', '#228b22', '#32cd32', '#008000'],
-    ice: ['#e0ffff', '#afeeee', '#f0ffff', '#00ffff', '#ffffff'],
-    generic: [],
+  const shadeHexes = ELEMENT_PALETTES[element];
+  const colorIndices: number[] = [];
+  let currentAsset = { ...asset };
+
+  shadeHexes.forEach(hex => {
+    // Fuzzy match
+    const found = entries.find(e => e.hex.startsWith(hex.substring(0, 4)));
+    if (found) {
+      colorIndices.push(found.key);
+    } else {
+      // Add to palette
+      const nextIdx = Math.max(0, ...Object.keys(currentAsset.palette).map(Number)) + 1;
+      currentAsset.palette[nextIdx] = hex;
+      currentAsset.colorNames[nextIdx] = `${element.toUpperCase()} SHADE`;
+      colorIndices.push(nextIdx);
+    }
+  });
+
+  return { 
+    updatedAsset: currentAsset, 
+    colors: { 
+      dark: colorIndices[0],
+      main: colorIndices[1],
+      light: colorIndices[2],
+    }
   };
-
-  if (element === 'generic' || !matches[element]) {
-    return Math.max(...entries.map(e => e.key));
-  }
-
-  // Find the 'best' match in the character's palette for this element
-  const elementHexes = matches[element];
-  for (const hex of elementHexes) {
-    const found = entries.find(e => e.hex.startsWith(hex.substring(0, 4))); // Match prefix for fuzzy hex matching
-    if (found) return found.key;
-  }
-
-  // Fallback: pick the brightest highlight (highest index)
-  return Math.max(...entries.map(e => e.key));
 }
 
 function generateFramePair(
