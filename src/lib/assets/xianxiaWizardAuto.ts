@@ -6,7 +6,7 @@ import { generateIdle, generateWalk, generateCast, generateHurt } from '@/lib/sp
 // 5=skin/beard   6=staff-wood  7=magic-glow
 const E = 0, O = 1, D = 2, M = 3, L = 4, S = 5, W = 6, G = 7;
 
-const baseFrame: Frame = [
+const baseFrame16: Frame = [
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
   [E,E,E,E,E,E,O,O,O,E,E,E,E,E,E,E],
   [E,E,E,E,E,O,S,S,S,O,E,E,E,E,E,E],
@@ -25,6 +25,24 @@ const baseFrame: Frame = [
   [E,E,E,E,E,E,E,E,E,E,E,E,E,E,E,E],
 ];
 
+/** Upscale a frame by 2x: each pixel becomes a 2×2 block. */
+function upscale2x(frame: Frame): Frame {
+  const out: Frame = [];
+  for (let r = 0; r < frame.length; r++) {
+    const rowA: number[] = [];
+    const rowB: number[] = [];
+    for (let c = 0; c < frame[r].length; c++) {
+      const v = frame[r][c];
+      rowA.push(v, v);
+      rowB.push(v, v);
+    }
+    out.push(rowA, rowB);
+  }
+  return out;
+}
+
+const baseFrame: Frame = upscale2x(baseFrame16);
+
 // Generate all animation frames from the single base
 const [idle0, idle1] = generateIdle(baseFrame);
 const [walk0, walk1] = generateWalk(baseFrame);
@@ -36,7 +54,7 @@ export const xianxiaWizardAuto: SpriteAsset = {
   name: 'Xianxia Elder (Auto-Anim)',
   description: 'Same base frame as the hand-crafted version, but all animations are generated via pixel transforms.',
   category: 'character',
-  size: 16,
+  size: 32,
   palette: {
     0: 'transparent',
     1: '#1a1a2e',

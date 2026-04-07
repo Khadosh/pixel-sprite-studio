@@ -3,8 +3,16 @@ import type { Frame, SpriteAsset } from '@/lib/types';
 // 0=transparent, 1=dark-blue, 2=mid-blue, 3=blue, 4=light-blue, 5=foam/white
 const E = 0, D = 1, M = 2, B = 3, L = 4, F = 5;
 
-// Frame 0: Calm water
-const water1: Frame = [
+/** Scales a 16×16 frame to 32×32 by duplicating each pixel into a 2×2 block. */
+function upscale2x(frame: Frame): Frame {
+  return frame.flatMap(row => {
+    const doubled = row.flatMap(pixel => [pixel, pixel]);
+    return [doubled, doubled];
+  }) as Frame;
+}
+
+// Frame 0: Calm water (16×16 source)
+const water1_16: Frame = [
   [B,B,B,L,B,B,B,B,B,B,L,B,B,B,B,B],
   [B,B,L,L,L,B,B,B,B,L,L,L,B,B,B,B],
   [B,L,L,B,L,L,B,B,L,L,B,L,L,B,B,B],
@@ -23,8 +31,8 @@ const water1: Frame = [
   [D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D],
 ];
 
-// Frame 1: Wave shift right
-const water2: Frame = [
+// Frame 1: Wave shift right (16×16 source)
+const water2_16: Frame = [
   [B,B,B,B,B,L,B,B,B,B,B,L,B,B,B,B],
   [B,B,B,B,L,L,L,B,B,B,L,L,L,B,B,B],
   [B,B,B,L,L,B,L,L,B,L,L,B,L,L,B,B],
@@ -43,8 +51,8 @@ const water2: Frame = [
   [D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D],
 ];
 
-// Frame 2: Wave shift left
-const water3: Frame = [
+// Frame 2: Wave shift left (16×16 source)
+const water3_16: Frame = [
   [B,B,B,B,B,B,L,B,B,B,B,B,B,L,B,B],
   [B,B,B,B,B,L,L,L,B,B,B,B,L,L,L,B],
   [B,B,B,B,L,L,B,L,L,B,B,L,L,B,L,L],
@@ -63,12 +71,17 @@ const water3: Frame = [
   [D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D],
 ];
 
+// 32×32 upscaled frames
+const water1 = upscale2x(water1_16);
+const water2 = upscale2x(water2_16);
+const water3 = upscale2x(water3_16);
+
 export const waterTile: SpriteAsset = {
   id: 'water-tile',
   name: 'Water Tile',
   description: 'An animated water tile with wave patterns — tileable for oceans, lakes, and rivers.',
   category: 'terrain',
-  size: 16,
+  size: 32,
   palette: {
     0: 'transparent',
     1: '#0a2463',   // dark blue
