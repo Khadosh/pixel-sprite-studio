@@ -8,14 +8,25 @@ const PREVIEW_SCALE = 6;
 interface SpritePreviewProps {
   asset: SpriteAsset;
   animationName?: string | null;
+  scale?: number;
+  showLabel?: boolean;
+  currentFrameOverride?: number[][];
 }
 
-export default function SpritePreview({ asset, animationName = null }: SpritePreviewProps) {
+export default function SpritePreview({ 
+  asset, 
+  animationName = null, 
+  scale = 6,
+  showLabel = true,
+  currentFrameOverride
+}: SpritePreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { palette } = usePalette();
-  const { currentFrame, currentAnimation } = useAssetPreview(asset, animationName);
+  const previewState = useAssetPreview(asset, animationName);
+  const currentFrame = currentFrameOverride || previewState.currentFrame;
+  const { currentAnimation } = previewState;
 
-  const PREVIEW_SIZE = asset.size * PREVIEW_SCALE;
+  const PREVIEW_SIZE = asset.size * scale;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,7 +37,7 @@ export default function SpritePreview({ asset, animationName = null }: SpritePre
     ctx.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
 
     // Draw checkerboard background
-    const cs = 12;
+    const cs = Math.max(4, Math.floor(PREVIEW_SIZE / 8));
     for (let y = 0; y < PREVIEW_SIZE; y += cs) {
       for (let x = 0; x < PREVIEW_SIZE; x += cs) {
         const isEven = ((x / cs) + (y / cs)) % 2 === 0;
@@ -44,24 +55,26 @@ export default function SpritePreview({ asset, animationName = null }: SpritePre
           const color = palette?.[val];
           if (!color || color === 'transparent') continue;
           ctx.fillStyle = color;
-          ctx.fillRect(col * PREVIEW_SCALE, row * PREVIEW_SCALE, PREVIEW_SCALE, PREVIEW_SCALE);
+          ctx.fillRect(col * scale, row * scale, scale, scale);
         }
       }
     }
-  }, [asset, currentFrame, palette, PREVIEW_SIZE]);
+  }, [asset, currentFrame, palette, PREVIEW_SIZE, scale]);
 
   const label = currentAnimation?.label ?? 'STATIC';
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="text-sm font-pixel text-primary tracking-wider">
-        PREVIEW — {label}
-      </div>
+    <div className="flex flex-col items-center gap-2">
+      {showLabel && (
+        <div className="text-[10px] font-pixel text-primary tracking-wider uppercase opacity-70">
+          Preview · {label}
+        </div>
+      )}
       <canvas
         ref={canvasRef}
         width={PREVIEW_SIZE}
         height={PREVIEW_SIZE}
-        className="rounded border border-border"
+        className="rounded border border-border bg-black/20 shadow-inner"
         style={{ imageRendering: 'pixelated' }}
       />
     </div>

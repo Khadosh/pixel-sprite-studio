@@ -9,12 +9,23 @@ import { compositeFrame } from '@/lib/layerUtils';
  */
 export function useAssetPreview(asset: SpriteAsset, animationName: string | null = null) {
   const [frameStep, setFrameStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [fps, setFps] = useState<number>(5);
 
   const currentAnimation = animationName === 'base'
     ? null
     : animationName
       ? asset.animations.find(a => a.name === animationName) || null
       : asset.animations.length > 0 ? asset.animations[0] : null;
+
+  // Sync FPS with animation's default when it changes, unless overridden
+  useEffect(() => {
+    if (currentAnimation && currentAnimation.fps) {
+      setFps(currentAnimation.fps);
+    } else {
+      setFps(5);
+    }
+  }, [currentAnimation]);
 
   // Reset frame step when animation changes
   useEffect(() => {
@@ -23,15 +34,14 @@ export function useAssetPreview(asset: SpriteAsset, animationName: string | null
 
   // Auto-cycle frames for animated assets
   useEffect(() => {
-    if (!currentAnimation) return;
+    if (!currentAnimation || !isPlaying) return;
 
-    const fps = currentAnimation.fps ?? 5;
     const interval = setInterval(() => {
       setFrameStep(prev => (prev + 1) % currentAnimation.frameIndices.length);
     }, 1000 / fps);
 
     return () => clearInterval(interval);
-  }, [currentAnimation]);
+  }, [currentAnimation, isPlaying, fps]);
 
   // Determine current frame
   let currentFrame: Frame;
@@ -50,5 +60,9 @@ export function useAssetPreview(asset: SpriteAsset, animationName: string | null
     currentFrame,
     currentAnimation,
     hasAnimations: asset.animations.length > 0,
+    isPlaying,
+    setIsPlaying,
+    fps,
+    setFps,
   };
 }

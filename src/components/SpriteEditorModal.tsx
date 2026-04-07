@@ -3,7 +3,9 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
-import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Eye, EyeOff, Lock, Unlock, Layers, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, Sparkles, Save, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Eye, EyeOff, Lock, Unlock, Layers, ChevronUp, ChevronDown, CheckSquare, Square, Info, Play, Pause, Plus as PlusIcon, Minus as MinusIcon } from 'lucide-react';
+import { useAssetPreview } from '@/hooks/useAssetPreview';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { SpriteAsset } from '@/lib/types';
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
@@ -207,7 +209,10 @@ export default function SpriteEditorModal({
     if (migrated.layers[0]) setActiveLayerId(migrated.layers[0].id);
   }, [initialAsset]);
 
-  const { isGenerating: isAnimGenerating, currentAnimation, error: animError, generateAnimationsSequence } = useGenerateAnimation();
+  const { isGenerating: isAnimGenerating, currentAnimation: genAnim, error: animError, generateAnimationsSequence } = useGenerateAnimation();
+
+  const previewState = useAssetPreview(editedAsset, viewingAnimation);
+  const { isPlaying, setIsPlaying, fps, setFps } = previewState;
 
   const {
     tool, setTool,
@@ -621,57 +626,57 @@ export default function SpriteEditorModal({
               </DialogTitle>
             )}
           </div>
-          {generatePrompt && onRegenerate && (
+
+          <div className="flex items-center gap-4">
+            {generatePrompt && onRegenerate && (
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline-block max-w-[200px] truncate">
+                  Prompt: "{generatePrompt}"
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onRegenerate}
+                  disabled={isGenerating || isAnimGenerating}
+                  className="font-pixel text-[10px] border-purple-500/50 text-purple-400 hover:bg-purple-600/20"
+                >
+                  {isGenerating ? 'GENERANDO...' : 'REGENERAR'}
+                  {!isGenerating && <Sparkles size={12} className="ml-1" />}
+                </Button>
+              </div>
+            )}
+            
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline-block max-w-[300px] truncate">
-                Prompt: "{generatePrompt}"
-              </span>
-              <Button
+              <Button 
+                onClick={handleExportPNG} 
+                variant="outline" 
                 size="sm"
-                variant="outline"
-                onClick={onRegenerate}
-                disabled={isGenerating || isAnimGenerating}
-                className="font-pixel text-[10px] border-purple-500 text-purple-400 hover:bg-purple-600/20"
+                className="font-pixel text-[9px] h-8 border-purple-500/30 text-purple-300 hover:bg-purple-600/10"
               >
-                {isGenerating ? 'GENERANDO...' : 'REGENERAR'}
-                {!isGenerating && <Sparkles size={12} className="ml-1" />}
+                <Download size={14} className="mr-2" />
+                EXPORTAR
+              </Button>
+              <Button
+                onClick={handleSave}
+                size="sm"
+                className="font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+              >
+                <Save size={14} className="mr-2" />
+                GUARDAR
               </Button>
             </div>
-          )}
+          </div>
         </DialogHeader>
 
         {/* MAIN BODY: 3 Columns */}
         <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
           
-          {/* LEFT: Palette & Layers */}
-          <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1 custom-scrollbar">
-            {/* PALETTE */}
-            <div className="bg-secondary/30 rounded-lg border border-border p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">PALETTE</span>
-                <button 
-                  onClick={() => setShowAllColors(!showAllColors)}
-                  className={`text-[8px] font-pixel px-2 py-0.5 rounded border transition-colors ${showAllColors ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'border-border text-muted-foreground'}`}
-                >
-                  {showAllColors ? 'SHOWING ALL' : 'LAYER SCOPED'}
-                </button>
-              </div>
-              <PaletteBar
-                palette={filteredPalette}
-                colorNames={editedAsset.colorNames}
-                activeColorKey={activeColorKey}
-                onSelectColor={setActiveColorKey}
-                onChangeColor={handleChangeColor}
-                onAddColor={handleAddColor}
-                onRemoveColor={handleRemoveColor}
-                onRenameColor={handleRenameColor}
-              />
-            </div>
-
+          {/* LEFT: Layers & Palette */}
+          <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 overflow-hidden pr-1">
             {/* LAYERS */}
-            <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-[300px]">
+            <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 shrink-0">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">LAYERS</span>
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider uppercase">LAYERS</span>
                 <Button 
                   size="icon" 
                   variant="ghost" 
@@ -748,6 +753,31 @@ export default function SpriteEditorModal({
                 })}
               </div>
             </div>
+
+            {/* PALETTE */}
+            <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 overflow-hidden flex-1 mb-2">
+              <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block uppercase">Palette</span>
+                <button 
+                  onClick={() => setShowAllColors(!showAllColors)}
+                  className={`text-[8px] font-pixel px-2 py-0.5 rounded border transition-colors ${showAllColors ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'border-border text-muted-foreground font-mono'}`}
+                >
+                  {showAllColors ? 'ALL' : 'LAYER SCOPED'}
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+                <PaletteBar
+                  palette={filteredPalette}
+                  colorNames={editedAsset.colorNames}
+                  activeColorKey={activeColorKey}
+                  onSelectColor={setActiveColorKey}
+                  onChangeColor={handleChangeColor}
+                  onAddColor={handleAddColor}
+                  onRemoveColor={handleRemoveColor}
+                  onRenameColor={handleRenameColor}
+                />
+              </div>
+            </div>
           </div>
 
           {/* CENTER: Canvas */}
@@ -798,156 +828,184 @@ export default function SpriteEditorModal({
 
           {/* RIGHT: Preview & Animation Controls */}
           <div className="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pl-1 custom-scrollbar">
-            <div className="bg-secondary/30 rounded-lg border border-border p-4">
-              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block mb-3">PREVIEW</span>
-              <PaletteProvider defaultPalette={editedAsset.palette}>
-                <SpritePreview asset={editedAsset} animationName={viewingAnimation} />
-              </PaletteProvider>
-            </div>
             <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">ANIMACIONES</span>
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">LIBRERIA DE ANIMACIONES</span>
                 <div className="flex gap-2">
-                  <button onClick={selectAllAnims} className="text-[7px] font-pixel text-purple-400 hover:text-purple-300">ALL</button>
-                  <button onClick={clearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NONE</button>
+                  <button onClick={selectAllAnims} className="text-[7px] font-pixel text-purple-400 hover:text-purple-300">TODO</button>
+                  <button onClick={clearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NADA</button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              
+              <div className="flex flex-col gap-2">
+                {/* Special case for BASE frame */}
+                <button
+                  type="button"
+                  onClick={() => { setViewingAnimation('base'); setEditingFrameIndex(0); }}
+                  className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between ${viewingAnimation === 'base'
+                    ? 'bg-purple-600/20 border-purple-500 text-purple-300'
+                    : 'bg-secondary/10 border-border text-muted-foreground hover:border-purple-500/30'
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
+                    <span>BASE (ESTATICO)</span>
+                  </div>
+                </button>
+
                 {AVAILABLE_ANIMS.map(anim => {
-                  const active = selectedAnims.includes(anim.value);
+                  const isViewing = viewingAnimation === anim.value;
+                  const isSelectedForGen = selectedAnims.includes(anim.value);
                   const exists = editedAsset.animations.some(a => a.name === anim.value);
+                  
                   return (
-                    <button
+                    <div 
                       key={anim.value}
-                      type="button"
-                      onClick={() => toggleAnim(anim.value)}
-                      className={`px-3 py-1.5 text-[10px] font-pixel rounded border transition-all flex items-center gap-1.5 ${active
-                        ? 'bg-purple-600/30 border-purple-500 text-purple-300'
-                        : 'bg-secondary/30 border-border text-muted-foreground hover:border-purple-500/50'
-                        }`}
+                      className={`group flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer ${isViewing 
+                        ? 'bg-purple-600/30 border-purple-500' 
+                        : 'bg-secondary/10 border-border hover:border-purple-500/30'
+                      }`}
+                      onClick={() => {
+                        setViewingAnimation(anim.value);
+                        const animDef = editedAsset.animations.find(a => a.name === anim.value);
+                        if (animDef) setEditingFrameIndex(animDef.frameIndices[0]);
+                      }}
                     >
-                      {exists && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]" />
-                      )}
-                      {anim.label.toUpperCase()}
-                    </button>
+                      <div className="flex-1 flex items-center gap-2 overflow-hidden">
+                        {exists ? (
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)] shrink-0" />
+                        ) : (
+                          <div className="w-1.5 h-1.5 rounded-full border border-muted-foreground/50 shrink-0" />
+                        )}
+                        <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-purple-200' : 'text-muted-foreground'}`}>
+                          {anim.label.toUpperCase()}
+                        </span>
+                      </div>
+                      
+                  <div 
+                        className="flex items-center justify-center p-1 hover:bg-white/5 rounded transition-colors group-hover:bg-white/10"
+                        onClick={(e) => { e.stopPropagation(); toggleAnim(anim.value); }}
+                        title="Seleccionar para generación"
+                      >
+                        <Checkbox 
+                          checked={isSelectedForGen}
+                          className={`h-4 w-4 border-muted-foreground/30 rounded-sm ${isSelectedForGen ? 'bg-purple-500 border-purple-500' : 'bg-transparent'}`}
+                        />
+                      </div>
+                    </div>
                   );
                 })}
               </div>
+
               <div className="flex flex-col gap-2 w-full pt-1">
                 <Button
                   onClick={handleGenerateAnimations}
                   disabled={selectedAnims.length === 0 || isAnimGenerating}
-                  className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border"
+                  className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border h-8"
                   title="Generación instantánea por matemática"
                 >
-                  QUICK MATCH (ALGORITHMIC)
+                  QUICK MATCH
                 </Button>
                 <Button
                   onClick={handleGenerateAnimationsAI}
                   disabled={selectedAnims.length === 0 || isAnimGenerating}
-                  className="w-full font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500"
-                  title="Generación de alta calidad usando IA (consume tokens)"
+                  className="w-full font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 h-8"
+                  title="Generación de alta calidad usando IA"
                 >
                   <Sparkles size={12} className="mr-1" />
-                  {isAnimGenerating ? `GENERANDO... ${currentAnimation?.substring(0, 4).toUpperCase()}` : 'GENERAR CON IA'}
+                  {isAnimGenerating ? `GENERANDO...` : 'GENERAR CON IA'}
                 </Button>
               </div>
               {animError && (
-                <div className="text-red-400 text-[10px] mt-1 break-words">{animError}</div>
+                <div className="text-red-400 text-[10px] mt-1 break-words font-mono">{animError}</div>
               )}
             </div>
           </div>
         </div>
 
         {/* FOOTER: Timeline + Save Actions */}
-        <div className="flex flex-col xl:flex-row items-end justify-between pt-3 border-t border-border gap-4 flex-shrink-0">
+        <div className="flex flex-row items-center justify-between pt-3 border-t border-border gap-4 flex-shrink-0">
           {/* Timeline Strip */}
           <div className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col bg-secondary/20 p-2 rounded-lg border border-border">
             {frameCount > 0 ? (
-              <div className="flex flex-col gap-2 w-full">
-                {editedAsset.animations.length > 0 && (
-                  <div className="flex items-center gap-2 border-b border-border/50 pb-2">
-                    <span className="font-pixel text-[8px] text-muted-foreground shrink-0">ANIMACIONES:</span>
-                    <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1">
-                      <button
-                        onClick={() => { setViewingAnimation('base'); setEditingFrameIndex(0); }}
-                        className={`text-[8px] font-pixel px-2 py-1 rounded transition-colors ${viewingAnimation === 'base' ? 'bg-purple-600 border border-purple-500 text-white' : 'bg-background border border-border text-muted-foreground hover:border-purple-500/50 hover:text-foreground'}`}
-                      >
-                        BASE
-                      </button>
-                      {editedAsset.animations.map(a => (
-                        <button
-                          key={a.name}
-                          onClick={() => { setViewingAnimation(a.name); setEditingFrameIndex(a.frameIndices[0]); }}
-                          className={`text-[8px] font-pixel px-2 py-1 rounded transition-colors ${viewingAnimation === a.name ? 'bg-purple-600 border border-purple-500 text-white' : 'bg-background border border-border text-muted-foreground hover:border-purple-500/50 hover:text-foreground'}`}
-                        >
-                          {a.label}
-                        </button>
-                      ))}
-                    </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={visibleFramesIndices.map(i => i.toString())} strategy={horizontalListSortingStrategy}>
+                  <div className="flex gap-4 overflow-x-auto custom-scrollbar flex-1 pb-1 px-2 items-center min-h-[90px]">
+                    {visibleFramesIndices.map((frameIndex) => (
+                      <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
+                          <ContextMenu>
+                            <ContextMenuTrigger asChild>
+                              <div>
+                                <FrameThumb
+                                  frame={compositeFrame(editedAsset, frameIndex)}
+                                  palette={editedAsset.palette}
+                                  size={editedAsset.size}
+                                  isActive={frameIndex === editingFrameIndex}
+                                  label={frameLabels[frameIndex]}
+                                  onClick={() => setEditingFrameIndex(frameIndex)}
+                                />
+                              </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                              <ContextMenuItem onClick={() => handleDuplicateFrame(frameIndex)}>
+                                Duplicar Frame
+                              </ContextMenuItem>
+                              <ContextMenuItem onClick={() => handleInsertEmptyFrame(frameIndex)}>
+                                Insertar Vacío (Después)
+                              </ContextMenuItem>
+                              <ContextMenuSeparator />
+                              <ContextMenuItem disabled={frameIndex === 0} onClick={() => handleDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
+                                Eliminar Frame
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                      </SortableFrameThumb>
+                    ))}
                   </div>
-                )}
-
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={visibleFramesIndices.map(i => i.toString())} strategy={horizontalListSortingStrategy}>
-                    <div className="flex gap-2 overflow-x-auto custom-scrollbar flex-1 pb-1 px-1 items-end min-h-[50px]">
-                      {visibleFramesIndices.map((frameIndex) => (
-                        <SortableFrameThumb key={frameIndex} frameIndex={frameIndex}>
-                            <ContextMenu>
-                              <ContextMenuTrigger asChild>
-                                <div>
-                                  <FrameThumb
-                                    frame={compositeFrame(editedAsset, frameIndex)}
-                                    palette={editedAsset.palette}
-                                    size={editedAsset.size}
-                                    isActive={frameIndex === editingFrameIndex}
-                                    label={frameLabels[frameIndex]}
-                                    onClick={() => setEditingFrameIndex(frameIndex)}
-                                  />
-                                </div>
-                              </ContextMenuTrigger>
-                              <ContextMenuContent>
-                                <ContextMenuItem onClick={() => handleDuplicateFrame(frameIndex)}>
-                                  Duplicar Frame
-                                </ContextMenuItem>
-                                <ContextMenuItem onClick={() => handleInsertEmptyFrame(frameIndex)}>
-                                  Insertar Vacío (Después)
-                                </ContextMenuItem>
-                                <ContextMenuSeparator />
-                                <ContextMenuItem disabled={frameIndex === 0} onClick={() => handleDeleteFrame(frameIndex)} className="text-red-500 hover:text-red-400">
-                                  Eliminar Frame
-                                </ContextMenuItem>
-                              </ContextMenuContent>
-                            </ContextMenu>
-                        </SortableFrameThumb>
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
+                </SortableContext>
+              </DndContext>
             ) : (
               <span className="font-pixel text-[10px] text-muted-foreground">SIN FRAMES</span>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-4 shrink-0">
-            <Button onClick={handleExportPNG} variant="outline" className="font-pixel text-[10px]">
-              <Download size={14} className="mr-2" />
-              EXPORTAR
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="font-pixel text-[10px]">
-                CERRAR
-              </Button>
-              <Button
-                onClick={handleSave}
-                className="font-pixel text-[10px] bg-primary text-primary-foreground hover:bg-primary/80 border border-primary"
+          {/* Right: Integrated Animation Preview + Controls */}
+          <div className="flex-shrink-0 bg-secondary/30 p-2 rounded-lg border border-border flex items-center gap-4 h-[90px]">
+            <div className="flex flex-col gap-1 items-center justify-center pt-1">
+              <div className="flex items-center justify-center bg-black/20 rounded-md p-1.5 border border-border/50 shadow-inner">
+                <PaletteProvider defaultPalette={editedAsset.palette}>
+                  <SpritePreview 
+                    asset={editedAsset} 
+                    animationName={viewingAnimation} 
+                    scale={4} 
+                    showLabel={false} 
+                    currentFrameOverride={previewState.currentFrame}
+                  />
+                </PaletteProvider>
+              </div>
+              {/* Spacer to match FrameThumb label height */}
+              <div className="h-[12px] w-full" />
+            </div>
+            
+            <div className="flex flex-col gap-2 border-l border-border/50 pl-4 py-1">
+              <button 
+                onClick={() => setIsPlaying(!isPlaying)}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all hover:scale-105 ${isPlaying ? 'bg-purple-600/20 text-purple-400 border-purple-500/50' : 'bg-background text-muted-foreground border-border'}`}
+                title={isPlaying ? "Pause" : "Play"}
               >
-                <Save size={14} className="mr-2" />
-                GUARDAR
-              </Button>
+                {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+              </button>
+              
+              <div className="flex items-center gap-3 bg-black/40 rounded-lg p-2 border border-border/50 h-10">
+                <div className="flex flex-col leading-none">
+                  <span className="font-mono text-[10px] font-bold text-primary">{fps}</span>
+                  <span className="font-pixel text-[6px] text-muted-foreground uppercase opacity-50">fps</span>
+                </div>
+                <div className="flex flex-col">
+                  <button onClick={() => setFps(Math.min(24, fps + 1))} className="text-muted-foreground hover:text-foreground transition-colors"><PlusIcon size={12} /></button>
+                  <button onClick={() => setFps(Math.max(1, fps - 1))} className="text-muted-foreground hover:text-foreground transition-colors"><MinusIcon size={12} /></button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
