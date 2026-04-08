@@ -22,7 +22,7 @@ export const PaletteSection = React.memo(() => {
         <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block uppercase">Palette</span>
         <button 
           onClick={() => setShowAllColors(!showAllColors)}
-          className={`text-[8px] font-pixel px-2 py-0.5 rounded border transition-colors ${showAllColors ? 'bg-purple-500/20 border-purple-500 text-purple-400' : 'border-border text-muted-foreground font-mono'}`}
+          className={`text-[8px] font-pixel px-2 py-0.5 rounded border transition-colors ${showAllColors ? 'bg-primary/10 border-primary text-primary' : 'border-border text-muted-foreground font-mono'}`}
         >
           {showAllColors ? 'ALL' : 'LAYER SCOPED'}
         </button>

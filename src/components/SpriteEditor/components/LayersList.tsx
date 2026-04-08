@@ -24,7 +24,7 @@ export const LayersList = React.memo(() => {
         <Button 
           size="icon" 
           variant="ghost" 
-          className="h-6 w-6 text-purple-400 hover:text-purple-300 hover:bg-purple-600/20"
+          className="h-6 w-6 text-primary hover:text-green-300 hover:bg-primary/20"
           onClick={handleAddLayer}
         >
           <Plus size={14} />
@@ -42,15 +42,15 @@ export const LayersList = React.memo(() => {
               onClick={() => setActiveLayerId(layer.id)}
               className={`group flex items-center gap-2 p-2 rounded border cursor-pointer transition-all ${
                 isActive 
-                  ? 'bg-purple-600/20 border-purple-500/50 text-foreground' 
+                  ? 'bg-primary/10 border-primary text-foreground' 
                   : 'bg-background/20 border-transparent hover:bg-secondary/40 text-muted-foreground'
               }`}
             >
               <button 
-                className={`hover:text-primary transition-colors ${!layer.isVisible && 'text-muted-foreground/30'}`}
+                className={`transition-colors ${isActive ? 'text-primary' : (layer.isVisible ? 'hover:text-primary' : 'text-muted-foreground/30')}`}
                 onClick={(e) => { e.stopPropagation(); handleToggleLayerVisibility(layer.id); }}
               >
-                {layer.isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+                {layer.isVisible ? <Eye size={12} strokeWidth={2.5} /> : <EyeOff size={12} strokeWidth={2} />}
               </button>
               
               <div className="flex-1 min-w-0 flex items-center gap-2">

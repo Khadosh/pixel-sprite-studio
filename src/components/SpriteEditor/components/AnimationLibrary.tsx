@@ -32,7 +32,7 @@ export const AnimationLibrary = React.memo(() => {
       <div className="flex items-center justify-between mb-1">
         <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">LIBRERIA DE ANIMACIONES</span>
         <div className="flex gap-2">
-          <button onClick={selectAllAnims} className="text-[7px] font-pixel text-purple-400 hover:text-purple-300">TODO</button>
+          <button onClick={selectAllAnims} className="text-[7px] font-pixel text-primary hover:text-green-400">TODO</button>
           <button onClick={clearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NADA</button>
         </div>
       </div>
@@ -45,8 +45,8 @@ export const AnimationLibrary = React.memo(() => {
             setEditingFrameIndex(0);
           }}
           className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between ${viewingAnimation === 'base'
-            ? 'bg-purple-600/20 border-purple-500 text-purple-300'
-            : 'bg-secondary/10 border-border text-muted-foreground hover:border-purple-500/30'
+            ? 'bg-primary/10 border-primary text-primary'
+            : 'bg-secondary/10 border-border text-muted-foreground hover:border-primary/30'
             }`}
         >
           <div className="flex items-center gap-2">
@@ -64,8 +64,8 @@ export const AnimationLibrary = React.memo(() => {
             <div 
               key={anim.value}
               className={`group flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer ${isViewing 
-                ? 'bg-purple-600/30 border-purple-500' 
-                : 'bg-secondary/10 border-border hover:border-purple-500/30'
+                ? 'bg-primary/5 border-primary shadow-[inset_0_0_10px_rgba(34,197,94,0.05)]' 
+                : 'bg-secondary/10 border-border hover:border-primary/30'
               }`}
               onClick={() => {
                 setViewingAnimation(anim.value);
@@ -79,7 +79,7 @@ export const AnimationLibrary = React.memo(() => {
                 ) : (
                   <div className="w-1.5 h-1.5 rounded-full border border-muted-foreground/50 shrink-0" />
                 )}
-                <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-purple-200' : 'text-muted-foreground'}`}>
+                <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-primary' : 'text-muted-foreground'}`}>
                   {anim.label.toUpperCase()}
                 </span>
                 
@@ -88,22 +88,22 @@ export const AnimationLibrary = React.memo(() => {
                     <PopoverTrigger asChild>
                       <button 
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-white/10 rounded-full text-muted-foreground hover:text-purple-400 transition-colors"
+                        className="p-1 hover:bg-white/10 rounded-full text-muted-foreground hover:text-primary transition-colors"
                       >
                         <Settings size={12} />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-48 bg-[#1a1a2e] border-purple-500/30 p-3 space-y-3" side="left" align="center" style={{ zIndex: 100 }}>
+                    <PopoverContent className="w-48 bg-[#0a0a0f] border-primary/30 p-3 space-y-3" side="left" align="center" style={{ zIndex: 100 }}>
                       <div className="space-y-1">
-                        <label className="text-[9px] font-pixel text-purple-400 uppercase tracking-tighter">Elemento</label>
+                        <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Elemento</label>
                         <Select 
                           value={castSettings.element} 
                           onValueChange={(val: CastElement) => setCastSettings(prev => ({ ...prev, element: val }))}
                         >
-                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-purple-500/20">
+                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-primary/20">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1a1a2e] border-purple-500/40 z-[110]">
+                          <SelectContent className="bg-[#0a0a0f] border-primary/40 z-[110]">
                             <SelectItem value="generic" className="text-[9px] font-pixel">GENERIC</SelectItem>
                             <SelectItem value="fire" className="text-[9px] font-pixel text-orange-400">FIRE</SelectItem>
                             <SelectItem value="water" className="text-[9px] font-pixel text-blue-400">WATER</SelectItem>
@@ -114,15 +114,15 @@ export const AnimationLibrary = React.memo(() => {
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[9px] font-pixel text-purple-400 uppercase tracking-tighter">Forma</label>
+                        <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Forma</label>
                         <Select 
                           value={castSettings.shape} 
                           onValueChange={(val: CastShape) => setCastSettings(prev => ({ ...prev, shape: val }))}
                         >
-                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-purple-500/20">
+                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-primary/20">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1a1a2e] border-purple-500/40 z-[110]">
+                          <SelectContent className="bg-[#0a0a0f] border-primary/40 z-[110]">
                             <SelectItem value="burst" className="text-[9px] font-pixel">BURST</SelectItem>
                             <SelectItem value="circle" className="text-[9px] font-pixel">CIRCLE</SelectItem>
                             <SelectItem value="beam" className="text-[9px] font-pixel">BEAM</SelectItem>
@@ -143,7 +143,7 @@ export const AnimationLibrary = React.memo(() => {
               >
                 <Checkbox 
                   checked={isSelectedForGen}
-                  className={`h-4 w-4 border-muted-foreground/30 rounded-sm ${isSelectedForGen ? 'bg-purple-500 border-purple-500' : 'bg-transparent'}`}
+                  className={`h-4 w-4 border-muted-foreground/30 rounded-sm ${isSelectedForGen ? 'bg-primary border-primary' : 'bg-transparent'}`}
                 />
               </div>
             </div>
@@ -155,16 +155,16 @@ export const AnimationLibrary = React.memo(() => {
         <Button
           onClick={handleGenerateAnimations}
           disabled={selectedAnims.length === 0 || isGenerating || isAnimGenerating}
-          className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border h-8"
+          className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border h-8 transition-all"
         >
           QUICK MATCH
         </Button>
         <Button
           onClick={handleGenerateAnimationsAI}
           disabled={selectedAnims.length === 0 || isGenerating || isAnimGenerating}
-          className="w-full font-pixel text-[8px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 h-8"
+          className="w-full font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all"
         >
-          <Sparkles size={12} className="mr-1" />
+          <Sparkles size={14} strokeWidth={2.5} className="mr-1" />
           {isAnimGenerating ? `GENERANDO...` : 'GENERAR CON IA'}
         </Button>
       </div>

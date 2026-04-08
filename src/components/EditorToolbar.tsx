@@ -65,7 +65,7 @@ export default React.memo(function EditorToolbar({
   onCopy, onPaste, onFlipH, onFlipV, onRotate
 }: EditorToolbarProps) {
   const btnBase = 'p-2 rounded border transition-all';
-  const btnActive = 'border-purple-500 bg-purple-600/30 text-purple-300';
+  const btnActive = 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(34,197,94,0.2)]';
   const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
   const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
 
@@ -80,7 +80,7 @@ export default React.memo(function EditorToolbar({
           onClick={() => onToolChange(t.id)} 
           className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
         >
-          <t.icon size={14} />
+          <t.icon size={16} strokeWidth={2.5} />
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -122,7 +122,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onCopy} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <Copy size={13} />
+                <Copy size={15} strokeWidth={2} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">COPIAR ({scope})</TooltipContent>
@@ -131,7 +131,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onPaste} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <ClipboardList size={13} />
+                <ClipboardList size={15} strokeWidth={2} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">PEGAR ({scope})</TooltipContent>
@@ -142,7 +142,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onFlipH} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <FlipHorizontal size={13} />
+                <FlipHorizontal size={15} strokeWidth={2} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">FLIP H ({scope})</TooltipContent>
@@ -151,7 +151,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onFlipV} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <FlipVertical size={13} />
+                <FlipVertical size={15} strokeWidth={2} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">FLIP V ({scope})</TooltipContent>
@@ -160,7 +160,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onRotate} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <RotateCw size={13} />
+                <RotateCw size={15} strokeWidth={2} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">ROTAR 90° ({scope})</TooltipContent>
@@ -193,7 +193,7 @@ export default React.memo(function EditorToolbar({
                 onClick={onToggleMirrorX}
                 className={`${btnBase} ${mirrorX ? btnActive : btnInactive}`}
               >
-                <SplitSquareHorizontal size={14} />
+                <SplitSquareHorizontal size={16} strokeWidth={2.5} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -212,7 +212,7 @@ export default React.memo(function EditorToolbar({
                 onClick={() => onScopeChange(scope === 'layer' ? 'frame' : 'layer')}
                 className={`${btnBase} flex items-center gap-1.5 px-2 bg-secondary/30 border-border text-muted-foreground hover:text-foreground`}
               >
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: scope === 'layer' ? '#a855f7' : '#3b82f6' }} />
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: scope === 'layer' ? 'hsl(var(--primary))' : 'hsl(var(--accent))' }} />
                 <span className="text-[8px] font-pixel uppercase tracking-tighter">
                   {scope}
                 </span>

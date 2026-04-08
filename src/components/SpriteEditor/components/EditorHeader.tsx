@@ -38,11 +38,11 @@ export const EditorHeader = React.memo(() => {
             onChange={e => setAssetName(e.target.value)}
             onBlur={() => setIsEditingName(false)}
             onKeyDown={e => e.key === 'Enter' && setIsEditingName(false)}
-            className="bg-background border border-purple-500 rounded px-2 py-1 text-sm font-pixel text-primary outline-none"
+            className="bg-background border border-primary rounded px-2 py-1 text-sm font-pixel text-primary outline-none focus:shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all"
           />
         ) : (
           <DialogTitle
-            className="font-pixel text-sm text-primary tracking-wider flex items-center gap-2 cursor-pointer hover:text-purple-400 transition-colors"
+            className="font-pixel text-sm text-primary tracking-wider flex items-center gap-2 cursor-pointer hover:text-green-400 transition-colors"
             onClick={() => setIsEditingName(true)}
             title="Click para editar nombre"
           >
@@ -63,10 +63,10 @@ export const EditorHeader = React.memo(() => {
               variant="outline"
               onClick={onRegenerate}
               disabled={isGenerating}
-              className="font-pixel text-[10px] border-purple-500/50 text-purple-400 hover:bg-purple-600/20"
+              className="font-pixel text-[10px] border-primary/50 text-primary hover:bg-primary/10 transition-all"
             >
               {isGenerating ? 'GENERANDO...' : 'REGENERAR'}
-              {!isGenerating && <Sparkles size={12} className="ml-1" />}
+              {!isGenerating && <Sparkles size={14} strokeWidth={2.5} className="ml-1" />}
             </Button>
           </div>
         )}
@@ -77,9 +77,9 @@ export const EditorHeader = React.memo(() => {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="font-pixel text-[9px] h-8 border-purple-500/30 text-purple-300 hover:bg-purple-600/10"
+                className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
               >
-                <Download size={14} className="mr-2" />
+                <Download size={15} strokeWidth={2.5} className="mr-2" />
                 EXPORTAR
               </Button>
             </DropdownMenuTrigger>
@@ -88,19 +88,19 @@ export const EditorHeader = React.memo(() => {
                 Opciones de Exportación
               </DropdownMenuLabel>
               
-              <DropdownMenuItem onClick={() => handleExportPNG()} className="cursor-pointer gap-2 focus:bg-purple-500/10 focus:text-purple-300">
+              <DropdownMenuItem onClick={() => handleExportPNG()} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
                 <ImageIcon size={14} />
                 PNG SPRITE SHEET
               </DropdownMenuItem>
               
-              <DropdownMenuItem onClick={() => handleExportPNG({ includeLabels: true })} className="cursor-pointer gap-2 focus:bg-purple-500/10 focus:text-purple-300">
+              <DropdownMenuItem onClick={() => handleExportPNG({ includeLabels: true })} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
                 <HardDrive size={14} />
                 PNG CON ETIQUETAS
               </DropdownMenuItem>
               
               <DropdownMenuSeparator className="bg-border" />
               
-              <DropdownMenuItem onClick={handleExportGIF} className="cursor-pointer gap-2 focus:bg-purple-500/10 focus:text-purple-300">
+              <DropdownMenuItem onClick={handleExportGIF} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
                 <FileVideo size={14} />
                 EXPORTAR GIF ({viewingAnimation.toUpperCase()})
               </DropdownMenuItem>
@@ -110,9 +110,9 @@ export const EditorHeader = React.memo(() => {
           <Button
             onClick={handleSave}
             size="sm"
-            className="font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+            className="font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all"
           >
-            <Save size={14} className="mr-2" />
+            <Save size={15} strokeWidth={2.5} className="mr-2" />
             GUARDAR
           </Button>
         </div>
