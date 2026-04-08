@@ -65,6 +65,7 @@ export interface SpriteEditorContextValue {
   handleExportPNG: (options?: { includeLabels?: boolean }) => void;
   handleExportGIF: () => Promise<void>;
   handleSave: () => void;
+  handleClose: () => void;
   undo: () => void;
   canUndo: boolean;
   tool: EditorTool;
@@ -122,10 +123,14 @@ export interface SpriteEditorContextValue {
   onRegenerate?: () => void; // From props
   generatePrompt?: string; // From props
 
+  // Zoom
+  zoom: number;
+  setZoom: (z: number | ((prev: number) => number)) => void;
+
   // Drawing Props (for SpritePixelEditor)
   draftFrame: number[][] | null;
-  handlePointerDown: (row: number, col: number) => void;
-  handlePointerMove: (row: number, col: number) => void;
+  handlePointerDown: (row: number, col: number, forceTool?: any) => void;
+  handlePointerMove: (row: number, col: number, forceTool?: any) => void;
   handlePointerUp: () => void;
   moveOffset?: { dr: number; dc: number; activeLayerId?: string | null } | null;
   rotationAngle: number;

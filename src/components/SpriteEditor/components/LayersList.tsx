@@ -84,7 +84,7 @@ export const LayersList = React.memo(() => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex flex-col gap-1 flex-1 overflow-y-auto custom-scrollbar pr-1">
         {[...layers].reverse().map((layer, revIdx) => {
           const idx = layers.length - 1 - revIdx;
           const isActive = layer.id === activeLayerId;

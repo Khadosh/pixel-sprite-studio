@@ -38,6 +38,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     shape: 'burst',
     element: 'generic',
   });
+  const [zoom, setZoom] = useState(1.0);
 
   const previewPanelRef = useRef<import('../components/AnimationPreviewPanel').AnimationPreviewPanelHandle>(null);
 
@@ -147,11 +148,30 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
         case 'r': setTool('rotate'); break;
         case 'm': setMirrorX((prev: boolean) => !prev); break;
         case 'z': if (e.ctrlKey || e.metaKey) { e.preventDefault(); undo(); } break;
+        case '+':
+        case '=':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setZoom(prev => Math.min(prev + 0.1, 8));
+          }
+          break;
+        case '-':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setZoom(prev => Math.max(prev - 0.1, 0.1));
+          }
+          break;
+        case '0':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setZoom(1.0);
+          }
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, setTool, setMirrorX]); 
+  }, [undo, setTool, setMirrorX, setZoom]); 
 
   const handleSave = () => {
     onSave({ ...editedAsset, name: assetName });
@@ -207,9 +227,12 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     activeColorKey,
     setActiveColorKey: setEditorColorKey,
     handleSave,
+    handleClose: () => onOpenChange(false),
     rotationAngle,
     moveOffset,
     rotationCenter,
+    zoom,
+    setZoom,
     isGenerating: props.isGenerating,
     onRegenerate: props.onRegenerate,
     generatePrompt: props.generatePrompt

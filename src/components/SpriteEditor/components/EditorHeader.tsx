@@ -1,5 +1,5 @@
 import React from 'react';
-import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { Edit2, Sparkles, Download, Save, Image as ImageIcon, FileVideo, HardDrive } from 'lucide-react';
+import { Edit2, Sparkles, Download, Save, Image as ImageIcon, FileVideo, HardDrive, ChevronLeft } from 'lucide-react';
 import { useSpriteEditorContext } from '../context/SpriteEditorContext';
 
 export const EditorHeader = React.memo(() => {
@@ -24,12 +24,23 @@ export const EditorHeader = React.memo(() => {
     handleExportPNG,
     handleExportGIF,
     handleSave,
+    handleClose,
     viewingAnimation
   } = useSpriteEditorContext();
 
   return (
-    <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0 pr-12">
-      <div className="flex items-center gap-2">
+    <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClose}
+          className="text-muted-foreground hover:text-foreground font-pixel text-[10px] gap-1"
+        >
+          <ChevronLeft size={14} /> SALIR
+        </Button>
+        <div className="w-px h-4 bg-border mx-1" />
+        <div className="flex items-center gap-2">
         {isEditingName ? (
           <input
             autoFocus
@@ -51,6 +62,7 @@ export const EditorHeader = React.memo(() => {
           </DialogTitle>
         )}
       </div>
+    </div>
 
       <div className="flex items-center gap-4">
         {generatePrompt && onRegenerate && (

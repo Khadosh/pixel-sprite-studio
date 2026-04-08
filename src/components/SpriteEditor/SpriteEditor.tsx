@@ -10,6 +10,7 @@ import { PaletteSection } from './components/PaletteSection';
 import { AnimationLibrary } from './components/AnimationLibrary';
 import { TimelineStrip } from './components/Timeline/TimelineStrip';
 import { AnimationPreviewPanel } from './components/AnimationPreviewPanel';
+import { ZoomControl } from './components/ZoomControl';
 import { SpriteEditorModalProps } from './types';
 import { PaletteProvider } from '@/hooks/usePalette';
 
@@ -21,7 +22,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <SpriteEditorProvider value={editor}>
         <PaletteProvider defaultPalette={editor.editedAsset.palette}>
-          <DialogContent className="w-[95vw] max-w-none h-[95vh] max-h-none flex flex-col bg-card border-border p-4 gap-4 overflow-hidden">
+          <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none flex flex-col bg-background p-4 gap-4 overflow-hidden border-none rounded-none translate-x-0 translate-y-0 [&>button]:hidden">
             <EditorHeader />
 
             {/* MAIN BODY: 3 Columns */}
@@ -56,7 +57,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                     onRotate={editor.handleRotate}
                   />
                 </div>
-                <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
+                <div className="flex-1 overflow-auto custom-scrollbar flex items-center justify-center p-4 relative">
                   <SpritePixelEditor
                     asset={editor.editedAsset}
                     frameIndex={editor.editingFrameIndex}
@@ -73,7 +74,10 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                     rotationCenter={editor.rotationCenter}
                     onionSkinPrevFrame={editor.onionGhostFrames.prev}
                     onionSkinNextFrame={editor.onionGhostFrames.next}
+                    zoom={editor.zoom}
+                    setZoom={editor.setZoom}
                   />
+                  <ZoomControl />
                 </div>
               </div>
 

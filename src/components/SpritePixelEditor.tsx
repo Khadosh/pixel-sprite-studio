@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { rotateFrameFree } from '@/lib/spriteTransforms';
 
-const PIXEL_SCALE = 20;
+const BASE_PIXEL_SCALE = 20;
 const CHECKER_SIZE = 5;
 const GRID_COLOR = '#2a2a42';
 
@@ -12,8 +12,8 @@ interface SpritePixelEditorProps {
   activeColorKey: number;
   activeLayerId: string | null;
   tool: string;
-  onPointerDown: (row: number, col: number) => void;
-  onPointerMove: (row: number, col: number) => void;
+  onPointerDown: (row: number, col: number, forceTool?: any) => void;
+  onPointerMove: (row: number, col: number, forceTool?: any) => void;
   onPointerUp: () => void;
   brushSize: number;
   onionSkinPrevFrame?: number[][];
@@ -22,6 +22,8 @@ interface SpritePixelEditorProps {
   moveOffset?: { dr: number; dc: number; activeLayerId?: string | null } | null;
   rotationAngle?: number | null;
   rotationCenter?: { r: number; c: number; activeLayerId?: string | null } | null;
+  zoom: number;
+  setZoom: (z: number | ((prev: number) => number)) => void;
 }
 
 export default function SpritePixelEditor({
@@ -37,10 +39,18 @@ export default function SpritePixelEditor({
   moveOffset,
   rotationAngle,
   rotationCenter,
+  zoom,
+  setZoom,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
+  
+  // Panning state
+  const panStart = useRef<{ x: number; y: number } | null>(null);
+  const scrollStart = useRef<{ left: number; top: number } | null>(null);
+  const isPanning = useRef(false);
 
+  const PIXEL_SCALE = BASE_PIXEL_SCALE * zoom;
   const canvasSize = asset.size * PIXEL_SCALE;
   
   // No longer using a single 'frame' variable at the top level
@@ -59,7 +69,7 @@ export default function SpritePixelEditor({
     const row = Math.floor(y / PIXEL_SCALE);
     if (row < 0 || row >= asset.size || col < 0 || col >= asset.size) return null;
     return { r: row, c: col };
-  }, [asset.size]);
+  }, [asset.size, PIXEL_SCALE]);
 
   // Draw frame
   useEffect(() => {
@@ -193,33 +203,76 @@ export default function SpritePixelEditor({
   }, [asset, activeLayerId, draftFrame, moveOffset, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    // Only accept left click
-    if (e.button !== 0) return;
-    
     // Attempt pointer capture to track outside canvas
     e.currentTarget.setPointerCapture(e.pointerId);
 
     const cell = getCell(e);
-    if (!cell) return;
+    
+    if (e.button === 1) { // Middle Click (Wheel)
+      // START PANNING
+      panStart.current = { x: e.clientX, y: e.clientY };
+      const parent = e.currentTarget.parentElement?.parentElement; // Scrollable container (div.overflow-auto)
+      if (parent) {
+        scrollStart.current = { left: parent.scrollLeft, top: parent.scrollTop };
+      }
+      isPanning.current = false; 
+      return;
+    }
 
-    onPointerDown(cell.r, cell.c);
+    if (e.button === 2) { // Right Click
+      // QUICK ERASE ONLY
+      if (cell) {
+        onPointerDown(cell.r, cell.c, 'eraser');
+      }
+      return;
+    }
+
+    if (e.button === 0) { // Left Click
+      if (!cell) return;
+      onPointerDown(cell.r, cell.c);
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const cell = getCell(e);
     setHoverCell(cell);
-    if (cell && e.buttons === 1) { // 1 means primary button is pressed
+
+    if (e.buttons === 4 && panStart.current && scrollStart.current) { // 4 is middle button mask
+      // Middle Click Pan
+      const dx = e.clientX - panStart.current.x;
+      const dy = e.clientY - panStart.current.y;
+      
+      const parent = e.currentTarget.parentElement?.parentElement;
+      if (parent) {
+        parent.scrollLeft = scrollStart.current.left - dx;
+        parent.scrollTop = scrollStart.current.top - dy;
+      }
+      return;
+    }
+
+    if (cell && (e.buttons === 1)) { // 1 is primary button mask
       onPointerMove(cell.r, cell.c);
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.currentTarget.releasePointerCapture(e.pointerId);
+    panStart.current = null;
+    scrollStart.current = null;
+    isPanning.current = false;
     onPointerUp();
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(prev => Math.max(0.1, Math.min(8, prev + delta)));
+    }
   };
 
   return (
@@ -228,12 +281,13 @@ export default function SpritePixelEditor({
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
-        className="rounded border border-border cursor-crosshair max-w-full max-h-full shrink-0 shadow-lg touch-none"
-        style={{ imageRendering: 'pixelated', objectFit: 'contain', aspectRatio: '1 / 1' }}
+        className="rounded border border-border cursor-crosshair shrink-0 shadow-lg touch-none"
+        style={{ imageRendering: 'pixelated' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
+        onWheel={handleWheel}
         onMouseLeave={() => { setHoverCell(null); }}
       />
     </div>

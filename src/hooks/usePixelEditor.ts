@@ -171,11 +171,13 @@ export function usePixelEditor(
     updateActiveLayerFrame(newFrame);
   };
 
-  const handlePointerDown = useCallback((r: number, c: number) => {
+  const handlePointerDown = useCallback((r: number, c: number, forceTool?: EditorTool) => {
     const frame = getActiveLayerFrame();
     if (!frame) return;
     
-    if (tool === 'move') {
+    const activeTool = forceTool || tool;
+    
+    if (activeTool === 'move') {
       strokeStart.current = { r, c };
       isDrawing.current = true;
       const f = getActiveLayerFrame();
@@ -183,7 +185,7 @@ export function usePixelEditor(
       return;
     }
 
-    if (tool === 'rotate') {
+    if (activeTool === 'rotate') {
       isDrawing.current = true;
       const baseFrame = scope === 'frame' ? compositeFrame(asset, frameIndex) : getActiveLayerFrame();
       const center = baseFrame ? getCenterOfMass(baseFrame) : { r: 7.5, c: 7.5 };
@@ -199,7 +201,7 @@ export function usePixelEditor(
       return;
     }
 
-    if (tool === 'picker') {
+    if (activeTool === 'picker') {
       const colorId = frame[r][c];
       if (colorId !== 0) setActiveColorKey(colorId);
       return;
@@ -207,7 +209,7 @@ export function usePixelEditor(
 
     pushUndo();
 
-    if (tool === 'fill') {
+    if (activeTool === 'fill') {
       executeFloodFill(r, c);
       return;
     }
@@ -215,9 +217,8 @@ export function usePixelEditor(
     isDrawing.current = true;
     strokeStart.current = { r, c };
 
-    const value = tool === 'eraser' ? 0 : activeColorKey;
-
-    if (tool === 'pencil' || tool === 'eraser') {
+    const value = activeTool === 'eraser' ? 0 : activeColorKey;
+    if (activeTool === 'pencil' || activeTool === 'eraser') {
       strokeMutableFrame.current = frame.map(row => [...row]);
       applyPixelsToFrame(strokeMutableFrame.current, expandBrush(r, c, value, asset.size), asset.size);
       updateActiveLayerFrame(strokeMutableFrame.current);
@@ -229,15 +230,17 @@ export function usePixelEditor(
     }
   }, [tool, activeColorKey, asset, frameIndex, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush, scope]);
 
-  const handlePointerMove = useCallback((r: number, c: number) => {
-    if (tool === 'move' && strokeStart.current) {
+  const handlePointerMove = useCallback((r: number, c: number, forceTool?: EditorTool) => {
+    const activeTool = forceTool || tool;
+
+    if (activeTool === 'move' && strokeStart.current) {
       const dr = r - strokeStart.current.r;
       const dc = c - strokeStart.current.c;
       setMoveOffset({ dr, dc, activeLayerId: scope === 'layer' ? activeLayerId : null });
       return;
     }
 
-    if (tool === 'rotate' && rotationCenter) {
+    if (activeTool === 'rotate' && rotationCenter) {
       const currentAngle = Math.atan2(r - rotationCenter.r, c - rotationCenter.c);
       const diff = ((currentAngle - initialRotationAngle) * 180) / Math.PI;
       setRotationAngle(diff);
@@ -247,9 +250,9 @@ export function usePixelEditor(
     const frame = getActiveLayerFrame();
     if (!isDrawing.current || !strokeStart.current || !frame) return;
 
-    const value = tool === 'eraser' ? 0 : activeColorKey;
+    const value = activeTool === 'eraser' ? 0 : activeColorKey;
 
-    if (tool === 'pencil' || tool === 'eraser') {
+    if (activeTool === 'pencil' || activeTool === 'eraser') {
       if (strokeMutableFrame.current) {
         applyPixelsToFrame(strokeMutableFrame.current, getLinePixels(strokeStart.current.r, strokeStart.current.c, r, c, value, asset.size), asset.size);
         strokeStart.current = { r, c }; 
@@ -258,7 +261,7 @@ export function usePixelEditor(
       }
     } else {
       const shapeDraft = Array.from({ length: asset.size }, () => Array(asset.size).fill(-1));
-      const pixels = getShapePixels(tool, strokeStart.current.r, strokeStart.current.c, r, c, value, asset.size);
+      const pixels = getShapePixels(activeTool as string, strokeStart.current.r, strokeStart.current.c, r, c, value, asset.size);
       applyPixelsToFrame(shapeDraft, pixels, asset.size);
       setDraftFrame(shapeDraft);
     }
