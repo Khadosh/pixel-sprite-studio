@@ -5,20 +5,18 @@ import { SpriteAsset } from '@/lib/types';
 export const assetKeys = {
   all: ['assets'] as const,
   lists: () => [...assetKeys.all, 'list'] as const,
-  list: (category?: string) => [...assetKeys.lists(), { category }] as const,
+  list: (category?: string, size?: number) => [...assetKeys.lists(), { category, size }] as const,
   details: () => [...assetKeys.all, 'detail'] as const,
   detail: (id: string) => [...assetKeys.details(), id] as const,
 };
 
-export function useAssets(category?: string) {
+export function useAssets(category?: string, size?: number) {
   return useQuery({
-    queryKey: assetKeys.list(category),
+    queryKey: assetKeys.list(category, size),
     queryFn: async () => {
-      // Simulate network request for consistency if desired, or just return static
-      return getAssetsByCategory(category || 'all');
+      // Return filtered static assets
+      return getAssetsByCategory(category || 'all', size);
     },
-    // We don't need real staletime for now since it's static,
-    // but the query pattern makes it easier to migrate later.
     staleTime: Infinity,
   });
 }
@@ -40,12 +38,14 @@ export function useAsset(id?: string) {
 /**
  * Hook to get the counts per category for the filter component
  */
-export function useAssetCategoryCounts() {
+export function useAssetCategoryCounts(size?: number) {
   return useQuery({
-    queryKey: [...assetKeys.all, 'counts'],
+    queryKey: [...assetKeys.all, 'counts', { size }],
     queryFn: async () => {
       const counts: Record<string, number> = {};
-      ASSET_CATALOG.forEach((a: SpriteAsset) => {
+      const assets = size ? ASSET_CATALOG.filter(a => a.size === size) : ASSET_CATALOG;
+      
+      assets.forEach((a: SpriteAsset) => {
         counts[a.category] = (counts[a.category] ?? 0) + 1;
       });
       return counts;
