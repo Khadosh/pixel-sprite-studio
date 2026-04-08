@@ -37,6 +37,8 @@ const mockAsset: SpriteAsset = {
       id: 'layer-1',
       name: 'Layer 1',
       isVisible: true,
+      isLocked: false,
+      opacity: 1,
       frames: [Array(16).fill(Array(16).fill(0))],
     }
   ],
