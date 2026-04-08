@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, size = 32 } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return new Response(
@@ -75,7 +75,48 @@ Deno.serve(async (req) => {
       );
     }
 
-    const userPrompt = `Generate a 32×32 pixel art sprite of: ${prompt.trim().slice(0, 300)}`;
+    const SYSTEM_PROMPT = `You are an expert pixel art sprite designer specializing in ${size}×${size} retro game assets. You create detailed, recognizable sprites that make efficient use of every pixel.
+
+CANVAS RULES:
+- Frame: ${size}×${size} 2D array of integers. 0 = transparent.
+- Palette: integer keys (1, 2, 3...) → hex color strings. Key 0 is always transparent (NOT in palette).
+- Use 8-12 colors. Include a dark outline/shadow color, mid-tones, and highlights.
+- colorNames: human-readable name for each color.
+
+COMPOSITION RULES:
+- Use the FULL ${size}×${size} canvas. The sprite should occupy at least 80% of the vertical and horizontal space.
+- Leave 1-2 rows/columns of transparency for padding return, no more.
+- Characters should be recognizable by their SILHOUETTE alone.
+- Use 1px dark outlines to define shapes clearly.
+- Reserve 1-2 pixels for highlights/shine to add depth.
+
+CHARACTER DESIGN (for creatures, humanoids, monsters):
+- Include ALL key anatomical features that define the subject: head, body, limbs.
+- Proportions: the head should be roughly 25-30% of height (chibi/retro style).
+- Face: at minimum eyes (1-2px each). 
+- Side or 3/4 view is preferred over front-facing — it gives more visual detail.
+
+OBJECTS & PROPS:
+- Fill at least 70% of the canvas with the object.
+- Add shadow/depth with darker shades on one side.
+
+COLOR TECHNIQUE:
+- Use adjacent palette values for shading: light → base → dark of the same hue.
+- Outline color should be darker than the darkest fill color.
+- Avoid pure black (#000000) for outlines.
+
+CRITICAL INSTRUCTION:
+- YOU MUST DRAW THE SPRITE USING THE PALETTE KEYS (1, 2, 3...). 
+- DO NOT RETURN AN EMPTY FRAME OF ALL 0s. Fill the array to form the shape of the requested character.
+
+OUTPUT (respond ONLY with this JSON):
+{
+  "palette": { "1": "#hex", "2": "#hex", ... },
+  "colorNames": { "1": "Dark Outline", "2": "Base Color", ... },
+  "frame": [[0,0,...], [0,0,...], ...]
+}`;
+
+    const userPrompt = `Generate a ${size}×${size} pixel art sprite of: ${prompt.trim().slice(0, 300)}`;
 
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
       method: "POST",
@@ -117,7 +158,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse the JSON (Gemini with responseMimeType should return clean JSON, but strip fences just in case)
+    // Parse the JSON
     const jsonStr = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     let parsed: { palette: Record<string, string>; colorNames: Record<string, string>; frame: number[][] };
 
@@ -132,18 +173,18 @@ Deno.serve(async (req) => {
     }
 
     // Validate frame dimensions
-    if (!Array.isArray(parsed.frame) || parsed.frame.length !== 32 ||
-        !parsed.frame.every(row => Array.isArray(row) && row.length === 32)) {
+    if (!Array.isArray(parsed.frame) || parsed.frame.length !== size ||
+        !parsed.frame.every(row => Array.isArray(row) && row.length === size)) {
       return new Response(
-        JSON.stringify({ error: "LLM returned invalid frame dimensions (expected 32×32)" }),
+        JSON.stringify({ error: `IA devolvió dimensiones inválidas (esperado ${size}x${size})` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Validate that the frame is not completely empty
     let hasPixels = false;
-    for (let r = 0; r < 32; r++) {
-      for (let c = 0; c < 32; c++) {
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
         if (parsed.frame[r][c] !== 0) {
           hasPixels = true;
           break;
@@ -154,7 +195,7 @@ Deno.serve(async (req) => {
 
     if (!hasPixels) {
       return new Response(
-        JSON.stringify({ error: "La IA generó una grilla vacía (sin píxeles). Por favor, intenta regenerar o cambiar el prompt." }),
+        JSON.stringify({ error: "La IA generó una grilla vacía (sin píxeles). Por favor, intenta regenerar." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -165,7 +206,7 @@ Deno.serve(async (req) => {
       name: prompt.slice(0, 20),
       description: prompt,
       category: "character",
-      size: 32,
+      size,
       palette: parsed.palette,
       colorNames: parsed.colorNames || {},
       frames: [parsed.frame],
