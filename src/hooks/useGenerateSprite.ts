@@ -19,7 +19,7 @@ export function useGenerateSprite() {
   });
 
   /** Generate a single base frame (no animations — those are added client-side). */
-  const generate = async (prompt: string) => {
+  const generate = async (prompt: string, size: number = 16) => {
     setState({ isGenerating: true, error: null, result: null });
 
     try {
@@ -30,7 +30,7 @@ export function useGenerateSprite() {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, size }),
       });
 
       const data = await res.json();

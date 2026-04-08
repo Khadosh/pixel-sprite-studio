@@ -73,7 +73,7 @@ export default function ProjectWorkspace() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!generatePrompt.trim() || isGenerating) return;
-    await generate(generatePrompt.trim());
+    await generate(generatePrompt.trim(), canvasSize);
   };
 
   const handleOpenEditorForSprite = (sprite: ProjectSprite) => {
@@ -151,69 +151,93 @@ export default function ProjectWorkspace() {
 
         {/* Unified Creation Panel */}
         {showCreator && (
-          <div className="bg-card border border-primary/30 p-6 rounded-lg space-y-4 shadow-[0_0_30px_rgba(34,197,94,0.05)]">
-            {/* Header: title + canvas size */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-primary" />
-                  <h2 className="font-pixel text-[10px] text-primary tracking-wider">CREAR NUEVO SPRITE</h2>
-                </div>
-                <div className="flex items-center gap-1 bg-secondary rounded-md p-0.5 border border-border">
-                  <button
-                    onClick={() => setCanvasSize(16)}
-                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 16 ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    16×16
-                  </button>
-                  <button
-                    onClick={() => setCanvasSize(32)}
-                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 32 ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    32×32
-                  </button>
+          <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            {/* Resolution Header */}
+            <div className="flex items-center justify-between bg-card/50 border border-border p-3 rounded-xl px-4">
+              <div className="flex items-center gap-3">
+                <span className="font-pixel text-[9px] text-muted-foreground uppercase tracking-widest">Resolución del lienzo:</span>
+                <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1 border border-border">
+                  {[16, 32].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setCanvasSize(s as 16 | 32)}
+                      className={`font-pixel text-[8px] px-4 py-1.5 rounded-md transition-all ${canvasSize === s ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}
+                    >
+                      {s}×{s}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button onClick={() => { setShowCreator(false); clearGenerated(); }} className="text-muted-foreground hover:text-white transition-colors">
-                <X size={16} />
+              <button 
+                onClick={() => { setShowCreator(false); clearGenerated(); }} 
+                className="text-muted-foreground hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            {/* AI Generation prompt */}
-            <form onSubmit={handleGenerate} className="flex gap-2">
-              <Input
-                value={generatePrompt}
-                onChange={(e) => setGeneratePrompt(e.target.value)}
-                placeholder="Describe tu sprite... ej: a red dragon, an old wizard, a treasure chest"
-                className="bg-secondary/50 font-mono flex-1"
-                maxLength={500}
-                disabled={isGenerating}
-              />
-              <Button
-                type="submit"
-                disabled={isGenerating || !generatePrompt.trim()}
-                className="font-pixel text-[10px] bg-primary text-primary-foreground hover:brightness-110 border border-primary whitespace-nowrap shadow-[0_0_15px_rgba(34,197,94,0.2)]"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 size={14} className="mr-2 animate-spin" />
-                    GENERANDO...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={14} className="mr-1" />
-                    GENERAR CON IA
-                  </>
-                )}
-              </Button>
-            </form>
+            {/* Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* Card 1: AI (Premium Violet) */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 shadow-[0_0_30px_rgba(168,85,247,0.15)]"></div>
+                <div className="relative bg-card border border-purple-500/30 p-5 rounded-2xl flex flex-col h-full space-y-4 transition-all hover:border-purple-500/50">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="bg-purple-500/20 p-2 rounded-lg border border-purple-500/20">
+                        <Sparkles className="text-purple-400" size={18} />
+                      </div>
+                      <span className="bg-purple-500/20 text-purple-300 text-[7px] font-pixel px-2 py-0.5 rounded-full border border-purple-500/30 tracking-tighter">PREMIUM</span>
+                    </div>
+                    <h3 className="font-pixel text-xs text-purple-100 tracking-wider pt-2">MAGIA DE IA</h3>
+                    <p className="font-mono text-[9px] text-purple-200/60 leading-relaxed">Describe tu idea y deja que la red neuronal genere un asset único para ti.</p>
+                  </div>
+                  
+                  <form onSubmit={handleGenerate} className="space-y-2 pt-2 mt-auto">
+                    <Input
+                      value={generatePrompt}
+                      onChange={(e) => setGeneratePrompt(e.target.value)}
+                      placeholder="ej: un dragón rojo..."
+                      className="bg-purple-950/20 border-purple-500/20 font-mono text-[10px] h-8 focus-visible:ring-purple-500"
+                      maxLength={500}
+                      disabled={isGenerating}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isGenerating || !generatePrompt.trim()}
+                      className="w-full font-pixel text-[9px] bg-purple-600 hover:bg-purple-500 text-white border-purple-400/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                    >
+                      {isGenerating ? (
+                        <Loader2 size={12} className="animate-spin mr-2" />
+                      ) : (
+                        "GENERAR AHORA"
+                      )}
+                    </Button>
+                  </form>
+                </div>
+              </div>
 
-            {/* Alternative creation options */}
-            <div className="flex items-center gap-3 pt-1">
-              <span className="font-mono text-[10px] text-muted-foreground">O también:</span>
-              <Button
-                variant="outline"
-                size="sm"
+              {/* Card 2: Catalog (Standard Green) */}
+              <div 
+                onClick={() => navigate(`/catalog?projectId=${project.id}&size=${canvasSize}`)}
+                className="bg-card border border-primary/20 p-5 rounded-2xl flex flex-col h-full space-y-4 hover:border-primary/50 transition-all cursor-pointer group"
+              >
+                <div className="space-y-2">
+                  <div className="bg-primary/10 p-2 rounded-lg border border-primary/10 w-fit group-hover:bg-primary/20 transition-colors">
+                    <ImageIcon className="text-primary" size={18} />
+                  </div>
+                  <h3 className="font-pixel text-xs text-primary/90 tracking-wider pt-2">BIBLIOTECA</h3>
+                  <p className="font-mono text-[9px] text-muted-foreground leading-relaxed">Explora cientos de sprites pre-diseñados listos para tu proyecto.</p>
+                </div>
+                <div className="mt-auto pt-4 flex items-center justify-between text-primary font-pixel text-[8px] opacity-60 group-hover:opacity-100 transition-opacity">
+                  <span>EXPLORAR CATÁLOGO</span>
+                  <ArrowLeft size={10} className="rotate-180" />
+                </div>
+              </div>
+
+              {/* Card 3: Scratch (Standard Bluish) */}
+              <div 
                 onClick={() => {
                   const s = canvasSize;
                   const blank: SpriteAsset = {
@@ -240,20 +264,20 @@ export default function ProjectWorkspace() {
                   setEditingSpriteId(null);
                   setEditorOpen(true);
                 }}
-                className="font-pixel text-[9px] border-primary/50 text-primary hover:bg-primary/10 transition-all"
+                className="bg-card border border-blue-500/20 p-5 rounded-2xl flex flex-col h-full space-y-4 hover:border-blue-500/50 transition-all cursor-pointer group"
               >
-                <Plus size={12} className="mr-1" />
-                DESDE CERO
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/catalog?projectId=${project.id}&size=${canvasSize}`)}
-                className="font-pixel text-[9px] border-primary/50 text-primary hover:bg-primary/10 transition-all"
-              >
-                <ImageIcon size={12} className="mr-1" />
-                DESDE CATÁLOGO
-              </Button>
+                <div className="space-y-2">
+                  <div className="bg-blue-500/10 p-2 rounded-lg border border-blue-500/10 w-fit group-hover:bg-blue-500/20 transition-colors">
+                    <Plus className="text-blue-400" size={18} />
+                  </div>
+                  <h3 className="font-pixel text-xs text-blue-100 tracking-wider pt-2">DESDE CERO</h3>
+                  <p className="font-mono text-[9px] text-muted-foreground leading-relaxed">Dibuja cada píxel manualmente con total control artístico sobre el lienzo.</p>
+                </div>
+                <div className="mt-auto pt-4 flex items-center justify-between text-blue-400 font-pixel text-[8px] opacity-60 group-hover:opacity-100 transition-opacity">
+                  <span>LIENZO EN BLANCO</span>
+                  <ArrowLeft size={10} className="rotate-180" />
+                </div>
+              </div>
             </div>
 
             {generateError && (
@@ -327,7 +351,7 @@ export default function ProjectWorkspace() {
           initialAsset={editorAsset}
           onSave={handleEditorSave}
           generatePrompt={editorIsNew && generatePrompt ? generatePrompt : undefined}
-          onRegenerate={editorIsNew ? () => generate(generatePrompt) : undefined}
+          onRegenerate={editorIsNew ? () => generate(generatePrompt, canvasSize) : undefined}
           isGenerating={isGenerating}
         />
       )}
