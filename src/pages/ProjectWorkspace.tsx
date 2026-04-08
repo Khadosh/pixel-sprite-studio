@@ -26,9 +26,10 @@ export default function ProjectWorkspace() {
   const updateSpriteMutation = useUpdateSprite();
   const deleteSpriteMutation = useDeleteSprite();
 
-  // Generation state
+  // Creation panel state
   const [generatePrompt, setGeneratePrompt] = useState('');
-  const [showGenerator, setShowGenerator] = useState(false);
+  const [showCreator, setShowCreator] = useState(false);
+  const [canvasSize, setCanvasSize] = useState<16 | 32>(16);
   const { isGenerating, error: generateError, result: generatedSprite, generate, clear: clearGenerated } = useGenerateSprite();
 
   // Editor modal state
