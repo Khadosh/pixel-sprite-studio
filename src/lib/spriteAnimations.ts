@@ -234,10 +234,13 @@ function getElementalColors(asset: SpriteAsset, element: CastElement): { updated
     if (found) {
       colorIndices.push(found.key);
     } else {
-      // Add to palette
+      // Add to palette with NEW reference to trigger React updates
       const nextIdx = Math.max(0, ...Object.keys(currentAsset.palette).map(Number)) + 1;
-      currentAsset.palette[nextIdx] = hex;
-      currentAsset.colorNames[nextIdx] = `${element.toUpperCase()} SHADE`;
+      currentAsset = {
+        ...currentAsset,
+        palette: { ...currentAsset.palette, [nextIdx]: hex },
+        colorNames: { ...currentAsset.colorNames, [nextIdx]: `${element.toUpperCase()} SHADE` }
+      };
       colorIndices.push(nextIdx);
     }
   });

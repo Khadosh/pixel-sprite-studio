@@ -105,6 +105,25 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 ---
 
+## Fase 6 — Gestión Pro & Librería de Props ⚔️
+*Prioridad: ALTA*
+
+### 6.1 — Refactor del Animation Library
+- [ ] Eliminar checkboxes confusos
+- [ ] Lista real de animaciones guardadas (soporte para duplicados: Attack 1, Attack 2)
+- [ ] Panel de generación dedicado: elegir tipo → generar → agregar a la lista
+- [ ] Eliminar/Renombrar animación individualmente
+
+### 6.2 — Librería de Props (Permanent Layers)
+- [ ] Crear sistema de `Props`: Espadas, Báculos, Escudos pre-definidos
+- [ ] Inyectar Props como nuevas capas automáticas (ajustadas a 16px/32px)
+
+### 6.3 — Operaciones de Proyecto
+- [ ] Clonar Sprite existente (Duplicar asset completo con nuevo ID)
+
+
+---
+
 ## Backlog / Ideas Futuras
 
 | Feature | Complejidad | Impacto |

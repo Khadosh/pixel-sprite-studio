@@ -317,10 +317,14 @@ export default function ProjectWorkspace() {
                     >
                       <Trash2 size={12} />
                     </button>
-                    <div className="aspect-square bg-secondary/50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                      <div className="scale-75 origin-center pointer-events-none">
+                    <div className="aspect-square bg-secondary/20 flex flex-col items-start justify-start p-3 relative overflow-auto custom-scrollbar">
+                      <div className="pointer-events-none origin-top-left">
                         <PaletteProvider defaultPalette={asset.palette}>
-                          <SpriteSheetCanvas asset={asset} />
+                          <SpriteSheetCanvas 
+                            asset={asset} 
+                            scale={2} 
+                            showLabels={true}
+                          />
                         </PaletteProvider>
                       </div>
                     </div>
