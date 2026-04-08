@@ -276,7 +276,7 @@ export default function ProjectWorkspace() {
                       opacity: 1,
                       frames: [Array.from({ length: s }, () => Array(s).fill(0))]
                     }],
-                    animations: [{ name: 'idle', label: 'IDLE', frameIndices: [0], fps: 5 }],
+                    animations: [],
                     tags: [],
                   };
                   setEditorAsset(blank);
@@ -321,33 +321,38 @@ export default function ProjectWorkspace() {
               <p className="font-mono text-muted-foreground text-[10px] max-w-sm mb-6">Genera un sprite con IA o agrega uno desde el catalogo.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {sprites.map((s) => {
                 const asset = s.asset_data as SpriteAsset;
                 return (
                   <div
                     key={s.id}
                     onClick={() => handleOpenEditorForSprite(s)}
-                    className="group bg-secondary/30 rounded-lg border border-border overflow-hidden relative cursor-pointer hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.1)]"
+                    className="group bg-card border border-border rounded-xl overflow-hidden relative cursor-pointer hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(34,197,94,0.15)]"
                   >
-                    <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-10">
+                    {/* Decorative corner element like in Dashboard */}
+                    <div className="absolute top-0 right-0 w-12 h-12 bg-primary/5 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-150 z-0" />
+                    
+                    <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-20">
                       <button
                         onClick={(e) => handleCloneSprite(e, s)}
-                        className="p-1.5 bg-background border border-border rounded text-muted-foreground hover:text-primary hover:border-primary transition-all"
+                        className="p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-md text-muted-foreground hover:text-primary hover:border-primary transition-all shadow-sm"
                         title="Clonar sprite"
                       >
                         <Copy size={12} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteSprite(e, s.id)}
-                        className="p-1.5 bg-background border border-border rounded text-muted-foreground hover:text-destructive hover:border-destructive transition-all"
+                        className="p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-md text-muted-foreground hover:text-destructive hover:border-destructive transition-all shadow-sm"
                         title="Eliminar del proyecto"
                       >
                         <Trash2 size={12} />
                       </button>
                     </div>
-                    <div className="aspect-square bg-secondary/20 flex flex-col items-start justify-start p-3 relative overflow-auto custom-scrollbar">
-                      <div className="pointer-events-none origin-top-left">
+                    
+                    {/* Preview Area - Fixed overflow-hidden as requested */}
+                    <div className="aspect-square bg-secondary/10 flex flex-col items-start justify-start p-4 relative overflow-hidden">
+                      <div className="pointer-events-none origin-top-left transition-transform duration-500 group-hover:scale-[1.02]">
                         <PaletteProvider defaultPalette={asset.palette}>
                           <SpriteSheetCanvas 
                             asset={asset} 
@@ -357,13 +362,20 @@ export default function ProjectWorkspace() {
                         </PaletteProvider>
                       </div>
                     </div>
-                    <div className="p-3 border-t border-border">
-                      <h3 className="font-pixel text-[10px] text-foreground tracking-wider truncate mb-1">
+                    
+                    {/* Info Panel */}
+                    <div className="p-4 border-t border-border bg-card/50 relative z-10">
+                      <h3 className="font-pixel text-[10px] text-foreground tracking-wider truncate mb-1 group-hover:text-primary transition-colors">
                         {asset.name.toUpperCase()}
                       </h3>
-                      <p className="font-mono text-[8px] text-muted-foreground">
-                        {asset.layers?.[0]?.frames.length || asset.frames?.length || 0} frame{(asset.layers?.[0]?.frames.length || asset.frames?.length || 0) !== 1 ? 's' : ''} · Click para editar
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="font-mono text-[8px] text-muted-foreground">
+                          {asset.layers?.[0]?.frames.length || asset.frames?.length || 0} frames
+                        </p>
+                        <span className="font-mono text-[8px] text-primary/40 font-bold group-hover:text-primary/70 transition-colors">
+                          {asset.size}x{asset.size}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
