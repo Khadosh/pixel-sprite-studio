@@ -91,7 +91,7 @@ export default function ProjectWorkspace() {
         onSuccess: () => {
           clearGenerated();
           setGeneratePrompt('');
-          setShowGenerator(false);
+          setShowCreator(false);
           toast({ title: 'Sprite guardado', description: 'El sprite se guardó en tu proyecto.' });
         },
         onError: (error: any) => {
