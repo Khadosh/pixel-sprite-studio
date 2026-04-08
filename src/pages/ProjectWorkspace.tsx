@@ -9,7 +9,7 @@ import { ArrowLeft, Plus, Image as ImageIcon, Trash2, Sparkles, Loader2, X } fro
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSprite } from '@/hooks/useGenerateSprite';
-import SpriteEditorModal from '@/components/SpriteEditorModal';
+import { SpriteEditorModal } from '@/components/SpriteEditor';
 import type { SpriteAsset } from '@/lib/types';
 import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
 
