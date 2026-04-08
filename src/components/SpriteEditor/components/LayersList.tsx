@@ -19,6 +19,26 @@ export const LayersList = React.memo(() => {
   } = useSpriteEditorContext() as any;
 
   const layers = editedAsset.layers;
+  const [editingLayerId, setEditingLayerId] = React.useState<string | null>(null);
+  const [tempName, setTempName] = React.useState('');
+
+  const startEditing = (e: React.MouseEvent, id: string, initialName: string) => {
+    e.stopPropagation();
+    setEditingLayerId(id);
+    setTempName(initialName);
+  };
+
+  const handleFinishEditing = () => {
+    if (editingLayerId && tempName.trim()) {
+      handleRenameLayer(editingLayerId, tempName.trim());
+    }
+    setEditingLayerId(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleFinishEditing();
+    if (e.key === 'Escape') setEditingLayerId(null);
+  };
 
   return (
     <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 shrink-0">
@@ -68,6 +88,7 @@ export const LayersList = React.memo(() => {
         {[...layers].reverse().map((layer, revIdx) => {
           const idx = layers.length - 1 - revIdx;
           const isActive = layer.id === activeLayerId;
+          const isEditing = layer.id === editingLayerId;
 
           return (
             <div 
@@ -88,19 +109,27 @@ export const LayersList = React.memo(() => {
               
               <div className="flex-1 min-w-0 flex items-center gap-2">
                 <Layers size={10} className="shrink-0 opacity-40" />
-                <span className="truncate font-pixel text-[10px]">
-                  {layer.name}
-                </span>
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    className="w-full bg-background/50 border-none outline-none font-pixel text-[10px] px-1 rounded text-primary"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    onBlur={handleFinishEditing}
+                    onKeyDown={handleKeyDown}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span className="truncate font-pixel text-[10px]">
+                    {layer.name}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   className="text-muted-foreground hover:text-foreground"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    const newName = prompt('Enter new layer name:', layer.name);
-                    if (newName) handleRenameLayer(layer.id, newName);
-                  }}
+                  onClick={(e) => startEditing(e, layer.id, layer.name)}
                 >
                   <Edit2 size={12} />
                 </button>

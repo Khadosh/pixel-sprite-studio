@@ -22,6 +22,21 @@ export default React.memo(function PaletteBar({
   onRemoveColor,
   onRenameColor,
 }: PaletteBarProps) {
+  const [editingKey, setEditingKey] = React.useState<number | null>(null);
+  const [tempName, setTempName] = React.useState('');
+
+  const handleFinishEditing = () => {
+    if (editingKey !== null && tempName.trim() && onRenameColor) {
+      onRenameColor(editingKey, tempName.trim());
+    }
+    setEditingKey(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleFinishEditing();
+    if (e.key === 'Escape') setEditingKey(null);
+  };
+
   return (
     <div className="flex flex-col gap-1">
       {Object.entries(palette)
@@ -29,6 +44,8 @@ export default React.memo(function PaletteBar({
         .map(([key, color]) => {
           const k = Number(key);
           const isActive = k === activeColorKey;
+          const isEditing = k === editingKey;
+
           return (
             <div
               key={key}
@@ -50,18 +67,31 @@ export default React.memo(function PaletteBar({
                 }`}
                 style={{ backgroundColor: color }}
               />
-              <span 
-                className={`flex-1 text-[10px] font-mono transition-colors truncate ${isActive ? 'text-purple-300 font-bold hover:underline cursor-text' : 'text-muted-foreground'}`}
-                onClick={(e) => {
-                  if (isActive && onRenameColor) {
-                    e.stopPropagation();
-                    const newName = prompt('Enter color name:', colorNames[k] || key);
-                    if (newName !== null) onRenameColor(k, newName);
-                  }
-                }}
-              >
-                {colorNames[k] || key}
-              </span>
+              
+              {isEditing ? (
+                <input
+                  autoFocus
+                  className="flex-1 min-w-0 bg-background/50 border-none outline-none font-pixel text-[10px] px-1 rounded text-purple-300"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onBlur={handleFinishEditing}
+                  onKeyDown={handleKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span 
+                  className={`flex-1 text-[10px] font-mono transition-colors truncate ${isActive ? 'text-purple-300 font-bold hover:underline cursor-text' : 'text-muted-foreground'}`}
+                  onClick={(e) => {
+                    if (isActive && onRenameColor) {
+                      e.stopPropagation();
+                      setEditingKey(k);
+                      setTempName(colorNames[k] || key);
+                    }
+                  }}
+                >
+                  {colorNames[k] || key}
+                </span>
+              )}
               
               <input
                 type="color"
