@@ -2,6 +2,7 @@ import { SpriteAsset, AdvancedCastSettings } from '@/lib/types';
 import { EditorScope, BrushSize } from '@/components/EditorToolbar';
 import { EditorTool } from '@/hooks/usePixelEditor';
 import { DragEndEvent } from '@dnd-kit/core';
+import type { AnimationPreviewPanelHandle } from '../components/AnimationPreviewPanel';
 
 export const THUMB_SCALE = 4;
 export const THUMB_SIZE = 16 * THUMB_SCALE;
@@ -111,7 +112,7 @@ export interface SpriteEditorContextValue {
   toggleAnim: (name: string) => void;
   isAnimGenerating: boolean;
   animError: string | null;
-  previewPanelRef: React.RefObject<HTMLDivElement>;
+  previewPanelRef: React.RefObject<AnimationPreviewPanelHandle>;
 
   // Meta
   isGenerating?: boolean; // From props
