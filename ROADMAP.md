@@ -1,6 +1,6 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-05 (Revisado tras Phase 2 Completion)
+> Última actualización: 2026-04-08 (Revisado tras auditoría estratégica)
 
 ## Visión
 
@@ -124,13 +124,71 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 ---
 
+---
+
+## Fase A — Paridad Competitiva 🔴
+*Prioridad: CRÍTICA — bloqueante para monetización*
+
+- [ ] **Zoom del canvas** — Scroll para zoom, hotkeys `+`/`-`, indicador de nivel
+- [ ] **Herramienta de selección rectangular** — Select, move, copy/paste, delete región
+- [ ] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
+- [ ] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)
+- [ ] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA
+- [ ] **TypeScript strict mode** — Habilitar `strict: true` en tsconfig y resolver warnings
+
+---
+
+## Fase B — Diferenciación y Monetización 💰
+*Prioridad: ALTA — features que justifican el pago*
+
+- [ ] **Import PNG** — Cargar imagen externa como referencia o sprite base
+- [ ] **Resize / crop canvas** — Anchor configurable, presets 8×8 / 16×16 / 32×32 / 64×64
+- [ ] **Paletas históricas** — NES, Game Boy, CGA, EGA, Pico-8 como templates
+- [ ] **HSL Color Picker visual** — Reemplazar el picker nativo HTML
+- [ ] **Auto-shade** — Generar N variantes claras/oscuras de un color seleccionado
+- [ ] **Export Spritesheet JSON** — Formato Texture Packer compatible con rect coordinates
+- [ ] **Tiling preview** — Ver sprite repetido en grid configurable (útil para tiles)
+- [ ] **Sistema de créditos IA + Stripe** — Integración de pagos, planes Free/Pro, cobro por generación
+- [ ] **Onboarding interactivo** — Tutorial paso a paso para nuevos usuarios
+- [ ] **Changelog público en la app** — Mostrar últimas updates; builds confianza
+
+---
+
+## Fase C — Plataforma y Comunidad 🌐
+*Prioridad: MEDIA — construir el moat*
+
+- [ ] **Galería pública de sprites** — Feed de creaciones de usuarios con likes y filtros
+- [ ] **Share link de solo lectura** — URL pública para compartir un sprite sin cuenta
+- [ ] **Marketplace** — Venta de packs de sprites con revenue share (70/30)
+- [ ] **Colaboración básica** — Compartir proyecto editable con otros usuarios registrados
+- [ ] **Export a Godot** — Recurso `.tres` con spritesheet embebido
+- [ ] **Export a Unity** — Atlas PNG + JSON con rect coordinates por frame
+- [ ] **Import palette (.pal / .gpl)** — Cargar paletas de herramientas externas
+- [ ] **Sprite sheet import** — Cargar PNG y dividirlo en frames automáticamente
+- [ ] **API pública** — Docs, autenticación con API keys, rate limits por tier
+
+---
+
+## Fase D — Escala 🚀
+*Prioridad: BAJA — si hay traction*
+
+- [ ] **Colaboración real-time** — Co-edición con cursors compartidos (Supabase Realtime)
+- [ ] **AI in-painting** — Seleccionar área del canvas y regenerar parcialmente con prompt
+- [ ] **Batch AI generation** — Generar set completo de 8 animaciones en un solo click
+- [ ] **Referencia de imagen overlay** — Cargar imagen semitransparente como guía de dibujo
+- [ ] **Smart Multi-layer AI Splitting** — IA detecta y separa colores/posiciones en capas
+- [ ] **Mobile / tablet (PWA)** — Touch events, soporte stylus, layout adaptado
+- [ ] **Plugins / scripting** — API para automatizar workflows con scripts de usuario
+
+---
+
 ## Backlog / Ideas Futuras
 
 | Feature | Complejidad | Impacto |
 |:--------|:-----------|:--------|
-| Selection tool (mover, copiar, rotar área) | 🟡 Media | Alto |
-| Move & Rotate tools (interactivo) | ✅ Hecho | Medio |
-| Smart Multi-layer AI Splitting (Color/Pos) | 🔵 Idea | Medio |
-| Tiling preview (ver sprite repetido) | 🟡 Media | Medio |
-| Reference image overlay | 🟡 Media | Medio |
-| Sprite sheet import (PNG → frames) | 🟡 Media | Alto |
+| Bezier curve drawing | 🔵 Alta | Bajo |
+| Gradient tool | 🟡 Media | Bajo |
+| Color modes (Indexed, Grayscale) | 🔵 Alta | Medio |
+| Animation easing curves | 🔵 Alta | Medio |
+| CLI / batch export headless | 🔵 Alta | Medio |
+| Tilemap editor | 🔵 Alta | Alto |
