@@ -108,10 +108,51 @@ export default function Catalog() {
              <p className="font-pixel text-[10px] text-muted-foreground animate-pulse tracking-widest">CARGANDO ASSETS...</p>
           </div>
         ) : filteredAssets.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredAssets.map(asset => (
-              <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
-            ))}
+          <div className="space-y-12">
+            {[16, 32].map(size => {
+              const assetsOfSize = filteredAssets.filter(a => a.size === size);
+              if (assetsOfSize.length === 0) return null;
+
+              return (
+                <section key={size} className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-pixel text-[12px] text-primary tracking-widest bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg">
+                      {size}x{size} ASSETS
+                    </h2>
+                    <div className="h-px flex-1 bg-gradient-to-r from-primary/20 to-transparent" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {assetsOfSize.map(asset => (
+                      <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+            
+            {/* Handle other potential sizes dynamicly if they exist */}
+            {(() => {
+              const otherSizes = [...new Set(filteredAssets.map(a => a.size))].filter(s => s !== 16 && s !== 32);
+              return otherSizes.map(size => {
+                const assetsOfSize = filteredAssets.filter(a => a.size === size);
+                return (
+                  <section key={size} className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <h2 className="font-pixel text-[12px] text-primary tracking-widest bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg">
+                        {size}x{size} ASSETS
+                      </h2>
+                      <div className="h-px flex-1 bg-gradient-to-r from-primary/20 to-transparent" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {assetsOfSize.map(asset => (
+                        <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
+                      ))}
+                    </div>
+                  </section>
+                );
+              });
+            })()}
           </div>
         ) : (
           <div className="text-center py-20 space-y-4 bg-secondary/10 rounded-xl border border-dashed border-border">

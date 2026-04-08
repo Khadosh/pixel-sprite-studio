@@ -36,16 +36,19 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
         const query = projectId ? `?projectId=${projectId}` : '';
         navigate(`/asset/${asset.id}${query}`);
       }}
-      className="group w-full text-left bg-card rounded-lg border border-border hover:border-primary/60 transition-all duration-500 hover:shadow-[0_0_30px_rgba(34,197,94,0.1)] hover:scale-[1.01] active:scale-[0.99] overflow-hidden cursor-pointer flex flex-col"
+      className="group w-full text-left bg-card rounded-xl border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-[0_0_25px_rgba(34,197,94,0.15)] hover:-translate-y-1 overflow-hidden cursor-pointer flex flex-col relative"
     >
+      {/* Decorative corner element */}
+      <div className="absolute top-0 right-0 w-12 h-12 bg-primary/5 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-150 z-0" />
+
       {/* Preview area: Professional dark background to match canvas */}
-      <div className="w-full flex-1 flex items-center justify-center p-4 bg-[#050508] min-h-[160px] overflow-hidden border-b border-white/5">
+      <div className="w-full flex-1 flex items-center justify-center p-6 bg-[#050508] min-h-[180px] overflow-hidden border-b border-white/5 relative z-10">
         <div className="transform transition-all duration-700 group-hover:scale-105 group-hover:brightness-110">
            <PaletteProvider defaultPalette={asset.palette}>
              <SpriteSheetCanvas
               asset={asset}
               // Scale logic: characters get slightly smaller scale to fit labels comfortably
-              scale={asset.animations.length > 4 ? 2 : 3}
+              scale={asset.animations.length > 4 ? 2 : 2.5}
               showLabels={true}
             />
            </PaletteProvider>
@@ -53,7 +56,7 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
       </div>
 
       {/* Info panel */}
-      <div className="p-4 bg-card">
+      <div className="p-4 bg-card/80 backdrop-blur-sm relative z-10">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-pixel text-[10px] text-foreground tracking-wider group-hover:text-primary transition-colors truncate pr-2">
             {asset.name.toUpperCase()}
@@ -70,25 +73,24 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
           </span>
         </div>
         
-        <p className="text-[9px] text-muted-foreground font-mono leading-relaxed line-clamp-2 h-[2.4em] opacity-60 italic">
+        <p className="text-[9px] text-muted-foreground font-mono leading-relaxed line-clamp-2 h-[2.4em] opacity-60 mb-3">
           {asset.description || 'No description provided.'}
         </p>
 
-        <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-3">
-          <div className="flex items-center gap-1.5 font-mono text-[7px] text-muted-foreground bg-white/5 px-2 py-0.5 rounded border border-white/5">
-            <span>{asset.size}x{asset.size}</span>
+        <div className="flex items-center justify-between pt-3 border-t border-white/5">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[8px] text-primary/60 font-bold">
+              {asset.size}x{asset.size}
+            </span>
+            <span className="text-white/10">|</span>
+            <span className="font-mono text-[8px] text-muted-foreground">
+              {frameCount} FRAMES
+            </span>
           </div>
-          <span className="text-[7px] text-muted-foreground/30 font-mono">•</span>
-          <span className="text-[7px] text-muted-foreground/80 font-mono">
-            {frameCount} FRAMES
-          </span>
           {asset.animations.length > 0 && (
-            <>
-              <span className="text-[7px] text-muted-foreground/30 font-mono">•</span>
-              <span className="text-[7px] text-muted-foreground/80 font-mono text-emerald-500/80">
-                {asset.animations.length} ANIMATIONS
-              </span>
-            </>
+            <span className="font-mono text-[8px] text-emerald-500/60 font-bold">
+              {asset.animations.length} ANIMS
+            </span>
           )}
         </div>
       </div>

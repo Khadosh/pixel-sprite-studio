@@ -4,6 +4,7 @@ import { PaletteProvider, usePalette } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
 import { Download, RotateCcw, ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { SpriteAsset } from '@/lib/types';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -102,146 +103,191 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   };
 
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
-
   const frameCount = asset.layers?.[0]?.frames.length || asset.frames?.length || 0;
   const animCount = asset.animations.length;
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Back link + header */}
-        <div className="space-y-4">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
-          >
-            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-            Back to Catalog
-          </button>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Subtle background pattern */}
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none" style={{
+        backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }} />
 
-          <header className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="font-pixel text-primary text-lg md:text-xl tracking-wider">
-                {asset.name.toUpperCase()}
-              </h1>
-              <span
-                className="inline-flex items-center px-2 py-0.5 text-[8px] font-pixel rounded-full border"
-                style={{
-                  color: categoryColor,
-                  borderColor: `${categoryColor}40`,
-                  backgroundColor: `${categoryColor}10`,
-                }}
-              >
-                {asset.category.toUpperCase()}
-              </span>
-            </div>
-            <p className="text-muted-foreground text-sm font-mono">
-              {asset.description}
-            </p>
-            <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
-              <span>{asset.size}×{asset.size} px</span>
-              <span className="text-border">•</span>
-              <span>{frameCount} frame{frameCount !== 1 ? 's' : ''}</span>
-              {animCount > 0 && (
-                <>
-                  <span className="text-border">•</span>
-                  <span>{animCount} animation{animCount !== 1 ? 's' : ''}</span>
-                </>
-              )}
-            </div>
-          </header>
+      <div className="relative max-w-6xl mx-auto p-6 md:p-10 space-y-8">
+        {/* Navigation */}
+        <div className="flex items-center justify-between group/nav">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-all font-mono"
+          >
+            <ArrowLeft size={14} className="group-hover/nav:-translate-x-1 transition-transform" />
+            Volver al Catálogo
+          </button>
+          
+          <div className="flex items-center gap-3 bg-secondary/50 border border-border px-4 py-1.5 rounded-full">
+            <span className="font-mono text-[8px] text-muted-foreground uppercase tracking-widest">Asset ID: {asset.id}</span>
+          </div>
         </div>
 
-        {/* Sprite sheet + Preview */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <div className="flex-1 overflow-x-auto">
-            <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
-                  SPRITE GRID
+        {/* Header Section */}
+        <header className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h1 className="font-pixel text-primary text-xl md:text-3xl tracking-tighter">
+                  {asset.name.toUpperCase()}
+                </h1>
+                <span
+                  className="inline-flex items-center px-2.5 py-1 text-[9px] font-pixel rounded-md border shadow-sm"
+                  style={{
+                    color: categoryColor,
+                    borderColor: `${categoryColor}40`,
+                    backgroundColor: `${categoryColor}15`,
+                  }}
+                >
+                  {asset.category.toUpperCase()}
                 </span>
-                <div className="flex items-center gap-2">
-                  {projectId && (
-                    <button
-                      onClick={handleSaveToProject}
-                      disabled={createSpriteMutation.isPending}
-                      className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-green-600 text-white rounded border border-green-500 hover:brightness-110 transition-all disabled:opacity-50"
-                    >
-                      {createSpriteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                      {createSpriteMutation.isPending ? 'GUARDANDO...' : 'GUARDAR EN PROYECTO'}
-                    </button>
-                  )}
-                  <button
-                    onClick={handleExportPNG}
-                    className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-primary text-primary-foreground rounded border border-primary hover:brightness-110 transition-all"
+              </div>
+              <p className="text-muted-foreground text-sm font-mono max-w-2xl leading-relaxed">
+                {asset.description || 'Este asset no tiene descripción disponible.'}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+               {projectId && (
+                  <Button
+                    onClick={handleSaveToProject}
+                    disabled={createSpriteMutation.isPending}
+                    className="bg-green-600 hover:bg-green-500 text-white font-pixel text-[10px] px-6 h-10 border border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
                   >
-                      <Download size={14} />
-                      EXPORT PNG
-                    </button>
-                  </div>
+                    {createSpriteMutation.isPending ? <Loader2 size={14} className="animate-spin mr-2" /> : <Save size={14} className="mr-2" />}
+                    {createSpriteMutation.isPending ? 'GUARDANDO...' : 'IMPORTAR A PROYECTO'}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleExportPNG}
+                  className="bg-card border-border hover:border-primary/50 text-foreground font-pixel text-[10px] px-6 h-10 transition-all"
+                >
+                  <Download size={14} className="mr-2" />
+                  EXPORT PNG
+                </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 text-[10px] font-mono text-muted-foreground uppercase tracking-widest pt-2">
+            <span className="flex items-center gap-1.5"><span className="text-primary">●</span> {asset.size}x{asset.size} PX</span>
+            <span className="text-border">|</span>
+            <span className="flex items-center gap-1.5"><span className="text-primary">●</span> {frameCount} FRAMES</span>
+            <span className="text-border">|</span>
+            <span className="flex items-center gap-1.5"><span className="text-primary">●</span> {animCount} ANIMACIONES</span>
+          </div>
+        </header>
+
+        {/* Main Preview Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Canvas Area */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+               <div className="bg-secondary/30 px-6 py-3 border-b border-border flex items-center justify-between">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-widest">SPRITE SHEET GRID</span>
+                <div className="flex gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
                 </div>
-                <div className="overflow-x-auto">
-                  <SpriteSheetCanvas asset={asset} />
+              </div>
+              <div className="p-8 overflow-auto flex justify-center bg-[#050508] min-h-[400px]">
+                <div className="scale-[1.5] origin-center">
+                  <SpriteSheetCanvas 
+                    asset={asset} 
+                    // Dynamic scale to keep things visible but not overwhelming
+                    scale={asset.size === 32 ? 2.5 : 4} 
+                  />
                 </div>
               </div>
             </div>
-  
-            {/* Preview panel */}
-            <div className="w-full lg:w-64">
-              <div className="bg-card rounded-lg border border-border p-4">
+
+            {/* Tags area */}
+            <div className="flex flex-wrap gap-2 pt-2">
+              {asset.tags.map(tag => (
+                <span key={tag} className="px-3 py-1 bg-secondary/30 border border-border/50 rounded-full font-mono text-[9px] text-muted-foreground hover:text-primary transition-colors cursor-default">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar Area */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Animated Preview */}
+            <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+              <div className="bg-secondary/30 px-6 py-3 border-b border-border">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-widest">PREVIEW</span>
+              </div>
+              <div className="p-8 flex justify-center bg-[#050508]">
                 <SpritePreview asset={asset} />
               </div>
             </div>
-          </div>
-  
-          {/* Palette Editor */}
-          <div className="bg-card rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-pixel text-[10px] text-muted-foreground tracking-wider">
-                PALETTE
-              </span>
-              <button
-                onClick={resetPalette}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-pixel text-muted-foreground bg-secondary rounded border border-border hover:border-primary/50 transition-colors"
-              >
-                <RotateCcw size={10} />
-                RESET
-              </button>
+
+            {/* Dynamic Palette */}
+            <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border overflow-hidden">
+              <div className="bg-secondary/30 px-6 py-3 border-b border-border flex items-center justify-between">
+                <span className="font-pixel text-[10px] text-muted-foreground tracking-widest">PALETTE</span>
+                <button
+                  onClick={resetPalette}
+                  className="flex items-center gap-1.5 text-[9px] font-pixel text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <RotateCcw size={10} />
+                  RESET
+                </button>
+              </div>
+              <div className="p-6 grid grid-cols-2 gap-4">
+                {Object.entries(palette)
+                  .filter(([k]) => k !== '0')
+                  .map(([key, color]) => (
+                    <label key={key} className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative shrink-0">
+                        <div
+                          className="w-10 h-10 rounded border border-border shadow-sm group-hover:border-primary/60 transition-all group-hover:scale-105"
+                          style={{ backgroundColor: color }}
+                        />
+                        <input
+                          type="color"
+                          value={color}
+                          onChange={(e) => setPaletteColor(Number(key), e.target.value)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] text-foreground font-mono font-bold truncate group-hover:text-primary transition-colors">
+                          {asset.colorNames[Number(key)] || `Color ${key}`}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase opacity-60">
+                          {color}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {Object.entries(palette)
-                .filter(([k]) => k !== '0')
-                .map(([key, color]) => (
-                  <label key={key} className="flex items-center gap-2 cursor-pointer group">
-                    <div className="relative">
-                      <div
-                        className="w-6 h-6 rounded-sm border border-border group-hover:border-primary/60 transition-colors"
-                        style={{ backgroundColor: color }}
-                      />
-                      <input
-                        type="color"
-                        value={color}
-                        onChange={(e) => setPaletteColor(Number(key), e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground font-mono group-hover:text-foreground transition-colors">
-                      {asset.colorNames[Number(key)] || key}
-                    </span>
-                  </label>
-                ))}
-            </div>
           </div>
-  
-          {/* Footer */}
-          <footer className="text-center text-[10px] text-muted-foreground font-mono pb-4">
-            {asset.name} • {frameCount} frames • {asset.size}×{asset.size} px • transparent PNG export
-          </footer>
         </div>
+
+        {/* Footer info */}
+        <footer className="pt-12 pb-6 border-t border-border/30 text-center space-y-2">
+           <p className="font-pixel text-[9px] text-muted-foreground/50 tracking-widest uppercase">
+            PIXEL SPRITE STUDIO — ASSET BROWSER PRO
+           </p>
+           <p className="font-mono text-[8px] text-muted-foreground/30">
+            Rendered with 100% pixel precision • Canvas Engine v2.0
+           </p>
+        </footer>
       </div>
-    );
-  }
-  
+    </div>
+  );
+}
   export default function AssetDetail() {
     const { assetId } = useParams<{ assetId: string }>();
     const navigate = useNavigate();

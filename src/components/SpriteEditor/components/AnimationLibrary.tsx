@@ -41,8 +41,100 @@ export const AnimationLibrary = React.memo(() => {
   };
 
   return (
-    <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-4">
-      {/* SECTION: SAVED ANIMATIONS */}
+    <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-6">
+      {/* SECTION: GENERATION PANEL - MOVED TO TOP */}
+      <div className="space-y-3">
+        <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Generar Nueva</span>
+        
+        <div className="space-y-3 p-3 rounded-md bg-black/20 border border-white/5">
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <Select value={genType} onValueChange={setGenType}>
+                <SelectTrigger className="h-8 text-[9px] font-pixel bg-background/50 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-primary/40">
+                  {AVAILABLE_ANIMS.map(a => (
+                    <SelectItem key={a.value} value={a.value} className="text-[9px] font-pixel">{a.label.toUpperCase()}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {genType === 'cast' && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/20 hover:text-primary border border-white/5">
+                    <Settings size={14} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 bg-[#0a0a0f] border-primary/30 p-3 space-y-3 shadow-2xl" side="left">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Elemento</label>
+                    <Select 
+                      value={castSettings.element} 
+                      onValueChange={(val: CastElement) => setCastSettings(prev => ({ ...prev, element: val }))}
+                    >
+                      <SelectTrigger className="h-7 text-[8px] font-pixel bg-black/40 border-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0a0a0f] border-primary/40">
+                        <SelectItem value="generic" className="text-[8px] font-pixel">GENERIC</SelectItem>
+                        <SelectItem value="fire" className="text-[8px] font-pixel text-orange-400">FIRE</SelectItem>
+                        <SelectItem value="water" className="text-[8px] font-pixel text-blue-400">WATER</SelectItem>
+                        <SelectItem value="electric" className="text-[8px] font-pixel text-yellow-300">ELECTRIC</SelectItem>
+                        <SelectItem value="nature" className="text-[8px] font-pixel text-green-400">NATURE</SelectItem>
+                        <SelectItem value="ice" className="text-[8px] font-pixel text-cyan-200">ICE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Forma</label>
+                    <Select 
+                      value={castSettings.shape} 
+                      onValueChange={(val: CastShape) => setCastSettings(prev => ({ ...prev, shape: val }))}
+                    >
+                      <SelectTrigger className="h-7 text-[8px] font-pixel bg-black/40 border-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0a0a0f] border-primary/40">
+                        <SelectItem value="burst" className="text-[8px] font-pixel">BURST</SelectItem>
+                        <SelectItem value="circle" className="text-[8px] font-pixel">CIRCLE</SelectItem>
+                        <SelectItem value="beam" className="text-[8px] font-pixel">BEAM</SelectItem>
+                        <SelectItem value="spark" className="text-[8px] font-pixel">SPARKS</SelectItem>
+                        <SelectItem value="pulse" className="text-[8px] font-pixel">PULSE</SelectItem>
+                        <SelectItem value="random" className="text-[8px] font-pixel">RANDOM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+
+          <div className="flex gap-1.5">
+            <Button
+              onClick={() => handleGenerateAnimations(genType)}
+              disabled={isGenerating || isAnimGenerating}
+              className="px-2 font-pixel text-[8px] bg-secondary/30 text-foreground hover:bg-secondary/50 border border-white/5 h-8 transition-all shrink-0"
+            >
+              QUICK
+            </Button>
+            <Button
+              onClick={() => handleGenerateAnimationsAI(genType)}
+              disabled={isGenerating || isAnimGenerating}
+              className="flex-1 font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all overflow-hidden"
+            >
+              <Sparkles size={11} className="mr-1 shrink-0" />
+              <span className="truncate">{isAnimGenerating ? '...' : 'IA GENERATE'}</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px bg-border/50" />
+
+      {/* SECTION: SAVED ANIMATIONS - MOVED TO BOTTOM */}
       <div className="space-y-3">
         <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Animaciones Guardadas</span>
         
@@ -124,98 +216,6 @@ export const AnimationLibrary = React.memo(() => {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      <div className="h-px bg-border/50" />
-
-      {/* SECTION: GENERATION PANEL */}
-      <div className="space-y-3 pt-1">
-        <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Generar Nueva</span>
-        
-        <div className="space-y-3 p-3 rounded-md bg-black/20 border border-white/5">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <Select value={genType} onValueChange={setGenType}>
-                <SelectTrigger className="h-8 text-[9px] font-pixel bg-background/50 border-white/10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0a0a0f] border-primary/40">
-                  {AVAILABLE_ANIMS.map(a => (
-                    <SelectItem key={a.value} value={a.value} className="text-[9px] font-pixel">{a.label.toUpperCase()}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {genType === 'cast' && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/20 hover:text-primary border border-white/5">
-                    <Settings size={14} />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 bg-[#0a0a0f] border-primary/30 p-3 space-y-3 shadow-2xl" side="left">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Elemento</label>
-                    <Select 
-                      value={castSettings.element} 
-                      onValueChange={(val: CastElement) => setCastSettings(prev => ({ ...prev, element: val }))}
-                    >
-                      <SelectTrigger className="h-7 text-[8px] font-pixel bg-black/40 border-primary/20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#0a0a0f] border-primary/40">
-                        <SelectItem value="generic" className="text-[8px] font-pixel">GENERIC</SelectItem>
-                        <SelectItem value="fire" className="text-[8px] font-pixel text-orange-400">FIRE</SelectItem>
-                        <SelectItem value="water" className="text-[8px] font-pixel text-blue-400">WATER</SelectItem>
-                        <SelectItem value="electric" className="text-[8px] font-pixel text-yellow-300">ELECTRIC</SelectItem>
-                        <SelectItem value="nature" className="text-[8px] font-pixel text-green-400">NATURE</SelectItem>
-                        <SelectItem value="ice" className="text-[8px] font-pixel text-cyan-200">ICE</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Forma</label>
-                    <Select 
-                      value={castSettings.shape} 
-                      onValueChange={(val: CastShape) => setCastSettings(prev => ({ ...prev, shape: val }))}
-                    >
-                      <SelectTrigger className="h-7 text-[8px] font-pixel bg-black/40 border-primary/20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#0a0a0f] border-primary/40">
-                        <SelectItem value="burst" className="text-[8px] font-pixel">BURST</SelectItem>
-                        <SelectItem value="circle" className="text-[8px] font-pixel">CIRCLE</SelectItem>
-                        <SelectItem value="beam" className="text-[8px] font-pixel">BEAM</SelectItem>
-                        <SelectItem value="spark" className="text-[8px] font-pixel">SPARKS</SelectItem>
-                        <SelectItem value="pulse" className="text-[8px] font-pixel">PULSE</SelectItem>
-                        <SelectItem value="random" className="text-[8px] font-pixel">RANDOM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={() => handleGenerateAnimations(genType)}
-              disabled={isGenerating || isAnimGenerating}
-              className="flex-1 font-pixel text-[8px] bg-secondary/50 text-foreground hover:bg-secondary/80 border border-white/5 h-8 transition-all"
-            >
-              QUICK
-            </Button>
-            <Button
-              onClick={() => handleGenerateAnimationsAI(genType)}
-              disabled={isGenerating || isAnimGenerating}
-              className="flex-[1.5] font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all"
-            >
-              <Sparkles size={12} className="mr-1" />
-              {isAnimGenerating ? '...' : 'IA GENERATE'}
-            </Button>
-          </div>
         </div>
       </div>
 
