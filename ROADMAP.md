@@ -1,6 +1,6 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-08 (Revisado tras auditoría estratégica)
+> Última actualización: 2026-04-08 (Revisado tras auditoría estratégica + sesión de producto)
 
 ## Visión
 
@@ -81,27 +81,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] Layer panel: lista, toggle, reorder
 - [x] Agregar/eliminar/duplicar capa
 - [x] Dibujar solo en capa activa (Scope selector: Layer vs Frame)
-- [ ] Merge capas (Flatten)
-
----
-
-## Fase 4 — Canvas Ops & More 🛠️
-*Prioridad: MEDIA*
-
-- [ ] Resize canvas (crop/padding con anchor configurable)
-- [ ] Scale sprite (nearest-neighbor 2×, 3×)
-- [ ] Presets: 8×8, 16×16, 32×32, 64×64
-- [ ] Export formats extra (GIF, SpriteSheet metadata JSON)
-
----
-
-## Fase 5 — Color & Palettes 🎨
-*Prioridad: MEDIA*
-
-- [ ] Auto-shade: genera N variantes claras/oscuras de un color
-- [ ] HSL Color Picker visual
-- [ ] Palette Templates (NES, Game Boy, etc.)
-- [ ] Import palette (.pal, .gpl)
+- [ ] Merge capas (Flatten) ← pasa a Fase A
 
 ---
 
@@ -121,9 +101,6 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 ### 6.3 — Operaciones de Proyecto
 - [x] Clonar Sprite existente (Duplicar asset completo con nuevo ID)
 
-
----
-
 ---
 
 ## Fase A — Paridad Competitiva 🔴
@@ -135,19 +112,37 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [ ] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)
 - [ ] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA
 - [ ] **TypeScript strict mode** — Habilitar `strict: true` en tsconfig y resolver warnings
+- [ ] **Estandarización de nombres de animación** — Contrato fijo de nombres canónicos (`idle`, `walk`, `walk_left`, `walk_right`, `attack`, `hurt`, `die`); requerido por Fase B.2 y Fase B.3
+
+> **Nota:** La estandarización de nombres de animación es prerequisito para el Export JSON y el Character Preview. Definirla acá evita deuda en los pasos siguientes.
 
 ---
 
-## Fase B — Diferenciación y Monetización 💰
-*Prioridad: ALTA — features que justifican el pago*
+## Fase B — Diferenciación, Engine Integration y Monetización 💰
+*Prioridad: ALTA — features que justifican el pago y construyen retención real*
 
+### B.1 — Export y contrato de datos
+- [ ] **Export Spritesheet JSON (Texture Packer format)** — Spritesheet PNG plano + JSON con nombre de animación, índices de frames, duración por frame y rect coordinates. Importable directamente en Godot, Unity y Defold sin plugins.
 - [ ] **Import PNG** — Cargar imagen externa como referencia o sprite base
 - [ ] **Resize / crop canvas** — Anchor configurable, presets 8×8 / 16×16 / 32×32 / 64×64
+
+### B.2 — Character Preview (mini-juego interactivo)
+*El loop completo: generás → animás → jugás → exportás.*
+
+- [ ] **Canvas de preview interactivo** — Canvas separado del editor, loop con `requestAnimationFrame`
+- [ ] **Character controller mínimo** — Movimiento con teclado (WASD / flechas), sin física; colisión simple por celda
+- [ ] **Tilemap fijo seleccionable** — 2-3 tilemaps de ejemplo (interior, exterior, dungeon); no es un editor de mapas
+- [ ] **Mapeo animación-estado** — `idle` sin input · `walk`/`walk_left`/`walk_right` en movimiento · `attack` en tecla de acción · `hurt` / `die` si se expande
+- [ ] **Driven por el mismo JSON de export** — El preview consume el Texture Packer JSON; lo que funciona acá funciona en Godot
+
+> **Por qué importa:** El momento en que el sprite generado reacciona al input del usuario es el punto de mayor retención del producto. Convierte un archivo en un personaje. Además valida en tiempo real que el export va a funcionar en el engine — el preview *es* la prueba de integración.
+
+### B.3 — Color y paletas
 - [ ] **Paletas históricas** — NES, Game Boy, CGA, EGA, Pico-8 como templates
 - [ ] **HSL Color Picker visual** — Reemplazar el picker nativo HTML
 - [ ] **Auto-shade** — Generar N variantes claras/oscuras de un color seleccionado
-- [ ] **Export Spritesheet JSON** — Formato Texture Packer compatible con rect coordinates
-- [ ] **Tiling preview** — Ver sprite repetido en grid configurable (útil para tiles)
+
+### B.4 — Monetización
 - [ ] **Sistema de créditos IA + Stripe** — Integración de pagos, planes Free/Pro, cobro por generación
 - [ ] **Onboarding interactivo** — Tutorial paso a paso para nuevos usuarios
 - [ ] **Changelog público en la app** — Mostrar últimas updates; builds confianza
@@ -158,14 +153,14 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 *Prioridad: MEDIA — construir el moat*
 
 - [ ] **Galería pública de sprites** — Feed de creaciones de usuarios con likes y filtros
-- [ ] **Share link de solo lectura** — URL pública para compartir un sprite sin cuenta
+- [ ] **Share link de solo lectura** — URL pública para compartir un sprite (+ preview interactivo embebible)
 - [ ] **Marketplace** — Venta de packs de sprites con revenue share (70/30)
 - [ ] **Colaboración básica** — Compartir proyecto editable con otros usuarios registrados
-- [ ] **Export a Godot** — Recurso `.tres` con spritesheet embebido
-- [ ] **Export a Unity** — Atlas PNG + JSON con rect coordinates por frame
+- [ ] **Export a Godot** — Recurso `.tres` con spritesheet embebido (la base ya está en el JSON de B.1)
+- [ ] **Export a Unity** — Atlas PNG + JSON con rect coordinates por frame (ídem)
 - [ ] **Import palette (.pal / .gpl)** — Cargar paletas de herramientas externas
 - [ ] **Sprite sheet import** — Cargar PNG y dividirlo en frames automáticamente
-- [ ] **API pública** — Docs, autenticación con API keys, rate limits por tier
+- [ ] **API pública** — Docs, autenticación con API keys, rate limits por tier; expone `/generate-sprite`, `/generate-animation` y `/export-json`
 
 ---
 
@@ -174,9 +169,10 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 - [ ] **Colaboración real-time** — Co-edición con cursors compartidos (Supabase Realtime)
 - [ ] **AI in-painting** — Seleccionar área del canvas y regenerar parcialmente con prompt
-- [ ] **Batch AI generation** — Generar set completo de 8 animaciones en un solo click
+- [ ] **Batch AI generation** — Generar set completo de animaciones canónicas en un solo click
 - [ ] **Referencia de imagen overlay** — Cargar imagen semitransparente como guía de dibujo
 - [ ] **Smart Multi-layer AI Splitting** — IA detecta y separa colores/posiciones en capas
+- [ ] **Tilemap editor básico** — Construir niveles con los tiles generados; conecta con el character preview
 - [ ] **Mobile / tablet (PWA)** — Touch events, soporte stylus, layout adaptado
 - [ ] **Plugins / scripting** — API para automatizar workflows con scripts de usuario
 
@@ -191,4 +187,44 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 | Color modes (Indexed, Grayscale) | 🔵 Alta | Medio |
 | Animation easing curves | 🔵 Alta | Medio |
 | CLI / batch export headless | 🔵 Alta | Medio |
-| Tilemap editor | 🔵 Alta | Alto |
+| Tilemap editor completo | 🔵 Alta | Alto |
+
+---
+
+## Notas de arquitectura
+
+### Contrato de datos para integración con game engines
+
+El JSON de export (Texture Packer format) es la fuente de verdad compartida entre el editor, el character preview y los exports a engines externos. La estructura mínima:
+
+```json
+{
+  "meta": {
+    "sprite": "my-character",
+    "size": { "w": 256, "h": 32 },
+    "frameSize": { "w": 32, "h": 32 }
+  },
+  "animations": {
+    "idle":  { "frames": [0], "duration": 200 },
+    "walk":  { "frames": [1, 2, 3, 4], "duration": 120 },
+    "attack":{ "frames": [5, 6, 7], "duration": 80 }
+  }
+}
+```
+
+Godot, Unity y Defold aceptan este formato con importadores nativos o plugins estándar. No requiere soluciones por engine — resolvés el contrato una vez.
+
+### Nombres de animación canónicos
+
+| Nombre | Descripción |
+|--------|-------------|
+| `idle` | Sin input |
+| `walk` | Movimiento genérico |
+| `walk_left` / `walk_right` | Si hay animaciones direccionales |
+| `walk_up` / `walk_down` | Para top-down |
+| `attack` | Acción principal |
+| `hurt` | Recibir daño |
+| `die` | Muerte |
+| `jump` / `fall` | Para platformers |
+
+La IA ya genera estos nombres — estandarizarlos en el data model es principalmente validación y UI.
