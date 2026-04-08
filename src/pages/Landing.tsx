@@ -14,7 +14,7 @@ export default function Landing() {
     if (user) {
       navigate('/dashboard');
     } else {
-      navigate('/auth');
+      navigate('/auth?mode=signup');
     }
   };
 
@@ -40,7 +40,7 @@ export default function Landing() {
           <Button variant="ghost" className="font-mono text-xs text-muted-foreground hover:text-white" onClick={() => navigate('/catalog')}>
             Live Catalog
           </Button>
-          <Button onClick={() => navigate(user ? '/dashboard' : '/auth')} className="font-pixel text-[10px] bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-primary-foreground transition-all">
+          <Button onClick={() => navigate(user ? '/dashboard' : '/auth?mode=login')} className="font-pixel text-[10px] bg-primary/20 text-primary border border-primary/50 hover:bg-primary hover:text-primary-foreground transition-all">
             {user ? 'DASHBOARD' : 'LOGIN'}
           </Button>
         </div>

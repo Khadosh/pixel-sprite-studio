@@ -20,6 +20,16 @@ export default function Auth() {
   const { isRecoveryMode, setRecoveryMode } = useAuth();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'signup') {
+      setView('signup');
+    } else if (mode === 'login') {
+      setView('login');
+    }
+  }, []);
+
+  useEffect(() => {
     if (isRecoveryMode) {
       setView('reset-password');
     }
