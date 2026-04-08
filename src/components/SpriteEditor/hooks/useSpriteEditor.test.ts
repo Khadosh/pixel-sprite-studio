@@ -30,13 +30,18 @@ vi.mock('@/hooks/useGenerateAnimation', () => ({
 const mockAsset: SpriteAsset = {
   id: 'test-sprite',
   name: 'Test Sprite',
+  description: 'Test sprite',
+  category: 'character',
   size: 16,
   palette: { 1: '#ffffff' },
+  colorNames: { 1: 'White' },
   layers: [
     {
       id: 'layer-1',
       name: 'Layer 1',
       isVisible: true,
+      isLocked: false,
+      opacity: 1,
       frames: [Array(16).fill(Array(16).fill(0))],
     }
   ],
