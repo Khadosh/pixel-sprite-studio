@@ -255,7 +255,7 @@ export default function ProjectWorkspace() {
               </div>
             )}
           </div>
-        )
+        )}
 
         {/* Sprites Grid */}
         <div className="bg-card border border-border p-6 md:p-8 rounded-lg min-h-[50vh]">
