@@ -141,9 +141,9 @@ export default function ProjectWorkspace() {
           <div className="flex gap-2 flex-wrap">
             <Button
               onClick={() => { setShowCreator(!showCreator); clearGenerated(); }}
-              className="font-pixel text-xs bg-accent text-accent-foreground hover:bg-accent/80 transition-all border border-border shadow-[0_0_15px_rgba(147,51,234,0.2)]"
+              className="font-pixel text-xs bg-purple-600 text-white hover:bg-purple-500 transition-all border border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.2)]"
             >
-              <Plus size={16} className="mr-2" />
+              <Sparkles size={16} className="mr-2" />
               CREAR SPRITE
             </Button>
           </div>
@@ -151,30 +151,30 @@ export default function ProjectWorkspace() {
 
         {/* Unified Creation Panel */}
         {showCreator && (
-          <div className="bg-card border border-border p-6 rounded-lg space-y-4">
+          <div className="bg-card border border-purple-500/30 p-6 rounded-lg space-y-4">
             {/* Header: title + canvas size */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-accent-foreground" />
-                  <h2 className="font-pixel text-[10px] text-foreground tracking-wider">CREAR NUEVO SPRITE</h2>
+                  <Sparkles size={16} className="text-purple-400" />
+                  <h2 className="font-pixel text-[10px] text-purple-400 tracking-wider">CREAR NUEVO SPRITE</h2>
                 </div>
                 <div className="flex items-center gap-1 bg-secondary rounded-md p-0.5">
                   <button
                     onClick={() => setCanvasSize(16)}
-                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 16 ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 16 ? 'bg-purple-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     16×16
                   </button>
                   <button
                     onClick={() => setCanvasSize(32)}
-                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 32 ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 32 ? 'bg-purple-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     32×32
                   </button>
                 </div>
               </div>
-              <button onClick={() => { setShowCreator(false); clearGenerated(); }} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => { setShowCreator(false); clearGenerated(); }} className="text-muted-foreground hover:text-white transition-colors">
                 <X size={16} />
               </button>
             </div>
@@ -192,7 +192,7 @@ export default function ProjectWorkspace() {
               <Button
                 type="submit"
                 disabled={isGenerating || !generatePrompt.trim()}
-                className="font-pixel text-[10px] bg-accent text-accent-foreground hover:bg-accent/80 border border-border whitespace-nowrap"
+                className="font-pixel text-[10px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 whitespace-nowrap"
               >
                 {isGenerating ? (
                   <>
@@ -233,7 +233,7 @@ export default function ProjectWorkspace() {
                   setEditingSpriteId(null);
                   setEditorOpen(true);
                 }}
-                className="font-pixel text-[9px] border-border text-muted-foreground hover:text-foreground"
+                className="font-pixel text-[9px] border-purple-500/50 text-purple-400 hover:bg-purple-600/20"
               >
                 <Plus size={12} className="mr-1" />
                 DESDE CERO
@@ -242,7 +242,7 @@ export default function ProjectWorkspace() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(`/catalog?projectId=${project.id}`)}
-                className="font-pixel text-[9px] border-border text-muted-foreground hover:text-foreground"
+                className="font-pixel text-[9px] border-purple-500/50 text-purple-400 hover:bg-purple-600/20"
               >
                 <ImageIcon size={12} className="mr-1" />
                 DESDE CATÁLOGO
