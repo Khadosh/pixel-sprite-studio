@@ -137,7 +137,31 @@ export default function ProjectWorkspace() {
               {project.name.toUpperCase()}
             </h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              onClick={() => {
+                const blank: SpriteAsset = {
+                  id: crypto.randomUUID(),
+                  name: 'New Sprite',
+                  description: 'Blank sprite created from scratch',
+                  category: 'character',
+                  size: 16,
+                  palette: { 0: 'transparent', 1: '#000000', 2: '#ffffff', 3: '#ff0000', 4: '#00ff00', 5: '#0000ff', 6: '#ffff00', 7: '#ff00ff', 8: '#00ffff', 9: '#888888' },
+                  colorNames: { 1: 'Black', 2: 'White', 3: 'Red', 4: 'Green', 5: 'Blue', 6: 'Yellow', 7: 'Magenta', 8: 'Cyan', 9: 'Gray' },
+                  frames: [Array.from({ length: 16 }, () => Array(16).fill(0))],
+                  animations: [{ name: 'idle', label: 'IDLE', frameIndices: [0], fps: 5 }],
+                  tags: [],
+                };
+                setEditorAsset(blank);
+                setEditorIsNew(true);
+                setEditingSpriteId(null);
+                setEditorOpen(true);
+              }}
+              className="font-pixel text-xs bg-secondary text-foreground hover:bg-secondary/80 transition-all border border-border"
+            >
+              <Plus size={16} className="mr-2" />
+              DESDE CERO
+            </Button>
             <Button
               onClick={() => { setShowGenerator(!showGenerator); clearGenerated(); }}
               className="font-pixel text-xs bg-purple-600 text-white hover:bg-purple-500 transition-all border border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.2)]"
