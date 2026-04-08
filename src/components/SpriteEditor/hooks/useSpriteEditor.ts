@@ -107,7 +107,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
 
   const { isGenerating: isAnimGenerating, error: animError, generateAnimationsSequence } = useGenerateAnimation();
 
-  const previewPanelRef = useRef<any>(null);
+  const previewPanelRef = useRef<import('../components/AnimationPreviewPanel').AnimationPreviewPanelHandle>(null);
 
   const {
     tool, setTool,
