@@ -1,7 +1,15 @@
 import React from 'react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Edit2, Sparkles, Download, Save } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
+import { Edit2, Sparkles, Download, Save, Image as ImageIcon, FileVideo, HardDrive } from 'lucide-react';
 import { useSpriteEditorContext } from '../context/SpriteEditorContext';
 
 export const EditorHeader = React.memo(() => {
@@ -14,7 +22,9 @@ export const EditorHeader = React.memo(() => {
     onRegenerate,
     isGenerating,
     handleExportPNG,
-    handleSave
+    handleExportGIF,
+    handleSave,
+    viewingAnimation
   } = useSpriteEditorContext();
 
   return (
@@ -62,15 +72,41 @@ export const EditorHeader = React.memo(() => {
         )}
         
         <div className="flex items-center gap-2">
-          <Button 
-            onClick={handleExportPNG} 
-            variant="outline" 
-            size="sm"
-            className="font-pixel text-[9px] h-8 border-purple-500/30 text-purple-300 hover:bg-purple-600/10"
-          >
-            <Download size={14} className="mr-2" />
-            EXPORTAR
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="font-pixel text-[9px] h-8 border-purple-500/30 text-purple-300 hover:bg-purple-600/10"
+              >
+                <Download size={14} className="mr-2" />
+                EXPORTAR
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card border-border font-pixel text-[10px]">
+              <DropdownMenuLabel className="text-muted-foreground text-[8px] uppercase tracking-widest px-2 py-1.5">
+                Opciones de Exportación
+              </DropdownMenuLabel>
+              
+              <DropdownMenuItem onClick={() => handleExportPNG()} className="cursor-pointer gap-2 focus:bg-purple-500/10 focus:text-purple-300">
+                <ImageIcon size={14} />
+                PNG SPRITE SHEET
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={() => handleExportPNG({ includeLabels: true })} className="cursor-pointer gap-2 focus:bg-purple-500/10 focus:text-purple-300">
+                <HardDrive size={14} />
+                PNG CON ETIQUETAS
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator className="bg-border" />
+              
+              <DropdownMenuItem onClick={handleExportGIF} className="cursor-pointer gap-2 focus:bg-purple-500/10 focus:text-purple-300">
+                <FileVideo size={14} />
+                EXPORTAR GIF ({viewingAnimation.toUpperCase()})
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             onClick={handleSave}
             size="sm"

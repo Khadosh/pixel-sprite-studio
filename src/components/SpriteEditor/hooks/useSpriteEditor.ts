@@ -14,7 +14,7 @@ import {
   duplicateFrameInAllLayers, removeFrameFromAllLayers, addEmptyFrameToAllLayers 
 } from '@/lib/spriteAnimations';
 import { flipHorizontal, flipVertical, rotate90 } from '@/lib/spriteTransforms';
-import { exportAsPNG } from '../utils/exportUtils';
+import { exportAsPNG, exportAsGIF } from '../utils/exportUtils';
 import { AVAILABLE_ANIMS, SpriteEditorModalProps, SpriteEditorContextValue } from '../types';
 
 export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorContextValue & {
@@ -427,8 +427,14 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     setEditedAsset(prev => reorderLayers(prev, fromIdx, toIdx));
   }, [editedAsset.layers.length]);
 
-  const handleExportPNG = () => {
-    exportAsPNG(editedAsset);
+  const handleExportPNG = (options?: { includeLabels?: boolean }) => {
+    exportAsPNG(editedAsset, options);
+  };
+
+  const handleExportGIF = async () => {
+    const anim = editedAsset.animations.find(a => a.name === viewingAnimation);
+    const fps = anim?.fps || 10;
+    await exportAsGIF(editedAsset, viewingAnimation, fps);
   };
 
   const handleSave = () => {
@@ -508,6 +514,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     activeColorKey,
     setActiveColorKey,
     handleExportPNG,
+    handleExportGIF,
     handleSave,
     frameLabels,
     rotationAngle,

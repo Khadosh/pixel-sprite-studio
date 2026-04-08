@@ -37,7 +37,7 @@ export interface SpriteEditorContextValue {
   // Layer State
   activeLayerId: string | null;
   setActiveLayerId: (id: string | null) => void;
-  activeLayer: any;
+  activeLayer: any; // Keep any for dynamic layer object, or define Layer type
   
   // Frame/Animation State
   editingFrameIndex: number;
@@ -61,7 +61,8 @@ export interface SpriteEditorContextValue {
   setScope: (scope: EditorScope) => void;
   
   // Handlers & Actions
-  handleExportPNG: () => void;
+  handleExportPNG: (options?: { includeLabels?: boolean }) => void;
+  handleExportGIF: () => Promise<void>;
   handleSave: () => void;
   undo: () => void;
   canUndo: boolean;
@@ -110,7 +111,7 @@ export interface SpriteEditorContextValue {
   toggleAnim: (name: string) => void;
   isAnimGenerating: boolean;
   animError: string | null;
-  previewPanelRef: React.RefObject<any>;
+  previewPanelRef: React.RefObject<HTMLDivElement>;
 
   // Meta
   isGenerating?: boolean; // From props
