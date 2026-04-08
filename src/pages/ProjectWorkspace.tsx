@@ -141,7 +141,7 @@ export default function ProjectWorkspace() {
           <div className="flex gap-2 flex-wrap">
             <Button
               onClick={() => { setShowCreator(!showCreator); clearGenerated(); }}
-              className="font-pixel text-xs bg-purple-600 text-white hover:bg-purple-500 transition-all border border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.2)]"
+              className="font-pixel text-xs bg-primary text-primary-foreground hover:brightness-110 transition-all border border-primary shadow-[0_0_15px_rgba(34,197,94,0.2)]"
             >
               <Sparkles size={16} className="mr-2" />
               CREAR SPRITE
@@ -151,24 +151,24 @@ export default function ProjectWorkspace() {
 
         {/* Unified Creation Panel */}
         {showCreator && (
-          <div className="bg-card border border-purple-500/30 p-6 rounded-lg space-y-4">
+          <div className="bg-card border border-primary/30 p-6 rounded-lg space-y-4 shadow-[0_0_30px_rgba(34,197,94,0.05)]">
             {/* Header: title + canvas size */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-purple-400" />
-                  <h2 className="font-pixel text-[10px] text-purple-400 tracking-wider">CREAR NUEVO SPRITE</h2>
+                  <Sparkles size={16} className="text-primary" />
+                  <h2 className="font-pixel text-[10px] text-primary tracking-wider">CREAR NUEVO SPRITE</h2>
                 </div>
-                <div className="flex items-center gap-1 bg-secondary rounded-md p-0.5">
+                <div className="flex items-center gap-1 bg-secondary rounded-md p-0.5 border border-border">
                   <button
                     onClick={() => setCanvasSize(16)}
-                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 16 ? 'bg-purple-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 16 ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     16×16
                   </button>
                   <button
                     onClick={() => setCanvasSize(32)}
-                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 32 ? 'bg-purple-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`font-pixel text-[9px] px-3 py-1 rounded transition-all ${canvasSize === 32 ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     32×32
                   </button>
@@ -192,7 +192,7 @@ export default function ProjectWorkspace() {
               <Button
                 type="submit"
                 disabled={isGenerating || !generatePrompt.trim()}
-                className="font-pixel text-[10px] bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 whitespace-nowrap"
+                className="font-pixel text-[10px] bg-primary text-primary-foreground hover:brightness-110 border border-primary whitespace-nowrap shadow-[0_0_15px_rgba(34,197,94,0.2)]"
               >
                 {isGenerating ? (
                   <>
@@ -222,9 +222,16 @@ export default function ProjectWorkspace() {
                     description: 'Blank sprite created from scratch',
                     category: 'character',
                     size: s,
-                    palette: { 0: 'transparent', 1: '#000000', 2: '#ffffff', 3: '#ff0000', 4: '#00ff00', 5: '#0000ff', 6: '#ffff00', 7: '#ff00ff', 8: '#00ffff', 9: '#888888' },
-                    colorNames: { 1: 'Black', 2: 'White', 3: 'Red', 4: 'Green', 5: 'Blue', 6: 'Yellow', 7: 'Magenta', 8: 'Cyan', 9: 'Gray' },
-                    frames: [Array.from({ length: s }, () => Array(s).fill(0))],
+                    palette: { 0: 'transparent', 1: '#1a1a2e', 2: '#f0c38e', 3: '#5c3a21', 4: '#2d6a4f', 5: '#3a3a5c', 6: '#4a2c1a', 7: '#c0c0c0', 8: '#1a1a2e', 9: '#e63946' },
+                    colorNames: { 1: 'Outline', 2: 'Skin', 3: 'Hair', 4: 'Shirt', 5: 'Pants', 6: 'Shoes', 7: 'Sword', 8: 'Eyes', 9: 'Hurt' },
+                    layers: [{
+                      id: 'layer-1',
+                      name: 'Base',
+                      isVisible: true,
+                      isLocked: false,
+                      opacity: 1,
+                      frames: [Array.from({ length: s }, () => Array(s).fill(0))]
+                    }],
                     animations: [{ name: 'idle', label: 'IDLE', frameIndices: [0], fps: 5 }],
                     tags: [],
                   };
@@ -233,7 +240,7 @@ export default function ProjectWorkspace() {
                   setEditingSpriteId(null);
                   setEditorOpen(true);
                 }}
-                className="font-pixel text-[9px] border-purple-500/50 text-purple-400 hover:bg-purple-600/20"
+                className="font-pixel text-[9px] border-primary/50 text-primary hover:bg-primary/10 transition-all"
               >
                 <Plus size={12} className="mr-1" />
                 DESDE CERO
@@ -241,8 +248,8 @@ export default function ProjectWorkspace() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/catalog?projectId=${project.id}`)}
-                className="font-pixel text-[9px] border-purple-500/50 text-purple-400 hover:bg-purple-600/20"
+                onClick={() => navigate(`/catalog?projectId=${project.id}&size=${canvasSize}`)}
+                className="font-pixel text-[9px] border-primary/50 text-primary hover:bg-primary/10 transition-all"
               >
                 <ImageIcon size={12} className="mr-1" />
                 DESDE CATÁLOGO
@@ -277,7 +284,7 @@ export default function ProjectWorkspace() {
                   <div
                     key={s.id}
                     onClick={() => handleOpenEditorForSprite(s)}
-                    className="group bg-secondary/30 rounded-lg border border-border overflow-hidden relative cursor-pointer hover:border-purple-500/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(147,51,234,0.1)]"
+                    className="group bg-secondary/30 rounded-lg border border-border overflow-hidden relative cursor-pointer hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.1)]"
                   >
                     <button
                       onClick={(e) => handleDeleteSprite(e, s.id)}

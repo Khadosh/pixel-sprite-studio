@@ -175,17 +175,20 @@ export default function SpritePixelEditor({
     }
 
     // Grid lines
-    ctx.strokeStyle = GRID_COLOR;
-    ctx.lineWidth = 0.5;
     for (let i = 0; i <= asset.size; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * PIXEL_SCALE, 0);
-      ctx.lineTo(i * PIXEL_SCALE, canvasSize);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, i * PIXEL_SCALE);
-      ctx.lineTo(canvasSize, i * PIXEL_SCALE);
-      ctx.stroke();
+        const isMajor = i % 8 === 0;
+        ctx.strokeStyle = isMajor ? '#3f3f5a' : GRID_COLOR;
+        ctx.lineWidth = isMajor ? 1 : 0.5;
+
+        ctx.beginPath();
+        ctx.moveTo(i * PIXEL_SCALE, 0);
+        ctx.lineTo(i * PIXEL_SCALE, canvasSize);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * PIXEL_SCALE);
+        ctx.lineTo(canvasSize, i * PIXEL_SCALE);
+        ctx.stroke();
     }
   }, [asset, activeLayerId, draftFrame, moveOffset, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame]);
 
