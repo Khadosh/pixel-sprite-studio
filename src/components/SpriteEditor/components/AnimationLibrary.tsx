@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Settings } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Sparkles, Settings, Trash2, Edit3, Check, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpriteEditorContext } from '../context/SpriteEditorContext';
@@ -14,162 +13,214 @@ export const AnimationLibrary = React.memo(() => {
     viewingAnimation,
     setViewingAnimation,
     setEditingFrameIndex,
-    selectedAnims,
-    toggleAnim,
     handleGenerateAnimations,
     handleGenerateAnimationsAI,
+    handleRenameAnimation,
+    handleRemoveAnimation,
     isGenerating,
     isAnimGenerating,
-    selectAllAnims,
-    clearSelection,
     castSettings,
     setCastSettings,
     animError
-  } = useSpriteEditorContext() as any; // Cast as any to access custom hook extensions for now
+  } = useSpriteEditorContext() as any;
+
+  const [genType, setGenType] = useState<string>('idle');
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [newName, setNewName] = useState('');
+
+  const startEditing = (name: string, label: string) => {
+    setEditingName(name);
+    setNewName(label);
+  };
+
+  const saveName = (name: string) => {
+    if (newName.trim()) {
+      handleRenameAnimation(name, newName);
+    }
+    setEditingName(null);
+  };
 
   return (
-    <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-3">
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block">LIBRERIA DE ANIMACIONES</span>
-        <div className="flex gap-2">
-          <button onClick={selectAllAnims} className="text-[7px] font-pixel text-primary hover:text-green-400">TODO</button>
-          <button onClick={clearSelection} className="text-[7px] font-pixel text-muted-foreground hover:text-foreground">NADA</button>
+    <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-4">
+      {/* SECTION: SAVED ANIMATIONS */}
+      <div className="space-y-3">
+        <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Animaciones Guardadas</span>
+        
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setViewingAnimation('base');
+              setEditingFrameIndex(0);
+            }}
+            className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between group ${viewingAnimation === 'base'
+              ? 'bg-primary/10 border-primary text-primary shadow-[0_0_10px_rgba(34,197,94,0.1)]'
+              : 'bg-secondary/10 border-border text-muted-foreground hover:border-primary/30'
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)] shrink-0" />
+              <span>BASE (ESTATICO)</span>
+            </div>
+          </button>
+
+          {editedAsset.animations.map((anim: any) => {
+            const isViewing = viewingAnimation === anim.name;
+            const isEditing = editingName === anim.name;
+            
+            return (
+              <div 
+                key={anim.name}
+                className={`group flex items-center gap-2 px-3 py-1.5 rounded border transition-all cursor-pointer ${isViewing 
+                  ? 'bg-primary/5 border-primary shadow-[inset_0_0_10px_rgba(34,197,94,0.05)]' 
+                  : 'bg-secondary/5 border-border hover:border-primary/20'
+                }`}
+                onClick={() => {
+                  setViewingAnimation(anim.name);
+                  if (anim.frameIndices.length > 0) setEditingFrameIndex(anim.frameIndices[0]);
+                }}
+              >
+                <div className="flex-1 flex items-center gap-2 overflow-hidden">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+                  
+                  {isEditing ? (
+                    <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        autoFocus
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveName(anim.name);
+                          if (e.key === 'Escape') setEditingName(null);
+                        }}
+                        className="bg-black/40 border-none outline-none text-[10px] font-pixel text-primary w-full p-0 h-4"
+                      />
+                      <button onClick={() => saveName(anim.name)} className="text-emerald-500"><Check size={10} /></button>
+                      <button onClick={() => setEditingName(null)} className="text-red-400"><X size={10} /></button>
+                    </div>
+                  ) : (
+                    <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-primary' : 'text-muted-foreground/80'}`}>
+                      {anim.label.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {!isEditing && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); startEditing(anim.name, anim.label); }}
+                      className="p-1 hover:text-primary transition-colors text-muted-foreground/50"
+                    >
+                      <Edit3 size={10} />
+                    </button>
+                  )}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleRemoveAnimation(anim.name); }}
+                    className="p-1 hover:text-destructive transition-colors text-muted-foreground/50"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-      
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setViewingAnimation('base');
-            setEditingFrameIndex(0);
-          }}
-          className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between ${viewingAnimation === 'base'
-            ? 'bg-primary/10 border-primary text-primary'
-            : 'bg-secondary/10 border-border text-muted-foreground hover:border-primary/30'
-            }`}
-        >
+
+      <div className="h-px bg-border/50" />
+
+      {/* SECTION: GENERATION PANEL */}
+      <div className="space-y-3 pt-1">
+        <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Generar Nueva</span>
+        
+        <div className="space-y-3 p-3 rounded-md bg-black/20 border border-white/5">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]" />
-            <span>BASE (ESTATICO)</span>
-          </div>
-        </button>
-
-        {AVAILABLE_ANIMS.map(anim => {
-          const isViewing = viewingAnimation === anim.value;
-          const isSelectedForGen = selectedAnims.includes(anim.value);
-          const exists = editedAsset.animations.some(a => a.name === anim.value);
-          
-          return (
-            <div 
-              key={anim.value}
-              className={`group flex items-center gap-2 px-3 py-2 rounded border transition-all cursor-pointer ${isViewing 
-                ? 'bg-primary/5 border-primary shadow-[inset_0_0_10px_rgba(34,197,94,0.05)]' 
-                : 'bg-secondary/10 border-border hover:border-primary/30'
-              }`}
-              onClick={() => {
-                setViewingAnimation(anim.value);
-                const animDef = editedAsset.animations.find(a => a.name === anim.value);
-                if (animDef) setEditingFrameIndex(animDef.frameIndices[0]);
-              }}
-            >
-              <div className="flex-1 flex items-center gap-2 overflow-hidden">
-                {exists ? (
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)] shrink-0" />
-                ) : (
-                  <div className="w-1.5 h-1.5 rounded-full border border-muted-foreground/50 shrink-0" />
-                )}
-                <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {anim.label.toUpperCase()}
-                </span>
-                
-                {anim.value === 'cast' && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button 
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-1 hover:bg-white/10 rounded-full text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <Settings size={12} />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 bg-[#0a0a0f] border-primary/30 p-3 space-y-3" side="left" align="center" style={{ zIndex: 100 }}>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Elemento</label>
-                        <Select 
-                          value={castSettings.element} 
-                          onValueChange={(val: CastElement) => setCastSettings(prev => ({ ...prev, element: val }))}
-                        >
-                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-primary/20">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#0a0a0f] border-primary/40 z-[110]">
-                            <SelectItem value="generic" className="text-[9px] font-pixel">GENERIC</SelectItem>
-                            <SelectItem value="fire" className="text-[9px] font-pixel text-orange-400">FIRE</SelectItem>
-                            <SelectItem value="water" className="text-[9px] font-pixel text-blue-400">WATER</SelectItem>
-                            <SelectItem value="electric" className="text-[9px] font-pixel text-yellow-300">ELECTRIC</SelectItem>
-                            <SelectItem value="nature" className="text-[9px] font-pixel text-green-400">NATURE</SelectItem>
-                            <SelectItem value="ice" className="text-[9px] font-pixel text-cyan-200">ICE</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Forma</label>
-                        <Select 
-                          value={castSettings.shape} 
-                          onValueChange={(val: CastShape) => setCastSettings(prev => ({ ...prev, shape: val }))}
-                        >
-                          <SelectTrigger className="h-8 text-[9px] font-pixel bg-black/40 border-primary/20">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-[#0a0a0f] border-primary/40 z-[110]">
-                            <SelectItem value="burst" className="text-[9px] font-pixel">BURST</SelectItem>
-                            <SelectItem value="circle" className="text-[9px] font-pixel">CIRCLE</SelectItem>
-                            <SelectItem value="beam" className="text-[9px] font-pixel">BEAM</SelectItem>
-                            <SelectItem value="spark" className="text-[9px] font-pixel">SPARKS</SelectItem>
-                            <SelectItem value="pulse" className="text-[9px] font-pixel">PULSE</SelectItem>
-                            <SelectItem value="random" className="text-[9px] font-pixel">RANDOM</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-              
-              <div 
-                className="flex items-center justify-center p-1 hover:bg-white/5 rounded transition-colors group-hover:bg-white/10"
-                onClick={(e) => { e.stopPropagation(); toggleAnim(anim.value); }}
-              >
-                <Checkbox 
-                  checked={isSelectedForGen}
-                  className={`h-4 w-4 border-muted-foreground/30 rounded-sm ${isSelectedForGen ? 'bg-primary border-primary' : 'bg-transparent'}`}
-                />
-              </div>
+            <div className="flex-1">
+              <Select value={genType} onValueChange={setGenType}>
+                <SelectTrigger className="h-8 text-[9px] font-pixel bg-background/50 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-primary/40">
+                  {AVAILABLE_ANIMS.map(a => (
+                    <SelectItem key={a.value} value={a.value} className="text-[9px] font-pixel">{a.label.toUpperCase()}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          );
-        })}
+
+            {genType === 'cast' && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/20 hover:text-primary border border-white/5">
+                    <Settings size={14} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 bg-[#0a0a0f] border-primary/30 p-3 space-y-3 shadow-2xl" side="left">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Elemento</label>
+                    <Select 
+                      value={castSettings.element} 
+                      onValueChange={(val: CastElement) => setCastSettings(prev => ({ ...prev, element: val }))}
+                    >
+                      <SelectTrigger className="h-7 text-[8px] font-pixel bg-black/40 border-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0a0a0f] border-primary/40">
+                        <SelectItem value="generic" className="text-[8px] font-pixel">GENERIC</SelectItem>
+                        <SelectItem value="fire" className="text-[8px] font-pixel text-orange-400">FIRE</SelectItem>
+                        <SelectItem value="water" className="text-[8px] font-pixel text-blue-400">WATER</SelectItem>
+                        <SelectItem value="electric" className="text-[8px] font-pixel text-yellow-300">ELECTRIC</SelectItem>
+                        <SelectItem value="nature" className="text-[8px] font-pixel text-green-400">NATURE</SelectItem>
+                        <SelectItem value="ice" className="text-[8px] font-pixel text-cyan-200">ICE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-pixel text-primary uppercase tracking-tighter">Forma</label>
+                    <Select 
+                      value={castSettings.shape} 
+                      onValueChange={(val: CastShape) => setCastSettings(prev => ({ ...prev, shape: val }))}
+                    >
+                      <SelectTrigger className="h-7 text-[8px] font-pixel bg-black/40 border-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0a0a0f] border-primary/40">
+                        <SelectItem value="burst" className="text-[8px] font-pixel">BURST</SelectItem>
+                        <SelectItem value="circle" className="text-[8px] font-pixel">CIRCLE</SelectItem>
+                        <SelectItem value="beam" className="text-[8px] font-pixel">BEAM</SelectItem>
+                        <SelectItem value="spark" className="text-[8px] font-pixel">SPARKS</SelectItem>
+                        <SelectItem value="pulse" className="text-[8px] font-pixel">PULSE</SelectItem>
+                        <SelectItem value="random" className="text-[8px] font-pixel">RANDOM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleGenerateAnimations(genType)}
+              disabled={isGenerating || isAnimGenerating}
+              className="flex-1 font-pixel text-[8px] bg-secondary/50 text-foreground hover:bg-secondary/80 border border-white/5 h-8 transition-all"
+            >
+              QUICK
+            </Button>
+            <Button
+              onClick={() => handleGenerateAnimationsAI(genType)}
+              disabled={isGenerating || isAnimGenerating}
+              className="flex-[1.5] font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all"
+            >
+              <Sparkles size={12} className="mr-1" />
+              {isAnimGenerating ? '...' : 'IA GENERATE'}
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 w-full pt-1">
-        <Button
-          onClick={handleGenerateAnimations}
-          disabled={selectedAnims.length === 0 || isGenerating || isAnimGenerating}
-          className="w-full font-pixel text-[8px] bg-secondary text-foreground hover:bg-secondary/80 border border-border h-8 transition-all"
-        >
-          QUICK MATCH
-        </Button>
-        <Button
-          onClick={handleGenerateAnimationsAI}
-          disabled={selectedAnims.length === 0 || isGenerating || isAnimGenerating}
-          className="w-full font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all"
-        >
-          <Sparkles size={14} strokeWidth={2.5} className="mr-1" />
-          {isAnimGenerating ? `GENERANDO...` : 'GENERAR CON IA'}
-        </Button>
-      </div>
       {animError && (
-        <div className="text-red-400 text-[10px] mt-1 break-words font-mono">{animError}</div>
+        <div className="text-red-400 text-[10px] mt-2 p-2 rounded bg-red-400/5 border border-red-400/10 font-mono whitespace-pre-wrap">{animError}</div>
       )}
     </div>
   );

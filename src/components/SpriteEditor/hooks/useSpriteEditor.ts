@@ -16,6 +16,7 @@ import {
 import { flipHorizontal, flipVertical, rotate90 } from '@/lib/spriteTransforms';
 import { exportAsPNG, exportAsGIF } from '../utils/exportUtils';
 import { AVAILABLE_ANIMS, SpriteEditorModalProps, SpriteEditorContextValue } from '../types';
+import { PROP_LIBRARY } from '@/lib/assets/props';
 
 export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorContextValue & {
   sensors: any;
@@ -252,23 +253,43 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     );
   };
 
-  const handleGenerateAnimations = () => {
-    const withAnims = generateAnimationsClientSide(editedAsset, selectedAnims, castSettings);
-    setEditedAsset(withAnims);
+  const handleGenerateAnimations = (type?: string) => {
+    const typeToGen = type || selectedAnims[0] || 'idle';
+    const withAnims = generateAnimationsClientSide(editedAsset, [typeToGen], castSettings);
+    
+    // Instead of replacing all, we append the newly generated one with a unique name
+    const newAnims = [...withAnims.animations];
+    const generated = newAnims[newAnims.length - 1]; // The newly added one
+    
+    const timestamp = Date.now().toString().slice(-4);
+    generated.name = `${generated.name}_${timestamp}`;
+    generated.label = `${generated.label} ${timestamp}`;
 
-    if (withAnims.animations.length > 0) {
-      const priority = selectedAnims.includes('cast') ? 'cast' : selectedAnims[0];
-      const targetAnim = withAnims.animations.find(a => a.name === priority);
-      
-      if (targetAnim) {
-        setViewingAnimation(targetAnim.name);
-        const impactOffset = targetAnim.name === 'cast' ? 3 : 1;
-        const targetFrame = targetAnim.frameIndices[impactOffset] || targetAnim.frameIndices[0];
-        setEditingFrameIndex(targetFrame);
-        previewPanelRef.current?.setIsPlaying(true);
-      }
-    }
+    setEditedAsset({
+      ...withAnims,
+      animations: [...editedAsset.animations, generated]
+    });
+
+    setViewingAnimation(generated.name);
+    const targetFrame = generated.frameIndices[0];
+    setEditingFrameIndex(targetFrame);
+    previewPanelRef.current?.setIsPlaying(true);
   };
+
+  const handleRenameAnimation = useCallback((name: string, newLabel: string) => {
+    setEditedAsset(prev => ({
+      ...prev,
+      animations: prev.animations.map(a => a.name === name ? { ...a, label: newLabel } : a)
+    }));
+  }, []);
+
+  const handleRemoveAnimation = useCallback((name: string) => {
+    setEditedAsset(prev => ({
+      ...prev,
+      animations: prev.animations.filter(a => a.name !== name)
+    }));
+    if (viewingAnimation === name) setViewingAnimation('base');
+  }, [viewingAnimation]);
 
   const selectAllAnims = () => {
     setSelectedAnims(AVAILABLE_ANIMS.map(a => a.value));
@@ -320,10 +341,25 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     }
   };
 
-  const handleGenerateAnimationsAI = async () => {
-    if (selectedAnims.length === 0) return;
-    await generateAnimationsSequence(editedAsset, selectedAnims, (updatedAsset) => {
-      setEditedAsset(updatedAsset);
+  const handleGenerateAnimationsAI = async (type?: string) => {
+    const animsToGen = type ? [type] : selectedAnims;
+    if (animsToGen.length === 0) return;
+    
+    await generateAnimationsSequence(editedAsset, animsToGen, (updatedAsset) => {
+      // Find the new animations by comparing with current
+      const newAnims = updatedAsset.animations.filter(
+        ua => !editedAsset.animations.some(ea => ea.name === ua.name)
+      );
+      
+      // Give them unique names/labels if necessary (though generateAnimationsSequence often replaces)
+      // For this pro refactor, we just append
+      setEditedAsset(prev => ({
+        ...updatedAsset,
+        animations: [...prev.animations, ...newAnims.map(a => {
+          const ts = Date.now().toString().slice(-3);
+          return { ...a, name: `${a.name}_${ts}`, label: `${a.label} ${ts}` };
+        })]
+      }));
     }, activeLayerId);
   };
 
@@ -427,6 +463,40 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     setEditedAsset(prev => reorderLayers(prev, fromIdx, toIdx));
   }, [editedAsset.layers.length]);
 
+  const handleAddPropLayer = useCallback((propId: string) => {
+    const prop = PROP_LIBRARY.find(p => p.id === propId);
+    if (!prop) return;
+
+    const size = editedAsset.size || 16;
+    const propData = size === 32 ? prop.data32 : prop.data16;
+    if (!propData) return;
+
+    const newLayerId = crypto.randomUUID();
+    const frameCount = editedAsset.layers[0]?.frames.length || 1;
+    
+    // Create frames for the new layer (all identical/static for now)
+    const newFrames = Array.from({ length: frameCount }, () => 
+      propData.map(row => [...row])
+    );
+
+    setEditedAsset(prev => ({
+      ...prev,
+      layers: [
+        ...prev.layers,
+        {
+          id: newLayerId,
+          name: prop.name,
+          frames: newFrames,
+          isVisible: true,
+          isLocked: false,
+          opacity: 1,
+          paletteIds: [] // Let it inherit or add specific colors if needed
+        }
+      ]
+    }));
+    setActiveLayerId(newLayerId);
+  }, [editedAsset.size, editedAsset.layers]);
+
   const handleExportPNG = (options?: { includeLabels?: boolean }) => {
     exportAsPNG(editedAsset, options);
   };
@@ -477,6 +547,8 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     previewPanelRef,
     handleGenerateAnimationsAI,
     handleGenerateAnimations,
+    handleRenameAnimation,
+    handleRemoveAnimation,
     selectAllAnims,
     clearSelection,
     toggleAnim,
@@ -486,6 +558,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     handleToggleLayerLock,
     handleRenameLayer,
     handleMoveLayer,
+    handleAddPropLayer,
     handleAddColor,
     handleRemoveColor,
     handleChangeColor,

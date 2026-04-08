@@ -90,6 +90,7 @@ export interface SpriteEditorContextValue {
   handleToggleLayerLock: (id: string) => void;
   handleRenameLayer: (id: string, name: string) => void;
   handleMoveLayer: (idx: number, dir: 'up' | 'down') => void;
+  handleAddPropLayer: (propId: string) => void;
 
   // Frame Actions
   handleDuplicateFrame: (idx: number) => void;
@@ -105,8 +106,10 @@ export interface SpriteEditorContextValue {
   handleRotate: () => void;
 
   // Animation Generation
-  handleGenerateAnimations: () => void;
-  handleGenerateAnimationsAI: () => Promise<void>;
+  handleGenerateAnimations: (type?: string) => void;
+  handleGenerateAnimationsAI: (type?: string) => Promise<void>;
+  handleRenameAnimation: (name: string, newLabel: string) => void;
+  handleRemoveAnimation: (name: string) => void;
   selectAllAnims: () => void;
   clearSelection: () => void;
   toggleAnim: (name: string) => void;

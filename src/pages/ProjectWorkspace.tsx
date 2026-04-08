@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Image as ImageIcon, Trash2, Sparkles, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, Trash2, Sparkles, Loader2, X, Copy } from 'lucide-react';
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSprite } from '@/hooks/useGenerateSprite';
@@ -108,10 +108,30 @@ export default function ProjectWorkspace() {
         }
       });
     }
-
     setEditorOpen(false);
     setEditorAsset(null);
     setEditingSpriteId(null);
+  };
+
+  const handleCloneSprite = async (e: React.MouseEvent, sprite: ProjectSprite) => {
+    e.stopPropagation();
+    if (!id) return;
+    
+    const originalAsset = sprite.asset_data as SpriteAsset;
+    const clonedAsset: SpriteAsset = {
+      ...originalAsset,
+      id: crypto.randomUUID(),
+      name: `${originalAsset.name} (Copia)`
+    };
+
+    createSpriteMutation.mutate({ projectId: id, asset: clonedAsset }, {
+      onSuccess: () => {
+        toast({ title: 'Sprite clonado', description: `Se ha creado una copia de ${originalAsset.name}.` });
+      },
+      onError: (error: any) => {
+        toast({ title: 'Error al clonar', description: error.message, variant: 'destructive' });
+      }
+    });
   };
 
   if (isProjectLoading || isSpritesLoading) {
@@ -310,13 +330,22 @@ export default function ProjectWorkspace() {
                     onClick={() => handleOpenEditorForSprite(s)}
                     className="group bg-secondary/30 rounded-lg border border-border overflow-hidden relative cursor-pointer hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(34,197,94,0.1)]"
                   >
-                    <button
-                      onClick={(e) => handleDeleteSprite(e, s.id)}
-                      className="absolute top-2 right-2 p-1.5 bg-background border border-border rounded text-muted-foreground hover:text-destructive hover:border-destructive opacity-0 group-hover:opacity-100 transition-all z-10"
-                      title="Eliminar del proyecto"
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-10">
+                      <button
+                        onClick={(e) => handleCloneSprite(e, s)}
+                        className="p-1.5 bg-background border border-border rounded text-muted-foreground hover:text-primary hover:border-primary transition-all"
+                        title="Clonar sprite"
+                      >
+                        <Copy size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteSprite(e, s.id)}
+                        className="p-1.5 bg-background border border-border rounded text-muted-foreground hover:text-destructive hover:border-destructive transition-all"
+                        title="Eliminar del proyecto"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                     <div className="aspect-square bg-secondary/20 flex flex-col items-start justify-start p-3 relative overflow-auto custom-scrollbar">
                       <div className="pointer-events-none origin-top-left">
                         <PaletteProvider defaultPalette={asset.palette}>
