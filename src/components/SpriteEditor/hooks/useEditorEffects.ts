@@ -63,7 +63,17 @@ export function useEditorEffects(store: SpriteEditorStore) {
         case 'z':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            bridge.undo();
+            if (e.shiftKey) {
+              state.redo();
+            } else {
+              state.undo();
+            }
+          }
+          break;
+        case 'y':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            state.redo();
           }
           break;
         case 'c':

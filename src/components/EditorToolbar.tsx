@@ -1,5 +1,5 @@
 import { 
-  Pencil, Eraser, Undo2, Layers, PaintBucket, Pipette, 
+  Pencil, Eraser, Undo2, Redo2, Layers, PaintBucket, Pipette, 
   Minus, Square, Circle, SplitSquareHorizontal,
   RotateCw, Monitor, Copy, ClipboardList, FlipHorizontal, FlipVertical,
   Scan, LucideIcon
@@ -18,6 +18,8 @@ interface EditorToolbarProps {
   onBrushSizeChange: (s: BrushSize) => void;
   canUndo: boolean;
   onUndo: () => void;
+  canRedo: boolean;
+  onRedo: () => void;
   onionSkin: boolean;
   onToggleOnionSkin: () => void;
   mirrorX: boolean;
@@ -59,6 +61,7 @@ export default React.memo(function EditorToolbar({
   tool, onToolChange, 
   brushSize, onBrushSizeChange, 
   canUndo, onUndo, 
+  canRedo, onRedo,
   onionSkin, onToggleOnionSkin,
   mirrorX, onToggleMirrorX,
   scope, onScopeChange,
@@ -209,20 +212,35 @@ export default React.memo(function EditorToolbar({
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={onUndo}
-                disabled={!canUndo}
-                className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
-              >
-                <Undo2 size={14} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-              Deshacer (Ctrl+Z)
-            </TooltipContent>
-          </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                  className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
+                >
+                  <Undo2 size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+                Deshacer (Ctrl+Z)
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                  className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
+                >
+                  <Redo2 size={14} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+                Rehacer (Ctrl+Shift+Z / Ctrl+Y)
+              </TooltipContent>
+            </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>

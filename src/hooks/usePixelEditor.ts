@@ -6,13 +6,15 @@ import { shiftFrame, getCenterOfMass, rotateFrameFree, resizeFrameNearest, findB
 import { compositeFrame } from '@/lib/layerUtils';
 
 export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'rotate' | 'select';
-
 export function usePixelEditor(
   asset: SpriteAsset,
   frameIndex: number,
   activeLayerId: string | null,
   onAssetChange: (a: SpriteAsset) => void,
-  scope: 'layer' | 'frame' = 'layer'
+  scope: 'layer' | 'frame' = 'layer',
+  onPushUndo?: () => void,
+  externalUndo?: () => void,
+  externalCanUndo?: boolean
 ) {
   const [tool, setTool] = useState<EditorTool>('pencil');
   const [activeColorKey, setActiveColorKey] = useState(1);
@@ -26,9 +28,6 @@ export function usePixelEditor(
   const [selectionRect, setSelectionRect] = useState<{ r: number; c: number; w: number; h: number } | null>(null);
   const [movingSelectionPixels, setMovingSelectionPixels] = useState<Frame | null>(null);
   const [draggingHandle, setDraggingHandle] = useState<number | null>(null);
-
-  const undoStack = useRef<Frame[]>([]);
-  const [undoLen, setUndoLen] = useState(0);
 
   const isDrawing = useRef(false);
   const strokeStart = useRef<{ r: number; c: number } | null>(null);
@@ -65,20 +64,14 @@ export function usePixelEditor(
   }, [asset, activeLayerId, frameIndex, onAssetChange]);
 
   const pushUndo = useCallback(() => {
-    const frame = getActiveLayerFrame();
-    if (!frame) return;
-    const snapshot = frame.map(row => [...row]);
-    undoStack.current.push(snapshot);
-    if (undoStack.current.length > 50) undoStack.current.shift();
-    setUndoLen(undoStack.current.length);
-  }, [getActiveLayerFrame]);
+    if (onPushUndo) {
+      onPushUndo();
+    }
+  }, [onPushUndo]);
 
   const undo = useCallback(() => {
-    const snapshot = undoStack.current.pop();
-    if (!snapshot) return;
-    setUndoLen(undoStack.current.length);
-    updateActiveLayerFrame(snapshot);
-  }, [updateActiveLayerFrame]);
+    if (externalUndo) externalUndo();
+  }, [externalUndo]);
 
   const applyPixelsToFrame = (frame: Frame, pixels: {r: number, c: number, v: number}[], size: number) => {
     for (const { r, c, v } of pixels) {
@@ -548,7 +541,7 @@ export function usePixelEditor(
     mirrorX, setMirrorX,
     draftFrame,
     handlePointerDown, handlePointerMove, handlePointerUp,
-    undo, pushUndo, canUndo: undoLen > 0,
+    undo, pushUndo, canUndo: externalCanUndo || false,
     overwriteLayerFrame,
     rotationAngle,
     rotationCenter,

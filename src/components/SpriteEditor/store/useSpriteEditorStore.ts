@@ -1,5 +1,6 @@
 import { createStore } from 'zustand/vanilla';
 import { SpriteAsset, AdvancedCastSettings } from '@/lib/types';
+import { AVAILABLE_ANIMS } from '../types';
 import { EditorScope } from '@/components/EditorToolbar';
 import { EditorTool } from '@/hooks/usePixelEditor';
 import type { Frame } from '@/lib/types';
@@ -146,6 +147,14 @@ export interface SpriteEditorState {
   handleSave: () => void;
   handleClose: () => void;
   initFromAsset: (asset: SpriteAsset) => void;
+  // --- History Actions ---
+  pushUndo: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  past: SpriteAsset[];
+  future: SpriteAsset[];
 }
 
 // ─── Store options ───
@@ -183,6 +192,12 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     selectedAnims: [],
     isAnimGenerating: false,
     animError: null,
+    
+    // History stacks
+    past: [] as SpriteAsset[],
+    future: [] as SpriteAsset[],
+    canUndo: false,
+    canRedo: false,
 
     // Props
     _onSave: options.onSave,
@@ -220,44 +235,100 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     setAnimError: (e) => set({ animError: e }),
     setPixelEditorBridge: (bridge) => set({ _pixelEditorBridge: bridge }),
 
-    // --- Frame Actions ---
-    duplicateFrame: (idx) => set(state => ({
-      editedAsset: duplicateFrameInAllLayers(state.editedAsset, idx),
-    })),
-
-    deleteFrame: (idx) => set(state => {
-      let newEditingIdx = state.editingFrameIndex;
-      if (newEditingIdx === idx) newEditingIdx = Math.max(0, idx - 1);
-      else if (newEditingIdx > idx) newEditingIdx = newEditingIdx - 1;
-      return {
-        editedAsset: removeFrameFromAllLayers(state.editedAsset, idx),
-        editingFrameIndex: newEditingIdx,
+    // --- History Internal Helper ---
+    pushUndo: () => set(state => {
+      // Deep clone only the asset to save in history
+      const snapshot = JSON.parse(JSON.stringify(state.editedAsset));
+      const newPast = [snapshot, ...state.past].slice(0, 50);
+      return { 
+        past: newPast, 
+        future: [],
+        canUndo: true,
+        canRedo: false
       };
     }),
 
-    insertEmptyFrame: (idx) => set(state => ({
-      editedAsset: addEmptyFrameToAllLayers(state.editedAsset, idx),
-    })),
+    undo: () => set(state => {
+      if (state.past.length === 0) return state;
+      const [previous, ...rest] = state.past;
+      const current = JSON.parse(JSON.stringify(state.editedAsset));
+      
+      return {
+        editedAsset: previous,
+        past: rest,
+        future: [current, ...state.future],
+        canUndo: rest.length > 0,
+        canRedo: true
+      };
+    }),
+
+    redo: () => set(state => {
+      if (state.future.length === 0) return state;
+      const [next, ...rest] = state.future;
+      const current = JSON.parse(JSON.stringify(state.editedAsset));
+      
+      return {
+        editedAsset: next,
+        future: rest,
+        past: [current, ...state.past],
+        canUndo: true,
+        canRedo: rest.length > 0
+      };
+    }),
+
+    // --- Frame Actions ---
+    duplicateFrame: (idx) => {
+      get().pushUndo();
+      set(state => ({
+        editedAsset: duplicateFrameInAllLayers(state.editedAsset, idx),
+      }));
+    },
+
+    deleteFrame: (idx) => {
+      get().pushUndo();
+      set(state => {
+        let newEditingIdx = state.editingFrameIndex;
+        if (newEditingIdx === idx) newEditingIdx = Math.max(0, idx - 1);
+        else if (newEditingIdx > idx) newEditingIdx = newEditingIdx - 1;
+        return {
+          editedAsset: removeFrameFromAllLayers(state.editedAsset, idx),
+          editingFrameIndex: newEditingIdx,
+        };
+      });
+    },
+
+    insertEmptyFrame: (idx) => {
+      get().pushUndo();
+      set(state => ({
+        editedAsset: addEmptyFrameToAllLayers(state.editedAsset, idx),
+      }));
+    },
 
     // --- Layer Actions ---
-    addLayer: () => set(state => {
-      const updated = addNewLayer(state.editedAsset, `Layer ${state.editedAsset.layers.length + 1}`);
-      return {
-        editedAsset: updated,
-        activeLayerId: updated.layers[updated.layers.length - 1].id,
-      };
-    }),
+    addLayer: () => {
+      get().pushUndo();
+      set(state => {
+        const updated = addNewLayer(state.editedAsset, `Layer ${state.editedAsset.layers.length + 1}`);
+        return {
+          editedAsset: updated,
+          activeLayerId: updated.layers[updated.layers.length - 1].id,
+        };
+      });
+    },
 
-    removeLayer: (layerId) => set(state => {
-      if (state.editedAsset.layers.length <= 1) return state;
-      const updated = removeLayer(state.editedAsset, layerId);
-      return {
-        editedAsset: updated,
-        activeLayerId: state.activeLayerId === layerId 
-          ? updated.layers[updated.layers.length - 1].id 
-          : state.activeLayerId,
-      };
-    }),
+    removeLayer: (layerId) => {
+      if (get().editedAsset.layers.length <= 1) return;
+      get().pushUndo();
+      set(state => {
+        const updated = removeLayer(state.editedAsset, layerId);
+        return {
+          editedAsset: updated,
+          activeLayerId: state.activeLayerId === layerId 
+            ? updated.layers[updated.layers.length - 1].id 
+            : state.activeLayerId,
+        };
+      });
+    },
 
     toggleLayerVisibility: (layerId) => set(state => ({
       editedAsset: toggleLayerVisibility(state.editedAsset, layerId),
@@ -275,6 +346,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const state = get();
       const toIdx = direction === 'up' ? fromIdx + 1 : fromIdx - 1;
       if (toIdx < 0 || toIdx >= state.editedAsset.layers.length) return;
+      state.pushUndo();
       set({ editedAsset: reorderLayers(state.editedAsset, fromIdx, toIdx) });
     },
 
@@ -289,6 +361,8 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         propData = upscale2x(prop.data16);
       }
       if (!propData) return;
+
+      state.pushUndo();
 
       const newLayerId = crypto.randomUUID();
       const frameCount = state.editedAsset.layers[0]?.frames.length || 1;
@@ -326,7 +400,9 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       editedAsset: { ...state.editedAsset, palette: { ...state.editedAsset.palette, [key]: color } },
     })),
 
-    addColor: () => set(state => {
+    addColor: () => {
+      get().pushUndo();
+      set(state => {
       const keys = Object.keys(state.editedAsset.palette).map(Number).filter(k => k > 0);
       const newKey = keys.length > 0 ? Math.max(...keys) + 1 : 1;
       const updatedPalette = { ...state.editedAsset.palette, [newKey]: '#888888' };
@@ -350,10 +426,12 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
           layers: newLayers,
         },
       };
-    }),
+      });
+    },
 
     removeColor: (key) => {
       const state = get();
+      state.pushUndo();
       const newPalette = { ...state.editedAsset.palette };
       delete newPalette[key];
       const newColorNames = { ...state.editedAsset.colorNames };
@@ -396,7 +474,6 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     })),
 
     selectAllAnims: () => {
-      const { AVAILABLE_ANIMS } = require('../types');
       set({ selectedAnims: AVAILABLE_ANIMS.map((a: any) => a.value) });
     },
 
@@ -404,6 +481,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
     generateAnimations: (type) => {
       const state = get();
+      state.pushUndo();
       const typeToGen = type || state.selectedAnims[0] || 'idle';
       const withAnims = generateAnimationsClientSide(state.editedAsset, [typeToGen], state.castSettings);
 
@@ -437,13 +515,16 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       },
     })),
 
-    removeAnimation: (name) => set(state => ({
-      editedAsset: {
-        ...state.editedAsset,
-        animations: state.editedAsset.animations.filter(a => a.name !== name),
-      },
-      viewingAnimation: state.viewingAnimation === name ? 'base' : state.viewingAnimation,
-    })),
+    removeAnimation: (name) => {
+      get().pushUndo();
+      set(state => ({
+        editedAsset: {
+          ...state.editedAsset,
+          animations: state.editedAsset.animations.filter(a => a.name !== name),
+        },
+        viewingAnimation: state.viewingAnimation === name ? 'base' : state.viewingAnimation,
+      }));
+    },
 
     // --- Transform Actions ---
     handleCopy: () => {
@@ -751,6 +832,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const state = get();
       if (state.viewingAnimation === 'base') return;
 
+      state.pushUndo();
       set(s => {
         const animIndex = s.editedAsset.animations.findIndex(a => a.name === s.viewingAnimation);
         if (animIndex === -1) return s;

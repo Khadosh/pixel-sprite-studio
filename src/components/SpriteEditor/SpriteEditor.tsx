@@ -69,11 +69,18 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
   const editingFrameIndex = useStore(store, s => s.editingFrameIndex);
   const activeLayerId = useStore(store, s => s.activeLayerId);
   const scope = useStore(store, s => s.scope);
+  const { pushUndo, undo, redo, canUndo, canRedo } = useStore(store, useShallow(s => ({ 
+    pushUndo: s.pushUndo, 
+    undo: s.undo, 
+    redo: s.redo, 
+    canUndo: s.canUndo, 
+    canRedo: s.canRedo 
+  })));
 
   // Pixel editor hook (local drawing state with refs)
   const pixelEditor = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     store.getState().setEditedAsset(updated);
-  }, scope);
+  }, scope, pushUndo, undo, canUndo);
 
   // Sync pixel editor bridge to store
   // Memoized bridge to avoid re-render loops
@@ -90,8 +97,10 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     handlePointerDown: pixelEditor.handlePointerDown,
     handlePointerMove: pixelEditor.handlePointerMove,
     handlePointerUp: pixelEditor.handlePointerUp,
-    undo: pixelEditor.undo,
-    canUndo: pixelEditor.canUndo,
+    undo: undo,
+    redo: redo,
+    canUndo: canUndo,
+    canRedo: canRedo,
     overwriteLayerFrame: pixelEditor.overwriteLayerFrame,
     rotationAngle: pixelEditor.rotationAngle,
     rotationCenter: pixelEditor.rotationCenter,
@@ -168,8 +177,10 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                     onToolChange={pixelEditor.setTool}
                     brushSize={pixelEditor.brushSize}
                     onBrushSizeChange={pixelEditor.setBrushSize}
-                    canUndo={pixelEditor.canUndo}
-                    onUndo={pixelEditor.undo}
+                    canUndo={canUndo}
+                    onUndo={undo}
+                    canRedo={canRedo}
+                    onRedo={redo}
                     onionSkin={onionSkin}
                     onToggleOnionSkin={() => setOnionSkin(!onionSkin)}
                     mirrorX={pixelEditor.mirrorX}
