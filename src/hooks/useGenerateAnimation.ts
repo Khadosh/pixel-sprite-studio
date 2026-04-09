@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { addExternalAnimation } from '@/lib/spriteAnimations';
 import { compositeFrame } from '@/lib/layerUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -13,6 +14,7 @@ interface GenerateAnimState {
 }
 
 export function useGenerateAnimation() {
+  const { session } = useAuth();
   const [state, setState] = useState<GenerateAnimState>({
     isGenerating: false,
     currentAnimation: null,
@@ -29,6 +31,7 @@ export function useGenerateAnimation() {
     let currentAsset = { ...asset };
 
     try {
+      const token = session?.access_token || SUPABASE_KEY;
       const baseFrame = compositeFrame(currentAsset, 0);
       const palette = currentAsset.palette;
       const colorNames = currentAsset.colorNames;
@@ -42,7 +45,7 @@ export function useGenerateAnimation() {
           headers: {
             'Content-Type': 'application/json',
             'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             baseFrame,
@@ -72,9 +75,10 @@ export function useGenerateAnimation() {
 
       setState({ isGenerating: false, currentAnimation: null, error: null });
       return currentAsset;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Animation generation failed:", err);
-      setState({ isGenerating: false, currentAnimation: null, error: err.message || 'Error generating animation' });
+      const message = err instanceof Error ? err.message : 'Error generating animation';
+      setState({ isGenerating: false, currentAnimation: null, error: message });
       return currentAsset;
     }
   };

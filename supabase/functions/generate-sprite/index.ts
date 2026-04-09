@@ -1,7 +1,11 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import "@supabase/functions-js/edge-runtime.d.ts";
 
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,49 +13,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SYSTEM_PROMPT = `You are an expert pixel art sprite designer specializing in 32×32 retro game assets. You create detailed, recognizable sprites that make efficient use of every pixel.
-
-CANVAS RULES:
-- Frame: 32×32 2D array of integers. 0 = transparent.
-- Palette: integer keys (1, 2, 3...) → hex color strings. Key 0 is always transparent (NOT in palette).
-- Use 8-12 colors. Include a dark outline/shadow color, mid-tones, and highlights.
-- colorNames: human-readable name for each color.
-
-COMPOSITION RULES:
-- Use the FULL 32×32 canvas. The sprite should occupy roughly 24-28 rows vertically and 20-28 columns horizontally.
-- Leave 2-4 rows of transparency at top and bottom for padding return, no more.
-- Characters should be recognizable by their SILHOUETTE alone.
-- Use 1px dark outlines to define shapes clearly.
-- Reserve 1-3 pixels for highlights/shine to add depth.
-
-CHARACTER DESIGN (for creatures, humanoids, monsters):
-- Include ALL key anatomical features that define the subject: head, body, limbs.
-- For creatures: wings, tail, horns, claws — whatever makes them identifiable.
-- For humanoids: head (2-3px), torso (4-5px), legs (3-4px), arms visible.
-- Proportions: the head should be roughly 25-30% of height (chibi/retro style).
-- Face: at minimum eyes (1-2px each). Mouth optional but recommended for expressive characters.
-- Side or 3/4 view is preferred over front-facing — it gives more visual detail.
-
-OBJECTS & PROPS:
-- Fill at least 60% of the canvas with the object.
-- Add shadow/depth with darker shades on one side.
-- Include recognizable details (e.g., a chest needs a lock/clasp, a potion needs liquid color and a cork).
-
-COLOR TECHNIQUE:
-- Use adjacent palette values for shading: light → base → dark of the same hue.
-- Outline color should be darker than the darkest fill color.
-- Avoid pure black (#000000) for outlines — use very dark versions of the main hue instead.
-
-CRITICAL INSTRUCTION:
-- YOU MUST DRAW THE SPRITE USING THE PALETTE KEYS (1, 2, 3...). 
-- DO NOT RETURN AN EMPTY FRAME OF ALL 0s. A blank frame is considered a complete failure. Fill the array to form the shape of the requested character.
-
-OUTPUT (respond ONLY with this JSON):
-{
-  "palette": { "1": "#hex", "2": "#hex", ... },
-  "colorNames": { "1": "Dark Outline", "2": "Base Color", ... },
-  "frame": [[0,0,...], [0,0,...], ...]
-}`;
+const DAILY_LIMIT = 10;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,6 +24,41 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ error: "GEMINI_API_KEY is not configured" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "No se proporcionó token de autorización" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // Authenticate user
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ error: "No autorizado", details: authError }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check rate limit
+  const today = new Date().toISOString().split("T")[0];
+  const { data: usage } = await supabaseAdmin
+    .from("user_ai_usage")
+    .select("call_count")
+    .eq("user_id", user.id)
+    .eq("usage_date", today)
+    .single();
+
+  if (usage && usage.call_count >= DAILY_LIMIT) {
+    return new Response(
+      JSON.stringify({ error: `Límite diario de IA alcanzado (${DAILY_LIMIT}/${DAILY_LIMIT}). Vuelve mañana para seguir creando.` }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -198,6 +195,20 @@ OUTPUT (respond ONLY with this JSON):
         JSON.stringify({ error: "La IA generó una grilla vacía (sin píxeles). Por favor, intenta regenerar." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    // Increment usage
+    try {
+      await supabaseAdmin
+        .from("user_ai_usage")
+        .upsert({ 
+          user_id: user.id, 
+          usage_date: today, 
+          call_count: (usage?.call_count || 0) + 1,
+          updated_at: new Date().toISOString()
+        });
+    } catch (upsertErr) {
+      console.error("Failed to increment usage:", upsertErr);
     }
 
     // Build SpriteAsset

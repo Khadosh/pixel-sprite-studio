@@ -1,13 +1,19 @@
-
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import "@supabase/functions-js/edge-runtime.d.ts";
 
 const GEMINI_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const DAILY_LIMIT = 10;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,10 +27,45 @@ Deno.serve(async (req) => {
     );
   }
 
-  try {
-    const { baseFrame, palette, colorNames, size, animationName } = await req.json();
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "No se proporcionó token de autorización" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
-    if (!baseFrame || !animationName || !palette || typeof size !== "number") {
+  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // Authenticate user
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({ error: "No autorizado", details: authError }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check rate limit
+  const today = new Date().toISOString().split("T")[0];
+  const { data: usage } = await supabaseAdmin
+    .from("user_ai_usage")
+    .select("call_count")
+    .eq("user_id", user.id)
+    .eq("usage_date", today)
+    .single();
+
+  if (usage && usage.call_count >= DAILY_LIMIT) {
+    return new Response(
+      JSON.stringify({ error: `Límite diario de IA alcanzado (${DAILY_LIMIT}/${DAILY_LIMIT}). Vuelve mañana para seguir creando.` }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  try {
+    const { baseFrame, palette, colorNames, size = 32, animationName } = await req.json();
+
+    if (!baseFrame || !animationName || !palette) {
       return new Response(
         JSON.stringify({ error: "Missing required properties" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -150,6 +191,20 @@ Make sure the characters limbs/body parts move contextually to the action.
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
+    }
+
+    // Increment usage
+    try {
+      await supabaseAdmin
+        .from("user_ai_usage")
+        .upsert({ 
+          user_id: user.id, 
+          usage_date: today, 
+          call_count: (usage?.call_count || 0) + 1,
+          updated_at: new Date().toISOString()
+        });
+    } catch (upsertErr) {
+      console.error("Failed to increment usage:", upsertErr);
     }
 
     return new Response(JSON.stringify({ frames: parsed.frames }), {

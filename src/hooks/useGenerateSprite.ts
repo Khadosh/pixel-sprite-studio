@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { ensureLayerSupport } from '@/lib/layerUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -12,6 +13,7 @@ interface GenerateState {
 }
 
 export function useGenerateSprite() {
+  const { session } = useAuth();
   const [state, setState] = useState<GenerateState>({
     isGenerating: false,
     error: null,
@@ -23,12 +25,13 @@ export function useGenerateSprite() {
     setState({ isGenerating: true, error: null, result: null });
 
     try {
+      const token = session?.access_token || SUPABASE_KEY;
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-sprite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ prompt, size }),
       });
@@ -42,8 +45,8 @@ export function useGenerateSprite() {
       const sprite = ensureLayerSupport(data as SpriteAsset);
       setState({ isGenerating: false, error: null, result: sprite });
       return sprite;
-    } catch (err: any) {
-      const message = err.message || 'Error generating sprite';
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error generating sprite';
       setState({ isGenerating: false, error: message, result: null });
       return null;
     }
