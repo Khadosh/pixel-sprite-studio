@@ -108,7 +108,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 *Prioridad: CRÍTICA — bloqueante para monetización*
 
 - [x] **Zoom del canvas** — Scroll para zoom, middle-click pan, hotkeys `+`/`-`, indicador de nivel
-- [ ] **Herramienta de selección rectangular** — Select, move, copy/paste, delete región
+- [x] **Herramienta de selección rectangular** — Select, move, copy/paste, delete región
 - [ ] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
 - [ ] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)
 - [ ] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA
