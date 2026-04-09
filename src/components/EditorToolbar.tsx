@@ -1,8 +1,8 @@
 import { 
   Pencil, Eraser, Undo2, Layers, PaintBucket, Pipette, 
   Minus, Square, Circle, SplitSquareHorizontal,
-  Copy, ClipboardList, FlipHorizontal, FlipVertical, RotateCw, Monitor,
-  Move, Scan, LucideIcon
+  RotateCw, Monitor, Copy, ClipboardList, FlipHorizontal, FlipVertical,
+  Scan, LucideIcon
 } from 'lucide-react';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -52,7 +52,6 @@ const SHAPE_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
 ];
 
 const TRANSFORM_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
-  { id: 'move', icon: Move, tooltip: 'Mover (V)' },
   { id: 'rotate', icon: RotateCw, tooltip: 'Rotación Libre (R)' },
 ];
 

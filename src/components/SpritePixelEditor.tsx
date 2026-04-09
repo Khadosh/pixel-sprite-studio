@@ -19,7 +19,7 @@ interface SpritePixelEditorProps {
   onionSkinPrevFrame?: number[][];
   onionSkinNextFrame?: number[][];
   draftFrame?: number[][] | null;
-  moveOffset?: { dr: number; dc: number; activeLayerId?: string | null } | null;
+
   rotationAngle?: number | null;
   rotationCenter?: { r: number; c: number; activeLayerId?: string | null } | null;
   zoom: number;
@@ -38,7 +38,7 @@ export default function SpritePixelEditor({
   onionSkinPrevFrame,
   onionSkinNextFrame,
   draftFrame,
-  moveOffset,
+
   rotationAngle,
   rotationCenter,
   zoom,
@@ -145,15 +145,13 @@ export default function SpritePixelEditor({
       }
     }
 
-    const dr = moveOffset?.dr || 0;
-    const dc = moveOffset?.dc || 0;
     const dra = rotationAngle || 0;
     const rCenter = rotationCenter;
 
     // Determine which layer(s) should be affected by the current preview
     // If null, all layers are affected. If string, only that one.
     // If undefined, no preview tool is active.
-    const previewTargetId = moveOffset ? moveOffset.activeLayerId : (rotationCenter ? rotationCenter.activeLayerId : undefined);
+    const previewTargetId = rotationCenter ? rotationCenter.activeLayerId : undefined;
 
     // Draw layers
     if (asset.layers && asset.layers.length > 0) {
@@ -165,18 +163,14 @@ export default function SpritePixelEditor({
         const isScopeFrame = previewTargetId === null;
         const isActive = layer.id === activeLayerId;
 
-        // Force full opacity for all layers if we are moving the whole frame
-        ctx.globalAlpha = (isScopeFrame && (dr !== 0 || dc !== 0 || dra !== 0)) ? 1.0 : (isActive ? 1.0 : 0.4);
+        // Force full opacity for all layers if we are rotating the whole frame
+        ctx.globalAlpha = (isScopeFrame && (dra !== 0)) ? 1.0 : (isActive ? 1.0 : 0.4);
 
-        const applyMove = (dr !== 0 || dc !== 0) && (
-          isScopeFrame || previewTargetId === layer.id
-        );
-        const applyRot = (dra !== 0 && rCenter) && (
+        const applyRot = (dra !== 0 && rCenter) && !movingSelectionPixels && (
           isScopeFrame || previewTargetId === layer.id
         );
 
-        const curDr = applyMove ? dr : 0;
-        const curDc = applyMove ? dc : 0;
+
 
         let frameToDraw = layerFrame;
 
@@ -184,19 +178,17 @@ export default function SpritePixelEditor({
           frameToDraw = rotateFrameFree(frameToDraw, dra, rCenter);
         }
 
-        drawFrameData(frameToDraw, true, curDr, curDc);
+        drawFrameData(frameToDraw, true, 0, 0);
 
         // Draw draft (preview of shapes) on top of the layer
         if (isActive && draftFrame) {
-          drawFrameData(draftFrame, true, curDr, curDc);
+          drawFrameData(draftFrame, true, 0, 0);
         }
       });
       ctx.globalAlpha = 1.0;
     } else if (asset.frames?.[frameIndex]) {
-      // Legacy fallback - apply movement if no layers but movement is active
-      const curDr = previewTargetId === null ? dr : 0;
-      const curDc = previewTargetId === null ? dc : 0;
-      drawFrameData(asset.frames[frameIndex], true, curDr, curDc);
+      // Legacy fallback
+      drawFrameData(asset.frames[frameIndex], true, 0, 0);
     }
 
     // Grid lines
@@ -275,10 +267,14 @@ export default function SpritePixelEditor({
 
       // Draw floating pixels if moving
       if (movingSelectionPixels) {
-        drawFrameData(movingSelectionPixels, true, selectionRect.r, selectionRect.c);
+        let pixelsToDraw = movingSelectionPixels;
+        if (rotationAngle !== 0 && rotationCenter) {
+           pixelsToDraw = rotateFrameFree(pixelsToDraw, rotationAngle, rotationCenter);
+        }
+        drawFrameData(pixelsToDraw, true, 0, 0);
       }
     }
-  }, [asset, activeLayerId, draftFrame, moveOffset, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame, selectionRect, movingSelectionPixels, PIXEL_SCALE]);
+  }, [asset, activeLayerId, draftFrame, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame, selectionRect, movingSelectionPixels, PIXEL_SCALE]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     // Attempt pointer capture to track outside canvas

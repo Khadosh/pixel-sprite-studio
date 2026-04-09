@@ -1,6 +1,6 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-08 (Post refactor de hooks + Zoom/Pan)
+> Última actualización: 2026-04-08 (Post Selección + Rotación + Resize)
 
 ## Visión
 
@@ -69,7 +69,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] **Eyedropper** (Picker tool)
 - [x] **Shapes**: Line, Rectangle, Circle (con Draft Preview)
 - [x] **Symmetry Mode**: MirrorX toggle (Hotkey: M)
-- [x] **Keyboard Shortcuts**: B (Brush), E (Eraser), I (Picker), G (Fill), M (Mirror), Z (Undo), O (Onion)
+- [x] **Keyboard Shortcuts**: B (Brush), E (Eraser), I (Picker), G (Fill), M (Mirror), Z (Undo), O (Onion), V/S (Select), R (Rotate)
 - [x] **Brush Sizes**: 1x1, 2x2, 4x4
 
 ---
@@ -108,7 +108,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 *Prioridad: CRÍTICA — bloqueante para monetización*
 
 - [x] **Zoom del canvas** — Scroll para zoom, middle-click pan, hotkeys `+`/`-`, indicador de nivel
-- [x] **Herramienta de selección rectangular** — Select, move, copy/paste, delete región
+- [x] **Herramienta de selección avanzada** — Rect select, move, rotation (free drag), resizing (handles), copy/paste, delete region, deselect on click.
 - [ ] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
 - [ ] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)
 - [ ] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA

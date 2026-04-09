@@ -336,6 +336,24 @@ export function rotateFrameFree(frame: Frame, angleDeg: number, center: { r: num
   return out;
 }
 
+/** Resize a frame using nearest neighbor scaling. */
+export function resizeFrameNearest(frame: Frame, newW: number, newH: number): Frame {
+  const oldH = frame.length;
+  if (oldH === 0) return [];
+  const oldW = frame[0].length;
+  
+  const out = Array.from({ length: newH }, () => Array(newW).fill(0));
+  
+  for (let r = 0; r < newH; r++) {
+    for (let c = 0; c < newW; c++) {
+      const srcR = Math.floor((r * oldH) / newH);
+      const srcC = Math.floor((c * oldW) / newW);
+      out[r][c] = frame[srcR][srcC];
+    }
+  }
+  return out;
+}
+
 // ─── Spell Effect Primitives ───
 
 /** Scans a frame to find the most frequent non-zero palette index. */

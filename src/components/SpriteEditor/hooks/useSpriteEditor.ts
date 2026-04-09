@@ -94,7 +94,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     overwriteLayerFrame,
     moveOffset, rotationAngle, rotationCenter,
     selectionRect, setSelectionRect,
-    movingSelectionPixels,
+    movingSelectionPixels, stampSelection, clearFloatingPixels,
   } = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     setEditedAsset(updated);
   }, scope);
@@ -152,10 +152,11 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
 
   // Clear selection when switching away from select tool
   useEffect(() => {
-    if (tool !== 'select') {
+    if (tool !== 'select' && tool !== 'rotate') {
+      if (movingSelectionPixels) stampSelection();
       setSelectionRect(null);
     }
-  }, [tool, setSelectionRect]);
+  }, [tool, setSelectionRect, movingSelectionPixels, stampSelection]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -165,7 +166,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
         case 'e': setTool('eraser'); break;
         case 'i': setTool('picker'); break;
         case 'g': setTool('fill'); break;
-        case 'v': setTool('move'); break;
+        case 'v': setTool('select'); break;
         case 'r': setTool('rotate'); break;
         case 's': setTool('select'); break;
         case 'm': setMirrorX((prev: boolean) => !prev); break;
@@ -179,18 +180,24 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
         case 'delete':
           if (tool === 'select' && selectionRect) {
             e.preventDefault();
-            const baseFrame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
-            if (baseFrame) {
-              const newFrame = baseFrame.map(row => [...row]);
-              for (let r = selectionRect.r; r < selectionRect.r + selectionRect.h; r++) {
-                for (let c = selectionRect.c; c < selectionRect.c + selectionRect.w; c++) {
-                  if (r >= 0 && r < editedAsset.size && c >= 0 && c < editedAsset.size) {
-                    newFrame[r][c] = 0;
+            if (movingSelectionPixels) {
+              clearFloatingPixels();
+            } else {
+              // Standard delete area logic
+              const baseFrame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
+              if (baseFrame) {
+                const newFrame = baseFrame.map(row => [...row]);
+                for (let r = selectionRect.r; r < selectionRect.r + selectionRect.h; r++) {
+                  for (let c = selectionRect.c; c < selectionRect.c + selectionRect.w; c++) {
+                    if (r >= 0 && r < editedAsset.size && c >= 0 && c < editedAsset.size) {
+                      newFrame[r][c] = 0;
+                    }
                   }
                 }
+                overwriteLayerFrame(newFrame);
               }
-              overwriteLayerFrame(newFrame);
             }
+            setSelectionRect(null);
           }
           break;
         case '+':

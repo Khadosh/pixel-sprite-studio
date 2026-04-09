@@ -2,10 +2,10 @@ import { useState, useRef, useCallback } from 'react';
 import type { Frame, SpriteAsset } from '@/lib/types';
 import type { BrushSize } from '@/components/EditorToolbar';
 
-import { shiftFrame, getCenterOfMass, rotateFrameFree } from '@/lib/spriteTransforms';
+import { shiftFrame, getCenterOfMass, rotateFrameFree, resizeFrameNearest, findBounds } from '@/lib/spriteTransforms';
 import { compositeFrame } from '@/lib/layerUtils';
 
-export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'move' | 'rotate' | 'select';
+export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'rotate' | 'select';
 
 export function usePixelEditor(
   asset: SpriteAsset,
@@ -19,12 +19,13 @@ export function usePixelEditor(
   const [brushSize, setBrushSize] = useState<BrushSize>(1);
   const [mirrorX, setMirrorX] = useState(false);
   const [draftFrame, setDraftFrame] = useState<Frame | null>(null);
-  const [moveOffset, setMoveOffset] = useState<{ dr: number; dc: number; activeLayerId?: string | null } | null>(null);
+
   const [rotationAngle, setRotationAngle] = useState<number | null>(null);
   const [rotationCenter, setRotationCenter] = useState<{ r: number; c: number; activeLayerId?: string | null } | null>(null);
   const [initialRotationAngle, setInitialRotationAngle] = useState<number>(0);
   const [selectionRect, setSelectionRect] = useState<{ r: number; c: number; w: number; h: number } | null>(null);
   const [movingSelectionPixels, setMovingSelectionPixels] = useState<Frame | null>(null);
+  const [draggingHandle, setDraggingHandle] = useState<number | null>(null);
 
   const undoStack = useRef<Frame[]>([]);
   const [undoLen, setUndoLen] = useState(0);
@@ -34,6 +35,8 @@ export function usePixelEditor(
   
   // To avoid redundant frame copies during pencil strokes
   const strokeMutableFrame = useRef<Frame | null>(null);
+  const originalMovingPixels = useRef<Frame | null>(null);
+  const originalSelectionRect = useRef<{ r: number; c: number; w: number; h: number } | null>(null);
 
   const getActiveLayerFrame = useCallback(() => {
     if (!asset.layers || asset.layers.length === 0) return asset.frames?.[frameIndex] || null;
@@ -179,22 +182,39 @@ export function usePixelEditor(
     
     const activeTool = forceTool || tool;
     
-    if (activeTool === 'move') {
-      strokeStart.current = { r, c };
-      isDrawing.current = true;
-      const f = getActiveLayerFrame();
-      if (f) strokeMutableFrame.current = f.map(row => [...row]);
-      return;
-    }
+
 
     if (activeTool === 'rotate') {
       isDrawing.current = true;
-      const baseFrame = scope === 'frame' ? compositeFrame(asset, frameIndex) : getActiveLayerFrame();
-      const center = baseFrame ? getCenterOfMass(baseFrame) : { r: 7.5, c: 7.5 };
-      const actualCenter = center || { r: 7.5, c: 7.5 };
       
-      setRotationCenter({ ...actualCenter, activeLayerId: scope === 'layer' ? activeLayerId : null });
-      const angle = Math.atan2(r - actualCenter.r, c - actualCenter.c);
+      let center;
+      if (selectionRect) {
+        center = { r: selectionRect.r + selectionRect.h / 2, c: selectionRect.c + selectionRect.w / 2 };
+        if (!movingSelectionPixels) {
+          // Lift selection before rotating
+          pushUndo();
+          const newFrame = frame.map(row => [...row]);
+          const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+          for (let ir = 0; ir < selectionRect.h; ir++) {
+            for (let ic = 0; ic < selectionRect.w; ic++) {
+              const fr = selectionRect.r + ir;
+              const fc = selectionRect.c + ic;
+              if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
+                liftedPixels[fr][fc] = frame[fr][fc];
+                newFrame[fr][fc] = 0;
+              }
+            }
+          }
+          setMovingSelectionPixels(liftedPixels);
+          updateActiveLayerFrame(newFrame);
+        }
+      } else {
+        const baseFrame = scope === 'frame' ? compositeFrame(asset, frameIndex) : getActiveLayerFrame();
+        center = (baseFrame ? getCenterOfMass(baseFrame) : null) || { r: asset.size / 2 - 0.5, c: asset.size / 2 - 0.5 };
+      }
+
+      setRotationCenter({ ...center, activeLayerId: scope === 'layer' ? activeLayerId : null });
+      const angle = Math.atan2(r - center.r, c - center.c);
       setInitialRotationAngle(angle);
       setRotationAngle(0);
 
@@ -204,29 +224,66 @@ export function usePixelEditor(
     }
 
     if (activeTool === 'select') {
+      // Check for handle clicks first
+      if (selectionRect) {
+        const threshold = 0.5; // half pixel threshold for hit testing
+        const handles = [
+          { r: selectionRect.r, c: selectionRect.c }, // 0: TL
+          { r: selectionRect.r, c: selectionRect.c + selectionRect.w }, // 1: TR
+          { r: selectionRect.r + selectionRect.h, c: selectionRect.c }, // 2: BL
+          { r: selectionRect.r + selectionRect.h, c: selectionRect.c + selectionRect.w }, // 3: BR
+          { r: selectionRect.r, c: selectionRect.c + selectionRect.w / 2 }, // 4: TM
+          { r: selectionRect.r + selectionRect.h, c: selectionRect.c + selectionRect.w / 2 }, // 5: BM
+          { r: selectionRect.r + selectionRect.h / 2, c: selectionRect.c }, // 6: LM
+          { r: selectionRect.r + selectionRect.h / 2, c: selectionRect.c + selectionRect.w }, // 7: RM
+        ];
+        
+        for (let i = 0; i < handles.length; i++) {
+          if (Math.abs(r - handles[i].r) <= threshold && Math.abs(c - handles[i].c) <= threshold) {
+            setDraggingHandle(i);
+            isDrawing.current = true;
+            strokeStart.current = { r, c };
+            originalMovingPixels.current = movingSelectionPixels?.map(row => [...row]) || null;
+            originalSelectionRect.current = selectionRect ? { ...selectionRect } : null;
+            return;
+          }
+        }
+      }
+
       // Check if clicking inside existing selection
       if (selectionRect && r >= selectionRect.r && r < selectionRect.r + selectionRect.h && c >= selectionRect.c && c < selectionRect.c + selectionRect.w) {
         // START MOVING SELECTION
-        pushUndo();
-        isDrawing.current = true;
-        strokeStart.current = { r, c };
-        
-        const pixels: Frame = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-        const newFrame = frame.map(row => [...row]);
-        
-        for (let ir = 0; ir < selectionRect.h; ir++) {
-          for (let ic = 0; ic < selectionRect.w; ic++) {
-            const fr = selectionRect.r + ir;
-            const fc = selectionRect.c + ic;
-            pixels[ir][ic] = frame[fr][fc];
-            newFrame[fr][fc] = 0; // Clear original
+        if (!movingSelectionPixels) {
+          pushUndo();
+          isDrawing.current = true;
+          strokeStart.current = { r, c };
+          
+          const newFrame = frame.map(row => [...row]);
+          const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+          
+          for (let ir = 0; ir < selectionRect.h; ir++) {
+            for (let ic = 0; ic < selectionRect.w; ic++) {
+              const fr = selectionRect.r + ir;
+              const fc = selectionRect.c + ic;
+              if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
+                liftedPixels[fr][fc] = frame[fr][fc];
+                newFrame[fr][fc] = 0; // Clear original
+              }
+            }
           }
+          
+          setMovingSelectionPixels(liftedPixels);
+          updateActiveLayerFrame(newFrame); // Update frame with cleared area
+        } else {
+          isDrawing.current = true;
+          strokeStart.current = { r, c };
         }
-        
-        setMovingSelectionPixels(pixels);
-        updateActiveLayerFrame(newFrame); // Update frame with cleared area
       } else {
         // START NEW SELECTION
+        if (movingSelectionPixels) {
+           // Stamp before new selection
+           stampSelection(); 
+        }
         isDrawing.current = true;
         strokeStart.current = { r, c };
         setSelectionRect({ r, c, w: 1, h: 1 });
@@ -267,12 +324,7 @@ export function usePixelEditor(
   const handlePointerMove = useCallback((r: number, c: number, forceTool?: EditorTool) => {
     const activeTool = forceTool || tool;
 
-    if (activeTool === 'move' && strokeStart.current) {
-      const dr = r - strokeStart.current.r;
-      const dc = c - strokeStart.current.c;
-      setMoveOffset({ dr, dc, activeLayerId: scope === 'layer' ? activeLayerId : null });
-      return;
-    }
+
 
     if (activeTool === 'rotate' && rotationCenter) {
       const currentAngle = Math.atan2(r - rotationCenter.r, c - rotationCenter.c);
@@ -282,10 +334,69 @@ export function usePixelEditor(
     }
 
     if (activeTool === 'select' && strokeStart.current) {
-      if (movingSelectionPixels) {
+      if (draggingHandle !== null && selectionRect && movingSelectionPixels) {
+        // RESIZE SELECTION
+        let { r: nr, c: nc, w: nw, h: nh } = selectionRect;
+        const dr = r - strokeStart.current.r;
+        const dc = c - strokeStart.current.c;
+
+        if (draggingHandle === 0) { nr += dr; nc += dc; nw -= dc; nh -= dr; } // TL
+        else if (draggingHandle === 1) { nr += dr; nw += dc; nh -= dr; } // TR
+        else if (draggingHandle === 2) { nc += dc; nw -= dc; nh += dr; } // BL
+        else if (draggingHandle === 3) { nw += dc; nh += dr; } // BR
+        else if (draggingHandle === 4) { nr += dr; nh -= dr; } // TM
+        else if (draggingHandle === 5) { nh += dr; } // BM
+        else if (draggingHandle === 6) { nc += dc; nw -= dc; } // LM
+        else if (draggingHandle === 7) { nw += dc; } // RM
+
+        // Ensure minimum size
+        if (nw < 1) nw = 1;
+        if (nh < 1) nh = 1;
+
+        setSelectionRect({ r: nr, c: nc, w: nw, h: nh });
+        
+        // RESIZE PIXELS INTERNALLY (PREVIEW ONLY)
+        // If we want high performance, we might wait for pointerUp to do the heavy resize
+        // But for pixel art (16x16 / 32x32), it should be fine.
+        if (originalMovingPixels.current && originalSelectionRect.current) {
+          const oldRect = originalSelectionRect.current;
+          
+          // Extract the selected snippet from original
+          const snippet = Array.from({ length: Math.round(oldRect.h) }, () => Array(Math.round(oldRect.w)).fill(0));
+          for (let ir = 0; ir < snippet.length; ir++) {
+            for (let ic = 0; ic < snippet[0].length; ic++) {
+              const fr = Math.round(oldRect.r) + ir;
+              const fc = Math.round(oldRect.c) + ic;
+              if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
+                snippet[ir][ic] = originalMovingPixels.current[fr][fc];
+              }
+            }
+          }
+          
+          // Scale it
+          const scaled = resizeFrameNearest(snippet, Math.round(nw), Math.round(nh));
+          
+          // Embed back into a full frame
+          const newFull = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+          for (let ir = 0; ir < scaled.length; ir++) {
+            for (let ic = 0; ic < scaled[0].length; ic++) {
+              const tr = Math.round(nr) + ir;
+              const tc = Math.round(nc) + ic;
+              if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
+                newFull[tr][tc] = scaled[ir][ic];
+              }
+            }
+          }
+          setMovingSelectionPixels(newFull);
+        }
+        strokeStart.current = { r, c };
+      } else if (movingSelectionPixels) {
         // MOVE EXISTING SELECTION
         const dr = r - strokeStart.current.r;
         const dc = c - strokeStart.current.c;
+        
+        const shiftedPixels = shiftFrame(movingSelectionPixels, dr, dc);
+        setMovingSelectionPixels(shiftedPixels);
         setSelectionRect(prev => prev ? { ...prev, r: prev.r + dr, c: prev.c + dc } : null);
         strokeStart.current = { r, c };
       } else {
@@ -328,6 +439,36 @@ export function usePixelEditor(
     rotationCenter, initialRotationAngle, selectionRect, movingSelectionPixels
   ]);
 
+  const stampSelection = useCallback(() => {
+    if (!movingSelectionPixels) return;
+    const baseFrame = getActiveLayerFrame();
+    if (!baseFrame) return;
+
+    const mergedFrame = baseFrame.map((row, r) => 
+      row.map((val, c) => {
+        const floatingVal = movingSelectionPixels[r][c];
+        return floatingVal !== 0 ? floatingVal : val;
+      })
+    );
+    
+    // Check if anything actually changed to avoid redundant undos
+    let changed = false;
+    for (let r = 0; r < asset.size; r++) {
+      for (let c = 0; c < asset.size; c++) {
+        if (mergedFrame[r][c] !== baseFrame[r][c]) {
+          changed = true;
+          break;
+        }
+      }
+      if (changed) break;
+    }
+
+    if (changed) {
+      updateActiveLayerFrame(mergedFrame);
+    }
+    setMovingSelectionPixels(null);
+  }, [movingSelectionPixels, getActiveLayerFrame, updateActiveLayerFrame, asset.size]);
+
   const overwriteLayerFrame = useCallback((newFrame: Frame) => {
     pushUndo(); // Save current state before overwriting
     updateActiveLayerFrame(newFrame);
@@ -337,21 +478,27 @@ export function usePixelEditor(
     if (!isDrawing.current) return;
 
     if (tool === 'rotate' && rotationCenter && rotationAngle !== null) {
-      const initial = strokeMutableFrame.current;
-      if (initial) {
-        if (scope === 'layer') {
-          overwriteLayerFrame(rotateFrameFree(initial, rotationAngle, rotationCenter));
-        } else {
-          // Rotate ALL layers
-          pushUndo();
-          onAssetChange({
-            ...asset,
-            layers: asset.layers.map(l => {
-              const newFrames = [...l.frames];
-              newFrames[frameIndex] = rotateFrameFree(l.frames[frameIndex], rotationAngle, rotationCenter);
-              return { ...l, frames: newFrames };
-            })
-          });
+      if (selectionRect && movingSelectionPixels) {
+        // Rotate the floating pixels
+        const rotated = rotateFrameFree(movingSelectionPixels, rotationAngle, rotationCenter);
+        setMovingSelectionPixels(rotated);
+      } else {
+        const initial = strokeMutableFrame.current;
+        if (initial) {
+          if (scope === 'layer') {
+            overwriteLayerFrame(rotateFrameFree(initial, rotationAngle, rotationCenter));
+          } else {
+            // Rotate ALL layers
+            pushUndo();
+            onAssetChange({
+              ...asset,
+              layers: asset.layers.map(l => {
+                const newFrames = [...l.frames];
+                newFrames[frameIndex] = rotateFrameFree(l.frames[frameIndex], rotationAngle, rotationCenter);
+                return { ...l, frames: newFrames };
+              })
+            });
+          }
         }
       }
       isDrawing.current = false;
@@ -361,54 +508,16 @@ export function usePixelEditor(
       return;
     }
 
-    if (tool === 'move' && strokeStart.current) {
-      const dr = moveOffset?.dr || 0;
-      const dc = moveOffset?.dc || 0;
-      const initial = strokeMutableFrame.current;
-      
-      if (initial && (dr !== 0 || dc !== 0)) {
-        if (scope === 'layer') {
-          overwriteLayerFrame(shiftFrame(initial, dr, dc));
-        } else {
-          // Move ALL layers
-          pushUndo();
-          onAssetChange({
-            ...asset,
-            layers: asset.layers.map(l => {
-              const newFrames = [...l.frames];
-              newFrames[frameIndex] = shiftFrame(l.frames[frameIndex], dr, dc);
-              return { ...l, frames: newFrames };
-            })
-          });
-        }
-      }
-      isDrawing.current = false;
-      strokeStart.current = null;
-      strokeMutableFrame.current = null;
-      setMoveOffset(null);
-      return;
-    }
+
 
     if (tool === 'select') {
-      if (movingSelectionPixels && selectionRect) {
-        // STAMP MOVING SELECTION
-        const baseFrame = getActiveLayerFrame();
-        if (baseFrame) {
-          const mergedFrame = baseFrame.map(row => [...row]);
-          for (let ir = 0; ir < selectionRect.h; ir++) {
-            for (let ic = 0; ic < selectionRect.w; ic++) {
-              const tr = selectionRect.r + ir;
-              const tc = selectionRect.c + ic;
-              if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
-                const val = movingSelectionPixels[ir][ic];
-                if (val !== 0) mergedFrame[tr][tc] = val;
-              }
-            }
-          }
-          overwriteLayerFrame(mergedFrame);
-        }
-        setMovingSelectionPixels(null);
+      if (!movingSelectionPixels && !draggingHandle && selectionRect && selectionRect.w === 1 && selectionRect.h === 1) {
+        // Just a click outside? Deselect.
+        setSelectionRect(null);
       }
+      setDraggingHandle(null);
+      originalMovingPixels.current = null;
+      originalSelectionRect.current = null;
       isDrawing.current = false;
       return;
     }
@@ -430,7 +539,7 @@ export function usePixelEditor(
     isDrawing.current = false;
     strokeMutableFrame.current = null;
     strokeStart.current = null;
-  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, moveOffset, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo, rotationAngle, rotationCenter]);
+  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo, rotationAngle, rotationCenter]);
   
   return {
     tool, setTool,
@@ -446,5 +555,7 @@ export function usePixelEditor(
     selectionRect,
     setSelectionRect,
     movingSelectionPixels,
+    stampSelection,
+    clearFloatingPixels: () => setMovingSelectionPixels(null),
   };
 }
