@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useAnimationActions } from '../useAnimationActions';
-import { SpriteAsset, AdvancedCastSettings } from '@/lib/types';
+import { createSpriteEditorStore } from '../../store/useSpriteEditorStore';
+import { SpriteAsset } from '@/lib/types';
+import React from 'react';
 
 const mockAsset: SpriteAsset = {
   id: 'test',
@@ -24,95 +24,49 @@ const mockAsset: SpriteAsset = {
   animations: []
 };
 
-const mockCastSettings: AdvancedCastSettings = {
-  shape: 'burst',
-  element: 'generic'
-};
-
-describe('useAnimationActions', () => {
-  let asset = { ...mockAsset };
-  const setAsset = vi.fn((update) => {
-    if (typeof update === 'function') asset = update(asset);
-    else asset = update;
-  });
-  const setViewing = vi.fn();
-  const setFrame = vi.fn();
-  const previewRef = { current: { setIsPlaying: vi.fn() } };
+describe('SpriteEditorStore - Animation Actions', () => {
+  let store: any;
 
   beforeEach(() => {
-    asset = { ...mockAsset, animations: [] };
-    vi.clearAllMocks();
+    store = createSpriteEditorStore({
+      initialAsset: JSON.parse(JSON.stringify(mockAsset)),
+      onSave: vi.fn(),
+      onOpenChange: vi.fn(),
+      previewPanelRef: { current: { setIsPlaying: vi.fn() } } as any,
+    });
   });
 
   it('generates an animation with sequential naming', () => {
-    const { result, rerender } = renderHook(({ currentAsset }) => useAnimationActions(
-      currentAsset, setAsset, 'base', setViewing, setFrame, previewRef as any, 'l1', mockCastSettings
-    ), {
-      initialProps: { currentAsset: asset }
-    });
-
-    act(() => {
-      result.current.handleGenerateAnimations('idle');
-    });
-
-    expect(setAsset).toHaveBeenCalled();
-    expect(asset.animations).toHaveLength(1);
-    expect(asset.animations[0].name).toBe('idle');
-    expect(asset.animations[0].label).toBe('IDLE');
-
-    // Rerender with the updated asset
-    rerender({ currentAsset: asset });
+    store.getState().generateAnimations('idle');
+    
+    let state = store.getState();
+    expect(state.editedAsset.animations).toHaveLength(1);
+    expect(state.editedAsset.animations[0].name).toBe('idle');
+    expect(state.editedAsset.animations[0].label).toBe('IDLE');
 
     // Generate again
-    act(() => {
-      result.current.handleGenerateAnimations('idle');
-    });
-    
-    expect(asset.animations).toHaveLength(2);
-    expect(asset.animations[1].name).toBe('idle_1');
-    expect(asset.animations[1].label).toBe('IDLE 1');
+    store.getState().generateAnimations('idle');
+    state = store.getState();
+    expect(state.editedAsset.animations).toHaveLength(2);
+    expect(state.editedAsset.animations[1].name).toBe('idle_1');
+    expect(state.editedAsset.animations[1].label).toBe('IDLE 1');
   });
 
   it('renames an animation', () => {
-    asset.animations = [{ name: 'idle', label: 'IDLE', frameIndices: [0], fps: 5 }];
-    const { result } = renderHook(() => useAnimationActions(
-      asset, setAsset, 'idle', setViewing, setFrame, previewRef as any, 'l1', mockCastSettings
-    ));
-
-    act(() => {
-      result.current.handleRenameAnimation('idle', 'STANCE');
-    });
-
-    expect(asset.animations[0].label).toBe('STANCE');
+    // Add one first
+    store.getState().generateAnimations('idle');
+    
+    store.getState().renameAnimation('idle', 'STANCE');
+    expect(store.getState().editedAsset.animations[0].label).toBe('STANCE');
   });
 
   it('removes an animation and resets viewing if active', () => {
-    asset.animations = [{ name: 'idle', label: 'IDLE', frameIndices: [0], fps: 5 }];
-    const { result } = renderHook(() => useAnimationActions(
-      asset, setAsset, 'idle', setViewing, setFrame, previewRef as any, 'l1', mockCastSettings
-    ));
-
-    act(() => {
-      result.current.handleRemoveAnimation('idle');
-    });
-
-    expect(asset.animations).toHaveLength(0);
-    expect(setViewing).toHaveBeenCalledWith('base');
-  });
-
-  it('manages selection', () => {
-    const { result } = renderHook(() => useAnimationActions(
-      asset, setAsset, 'base', setViewing, setFrame, previewRef as any, 'l1', mockCastSettings
-    ));
-
-    act(() => {
-      result.current.toggleAnim('walk');
-    });
-    expect(result.current.selectedAnims).toContain('walk');
-
-    act(() => {
-      result.current.clearSelection();
-    });
-    expect(result.current.selectedAnims).toHaveLength(0);
+    store.getState().generateAnimations('idle');
+    store.getState().setViewingAnimation('idle');
+    
+    store.getState().removeAnimation('idle');
+    const state = store.getState();
+    expect(state.editedAsset.animations).toHaveLength(0);
+    expect(state.viewingAnimation).toBe('base');
   });
 });

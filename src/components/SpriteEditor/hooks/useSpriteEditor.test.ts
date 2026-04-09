@@ -1,31 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useSpriteEditor } from './useSpriteEditor';
+import { createSpriteEditorStore } from '../store/useSpriteEditorStore';
 import { SpriteAsset } from '@/lib/types';
-
-// Mocking dependencies
-vi.mock('@/hooks/usePixelEditor', () => ({
-  usePixelEditor: () => ({
-    tool: 'pencil',
-    setTool: vi.fn(),
-    activeColorKey: 1,
-    setActiveColorKey: vi.fn(),
-    brushSize: 1,
-    setBrushSize: vi.fn(),
-    mirrorX: false,
-    setMirrorX: vi.fn(),
-    undo: vi.fn(),
-    canUndo: false,
-  }),
-}));
-
-vi.mock('@/hooks/useGenerateAnimation', () => ({
-  useGenerateAnimation: () => ({
-    isGenerating: false,
-    error: null,
-    generateAnimationsSequence: vi.fn(),
-  }),
-}));
+import React from 'react';
 
 const mockAsset: SpriteAsset = {
   id: 'test-sprite',
@@ -48,37 +24,31 @@ const mockAsset: SpriteAsset = {
   animations: [],
 };
 
-describe('useSpriteEditor', () => {
-  const mockProps = {
-    open: true,
-    onOpenChange: vi.fn(),
-    initialAsset: mockAsset,
-    onSave: vi.fn(),
-  };
+const createTestStore = () => createSpriteEditorStore({
+  initialAsset: mockAsset,
+  onSave: vi.fn(),
+  onOpenChange: vi.fn(),
+  previewPanelRef: { current: null } as React.RefObject<any>,
+});
 
+describe('SpriteEditorStore', () => {
   it('initializes with the correct asset name', () => {
-    const { result } = renderHook(() => useSpriteEditor(mockProps));
-    expect(result.current.assetName).toBe('Test Sprite');
+    const store = createTestStore();
+    expect(store.getState().assetName).toBe('Test Sprite');
   });
 
   it('toggles onion skin', () => {
-    const { result } = renderHook(() => useSpriteEditor(mockProps));
-    expect(result.current.onionSkin).toBe(false);
+    const store = createTestStore();
+    expect(store.getState().onionSkin).toBe(false);
     
-    act(() => {
-      result.current.setOnionSkin(true);
-    });
-    
-    expect(result.current.onionSkin).toBe(true);
+    store.getState().setOnionSkin(true);
+    expect(store.getState().onionSkin).toBe(true);
   });
 
   it('updates asset name', () => {
-    const { result } = renderHook(() => useSpriteEditor(mockProps));
+    const store = createTestStore();
     
-    act(() => {
-      result.current.setAssetName('New Name');
-    });
-    
-    expect(result.current.assetName).toBe('New Name');
+    store.getState().setAssetName('New Name');
+    expect(store.getState().assetName).toBe('New Name');
   });
 });

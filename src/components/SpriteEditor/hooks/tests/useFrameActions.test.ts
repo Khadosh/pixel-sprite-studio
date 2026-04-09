@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useFrameActions } from '../useFrameActions';
+import { createSpriteEditorStore } from '../../store/useSpriteEditorStore';
+import { selectFrameLabels } from '../../store/derived';
 import { SpriteAsset } from '@/lib/types';
+import React from 'react';
 
 const mockAsset: SpriteAsset = {
   id: 'test',
@@ -26,56 +27,46 @@ const mockAsset: SpriteAsset = {
   ]
 };
 
-describe('useFrameActions', () => {
-  let asset = { ...mockAsset };
-  const setAsset = vi.fn((update) => {
-    if (typeof update === 'function') asset = update(asset);
-    else asset = update;
-  });
-  const setFrameIndex = vi.fn();
+describe('SpriteEditorStore - Frame Actions', () => {
+  let store: any;
 
   beforeEach(() => {
-    asset = JSON.parse(JSON.stringify(mockAsset));
-    vi.clearAllMocks();
+    store = createSpriteEditorStore({
+      initialAsset: JSON.parse(JSON.stringify(mockAsset)),
+      onSave: vi.fn(),
+      onOpenChange: vi.fn(),
+      previewPanelRef: { current: null } as React.RefObject<any>,
+    });
   });
 
   it('generates frame labels based on animations', () => {
-    const { result } = renderHook(() => useFrameActions(asset, setAsset, 0, setFrameIndex));
-    
-    expect(result.current.frameLabels[0]).toBe('WALK 1');
+    const labels = selectFrameLabels(store.getState());
+    expect(labels[0]).toBe('WALK 1');
   });
 
   it('duplicates a frame', () => {
-    const { result } = renderHook(() => useFrameActions(asset, setAsset, 0, setFrameIndex));
-
-    act(() => {
-      result.current.handleDuplicateFrame(0);
-    });
-
-    expect(asset.layers[0].frames).toHaveLength(2);
+    store.getState().duplicateFrame(0);
+    const state = store.getState();
+    expect(state.editedAsset.layers[0].frames).toHaveLength(2);
   });
 
   it('inserts an empty frame', () => {
-    const { result } = renderHook(() => useFrameActions(asset, setAsset, 0, setFrameIndex));
-
-    act(() => {
-      result.current.handleInsertEmptyFrame(0);
-    });
-
-    expect(asset.layers[0].frames).toHaveLength(2);
+    store.getState().insertEmptyFrame(0);
+    const state = store.getState();
+    expect(state.editedAsset.layers[0].frames).toHaveLength(2);
   });
 
   it('deletes a frame', () => {
     // Start with 2 frames
-    asset.layers[0].frames.push(Array(16).fill(0).map(() => Array(16).fill(0)));
+    store.getState().duplicateFrame(0);
+    expect(store.getState().editedAsset.layers[0].frames).toHaveLength(2);
     
-    const { result } = renderHook(() => useFrameActions(asset, setAsset, 1, setFrameIndex));
-
-    act(() => {
-      result.current.handleDeleteFrame(1);
-    });
-
-    expect(asset.layers[0].frames).toHaveLength(1);
-    expect(setFrameIndex).toHaveBeenCalledWith(0);
+    // Set active frame to 1
+    store.getState().setEditingFrameIndex(1);
+    
+    store.getState().deleteFrame(1);
+    const state = store.getState();
+    expect(state.editedAsset.layers[0].frames).toHaveLength(1);
+    expect(state.editingFrameIndex).toBe(0);
   });
 });

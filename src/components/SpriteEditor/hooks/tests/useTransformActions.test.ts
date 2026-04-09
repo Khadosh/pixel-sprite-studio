@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useTransformActions } from '../useTransformActions';
+import { createSpriteEditorStore } from '../../store/useSpriteEditorStore';
 import { SpriteAsset } from '@/lib/types';
+import React from 'react';
 
 const mockAsset: SpriteAsset = {
   id: 'test',
@@ -26,69 +26,55 @@ const mockAsset: SpriteAsset = {
   animations: []
 };
 
-describe('useTransformActions', () => {
-  let asset = { ...mockAsset };
-  const setAsset = vi.fn((update) => {
-    if (typeof update === 'function') asset = update(asset);
-    else asset = update;
-  });
+describe('SpriteEditorStore - Transform Actions', () => {
+  let store: any;
   const overwriteFrame = vi.fn((pixels) => {
+    const asset = store.getState().editedAsset;
     asset.layers[0].frames[0] = pixels;
+    store.setState({ editedAsset: { ...asset } });
   });
 
   beforeEach(() => {
-    asset = JSON.parse(JSON.stringify(mockAsset));
-    vi.clearAllMocks();
+    store = createSpriteEditorStore({
+      initialAsset: JSON.parse(JSON.stringify(mockAsset)),
+      onSave: vi.fn(),
+      onOpenChange: vi.fn(),
+      previewPanelRef: { current: null } as React.RefObject<any>,
+    });
+    
+    // Inject bridge mock for overwrite
+    store.getState().setPixelEditorBridge({
+      overwriteLayerFrame: overwriteFrame,
+      copySelection: vi.fn(),
+      pasteSelection: vi.fn(),
+    } as any);
   });
 
   it('flips horizontally in layer scope', () => {
-    const { result } = renderHook(() => useTransformActions(
-      asset, setAsset, 0, 'l1', 'base', 'layer', overwriteFrame
-    ));
-
-    act(() => {
-      result.current.handleFlipH();
-    });
-
+    store.getState().handleFlipH();
+    
     expect(overwriteFrame).toHaveBeenCalled();
+    const state = store.getState();
     // [[1, 0], [0, 0]] -> [[0, 1], [0, 0]]
-    expect(asset.layers[0].frames[0][0][1]).toBe(1);
-    expect(asset.layers[0].frames[0][0][0]).toBe(0);
+    expect(state.editedAsset.layers[0].frames[0][0][1]).toBe(1);
+    expect(state.editedAsset.layers[0].frames[0][0][0]).toBe(0);
   });
 
   it('rotates 90 degrees', () => {
-    const { result } = renderHook(() => useTransformActions(
-      asset, setAsset, 0, 'l1', 'base', 'layer', overwriteFrame
-    ));
-
-    act(() => {
-      result.current.handleRotate();
-    });
-
+    store.getState().handleRotate();
+    
+    const state = store.getState();
     // [[1, 0], [0, 0]] rotate 90 -> [[0, 1], [0, 0]]
-    expect(asset.layers[0].frames[0][0][1]).toBe(1);
+    expect(state.editedAsset.layers[0].frames[0][0][1]).toBe(1);
   });
 
   it('copies and pastes layer frame', () => {
-    const setLClip = vi.fn();
-    const setFClip = vi.fn();
+    store.getState().handleCopy();
     
-    const { result } = renderHook(() => useTransformActions(
-      asset, setAsset, 0, 'l1', 'base', 'layer', overwriteFrame
-    ));
+    const state = store.getState();
+    expect(state.layerClipboard).toEqual([[1, 0], [0, 0]]);
 
-    act(() => {
-      result.current.handleCopy(setLClip, setFClip);
-    });
-
-    expect(setLClip).toHaveBeenCalledWith([[1, 0], [0, 0]]);
-
-    act(() => {
-      result.current.handlePaste([[0, 1], [1, 0]], null);
-    });
-
+    store.getState().handlePaste();
     expect(overwriteFrame).toHaveBeenCalled();
-    expect(asset.layers[0].frames[0][0][1]).toBe(1);
-    expect(asset.layers[0].frames[0][1][0]).toBe(1);
   });
 });

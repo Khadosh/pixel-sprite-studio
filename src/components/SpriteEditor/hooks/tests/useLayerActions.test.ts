@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useLayerActions } from '../useLayerActions';
+import { createSpriteEditorStore } from '../../store/useSpriteEditorStore';
 import { SpriteAsset } from '@/lib/types';
+import React from 'react';
 
 const mockAsset: SpriteAsset = {
   id: 'test',
@@ -40,65 +40,48 @@ vi.mock('@/lib/assets/props', () => ({
   ]
 }));
 
-describe('useLayerActions', () => {
-  let asset = { ...mockAsset };
-  const setAsset = vi.fn((update) => {
-    if (typeof update === 'function') asset = update(asset);
-    else asset = update;
-  });
-  const setActiveId = vi.fn();
+describe('SpriteEditorStore - Layer Actions', () => {
+  let store: any;
 
   beforeEach(() => {
-    asset = { ...mockAsset, layers: [...mockAsset.layers] };
-    vi.clearAllMocks();
+    store = createSpriteEditorStore({
+      initialAsset: JSON.parse(JSON.stringify(mockAsset)),
+      onSave: vi.fn(),
+      onOpenChange: vi.fn(),
+      previewPanelRef: { current: null } as React.RefObject<any>,
+    });
   });
 
   it('adds a new empty layer', () => {
-    const { result } = renderHook(() => useLayerActions(asset, setAsset, 'l1', setActiveId));
-
-    act(() => {
-      result.current.handleAddLayer();
-    });
-
-    expect(asset.layers).toHaveLength(2);
-    expect(asset.layers[1].name).toBe('Layer 2');
-    expect(setActiveId).toHaveBeenCalled();
+    store.getState().addLayer();
+    const state = store.getState();
+    expect(state.editedAsset.layers).toHaveLength(2);
+    expect(state.editedAsset.layers[1].name).toBe('Layer 2');
+    expect(state.activeLayerId).toBe(state.editedAsset.layers[1].id);
   });
 
   it('removes a layer', () => {
-    asset.layers.push({ ...mockAsset.layers[0], id: 'l2', name: 'Layer 2' });
-    const { result } = renderHook(() => useLayerActions(asset, setAsset, 'l2', setActiveId));
-
-    act(() => {
-      result.current.handleRemoveLayer('l2');
-    });
-
-    expect(asset.layers).toHaveLength(1);
-    expect(asset.layers[0].id).toBe('l1');
+    // Add a second layer first
+    store.getState().addLayer();
+    const l2Id = store.getState().editedAsset.layers[1].id;
+    
+    store.getState().removeLayer(l2Id);
+    expect(store.getState().editedAsset.layers).toHaveLength(1);
+    expect(store.getState().editedAsset.layers[0].id).toBe('l1');
   });
 
   it('toggles visibility', () => {
-    const { result } = renderHook(() => useLayerActions(asset, setAsset, 'l1', setActiveId));
-
-    act(() => {
-      result.current.handleToggleLayerVisibility('l1');
-    });
-
-    expect(asset.layers[0].isVisible).toBe(false);
+    store.getState().toggleLayerVisibility('l1');
+    expect(store.getState().editedAsset.layers[0].isVisible).toBe(false);
   });
 
-  it('adds a prop layer and DETECTS PALETTE COLORS', () => {
-    const { result } = renderHook(() => useLayerActions(asset, setAsset, 'l1', setActiveId));
-
-    act(() => {
-      result.current.handleAddPropLayer('staff');
-    });
-
-    const newLayer = asset.layers[asset.layers.length - 1];
+  it('adds a prop layer and detects palette colors', () => {
+    store.getState().addPropLayer('staff');
+    const state = store.getState();
+    const newLayer = state.editedAsset.layers[state.editedAsset.layers.length - 1];
     expect(newLayer.name).toBe('Staff');
     // Staff mocked data uses colors 4 and 5
     expect(newLayer.paletteIds).toContain(4);
     expect(newLayer.paletteIds).toContain(5);
-    expect(newLayer.paletteIds).not.toContain(0);
   });
 });

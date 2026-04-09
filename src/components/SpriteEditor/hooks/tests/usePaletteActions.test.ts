@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { usePaletteActions } from '../usePaletteActions';
+import { createSpriteEditorStore } from '../../store/useSpriteEditorStore';
 import { SpriteAsset } from '@/lib/types';
+import React from 'react';
 
 const mockAsset: SpriteAsset = {
   id: 'test',
@@ -25,63 +25,47 @@ const mockAsset: SpriteAsset = {
   animations: []
 };
 
-describe('usePaletteActions', () => {
-  let asset = { ...mockAsset };
-  const setAsset = vi.fn((update) => {
-    if (typeof update === 'function') asset = update(asset);
-    else asset = update;
-  });
-  const setActiveKey = vi.fn();
+describe('SpriteEditorStore - Palette Actions', () => {
+  let store: any;
 
   beforeEach(() => {
-    asset = JSON.parse(JSON.stringify(mockAsset));
-    vi.clearAllMocks();
+    store = createSpriteEditorStore({
+      initialAsset: JSON.parse(JSON.stringify(mockAsset)),
+      onSave: vi.fn(),
+      onOpenChange: vi.fn(),
+      previewPanelRef: { current: null } as React.RefObject<any>,
+    });
   });
 
   it('changes a color in the palette', () => {
-    const { result } = renderHook(() => usePaletteActions(asset, setAsset, 'l1', 1, setActiveKey));
-
-    act(() => {
-      result.current.handleChangeColor(1, '#ff0000');
-    });
-
-    expect(asset.palette[1]).toBe('#ff0000');
+    store.getState().changeColor(1, '#ff0000');
+    expect(store.getState().editedAsset.palette[1]).toBe('#ff0000');
   });
 
   it('renames a color', () => {
-    const { result } = renderHook(() => usePaletteActions(asset, setAsset, 'l1', 1, setActiveKey));
-
-    act(() => {
-      result.current.handleRenameColor(1, 'Red');
-    });
-
-    expect(asset.colorNames[1]).toBe('Red');
+    store.getState().renameColor(1, 'Red');
+    expect(store.getState().editedAsset.colorNames[1]).toBe('Red');
   });
 
   it('adds a new color and adds it to the active layer paletteIds', () => {
-    const { result } = renderHook(() => usePaletteActions(asset, setAsset, 'l1', 1, setActiveKey));
-
-    act(() => {
-      result.current.handleAddColor();
-    });
-
+    store.getState().addColor();
+    const state = store.getState();
     const newKey = 2;
-    expect(asset.palette[newKey]).toBeDefined();
-    expect(asset.layers[0].paletteIds).toContain(newKey);
+    expect(state.editedAsset.palette[newKey]).toBeDefined();
+    expect(state.editedAsset.layers[0].paletteIds).toContain(newKey);
   });
 
   it('removes a color and cleans up layers', () => {
     // Add pixel with color 1
+    const asset = store.getState().editedAsset;
     asset.layers[0].frames[0][0][0] = 1;
+    store.setState({ editedAsset: asset });
     
-    const { result } = renderHook(() => usePaletteActions(asset, setAsset, 'l1', 1, setActiveKey));
-
-    act(() => {
-      result.current.handleRemoveColor(1);
-    });
-
-    expect(asset.palette[1]).toBeUndefined();
-    expect(asset.layers[0].paletteIds).not.toContain(1);
-    expect(asset.layers[0].frames[0][0][0]).toBe(0); // Pixel should become transparent
+    store.getState().removeColor(1);
+    
+    const state = store.getState();
+    expect(state.editedAsset.palette[1]).toBeUndefined();
+    expect(state.editedAsset.layers[0].paletteIds).not.toContain(1);
+    expect(state.editedAsset.layers[0].frames[0][0][0]).toBe(0); // Pixel should become transparent
   });
 });
