@@ -3,7 +3,7 @@ import { Play, Pause, Plus as PlusIcon, Minus as MinusIcon } from 'lucide-react'
 import { useAssetPreview } from '@/hooks/useAssetPreview';
 import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';
-import { useSpriteEditorContext } from '../context/SpriteEditorContext';
+import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 
 export interface AnimationPreviewPanelHandle {
   setIsPlaying: (playing: boolean) => void;
@@ -11,7 +11,8 @@ export interface AnimationPreviewPanelHandle {
 
 export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanelHandle, {}>(
   (_, ref) => {
-    const { editedAsset, viewingAnimation } = useSpriteEditorContext();
+    const editedAsset = useSpriteEditorStore(s => s.editedAsset);
+    const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
     const { currentFrame, isPlaying, setIsPlaying, fps, setFps } = useAssetPreview(editedAsset, viewingAnimation);
 
     useImperativeHandle(ref, () => ({

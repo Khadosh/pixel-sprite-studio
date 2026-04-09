@@ -3,26 +3,24 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, Settings, Trash2, Edit3, Check, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useSpriteEditorContext } from '../context/SpriteEditorContext';
+import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
 import { AVAILABLE_ANIMS } from '../types';
 import { CastElement, CastShape } from '@/lib/types';
 
 export const AnimationLibrary = React.memo(() => {
-  const {
-    editedAsset,
-    viewingAnimation,
-    setViewingAnimation,
-    setEditingFrameIndex,
-    handleGenerateAnimations,
-    handleGenerateAnimationsAI,
-    handleRenameAnimation,
-    handleRemoveAnimation,
-    isGenerating,
-    isAnimGenerating,
-    castSettings,
-    setCastSettings,
-    animError
-  } = useSpriteEditorContext() as any;
+  const editedAsset = useSpriteEditorStore(s => s.editedAsset);
+  const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
+  const setViewingAnimation = useSpriteEditorStore(s => s.setViewingAnimation);
+  const setEditingFrameIndex = useSpriteEditorStore(s => s.setEditingFrameIndex);
+  const handleGenerateAnimations = useSpriteEditorStore(s => s.generateAnimations);
+  const handleRenameAnimation = useSpriteEditorStore(s => s.renameAnimation);
+  const handleRemoveAnimation = useSpriteEditorStore(s => s.removeAnimation);
+  const isGenerating = useSpriteEditorStore(s => s._isGenerating);
+  const isAnimGenerating = useSpriteEditorStore(s => s.isAnimGenerating);
+  const castSettings = useSpriteEditorStore(s => s.castSettings);
+  const setCastSettings = useSpriteEditorStore(s => s.setCastSettings);
+  const animError = useSpriteEditorStore(s => s.animError);
+  const storeApi = useSpriteEditorStoreApi();
 
   const [genType, setGenType] = useState<string>('idle');
   const [editingName, setEditingName] = useState<string | null>(null);
@@ -38,6 +36,12 @@ export const AnimationLibrary = React.memo(() => {
       handleRenameAnimation(name, newName);
     }
     setEditingName(null);
+  };
+
+  const handleGenerateAI = async (type: string) => {
+    // Access the bridge function stored on the store by SpriteEditor.tsx
+    const fn = (storeApi as any)._handleGenerateAnimationsAI;
+    if (fn) await fn(type);
   };
 
   return (
@@ -121,7 +125,7 @@ export const AnimationLibrary = React.memo(() => {
               QUICK
             </Button>
             <Button
-              onClick={() => handleGenerateAnimationsAI(genType)}
+              onClick={() => handleGenerateAI(genType)}
               disabled={isGenerating || isAnimGenerating}
               className="flex-1 font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all overflow-hidden"
             >

@@ -10,23 +10,21 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Edit2, Sparkles, Download, Save, Image as ImageIcon, FileVideo, HardDrive, ChevronLeft } from 'lucide-react';
-import { useSpriteEditorContext } from '../context/SpriteEditorContext';
+import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 
 export const EditorHeader = React.memo(() => {
-  const {
-    assetName,
-    setAssetName,
-    isEditingName,
-    setIsEditingName,
-    generatePrompt,
-    onRegenerate,
-    isGenerating,
-    handleExportPNG,
-    handleExportGIF,
-    handleSave,
-    handleClose,
-    viewingAnimation
-  } = useSpriteEditorContext();
+  const assetName = useSpriteEditorStore(s => s.assetName);
+  const setAssetName = useSpriteEditorStore(s => s.setAssetName);
+  const isEditingName = useSpriteEditorStore(s => s.isEditingName);
+  const setIsEditingName = useSpriteEditorStore(s => s.setIsEditingName);
+  const generatePrompt = useSpriteEditorStore(s => s._generatePrompt);
+  const onRegenerate = useSpriteEditorStore(s => s._onRegenerate);
+  const isGenerating = useSpriteEditorStore(s => s._isGenerating);
+  const handleExportPNG = useSpriteEditorStore(s => s.handleExportPNG);
+  const handleExportGIF = useSpriteEditorStore(s => s.handleExportGIF);
+  const handleSave = useSpriteEditorStore(s => s.handleSave);
+  const handleClose = useSpriteEditorStore(s => s.handleClose);
+  const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
 
   return (
     <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0">

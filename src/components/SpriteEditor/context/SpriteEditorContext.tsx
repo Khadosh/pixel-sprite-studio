@@ -1,16 +1,33 @@
 import React, { createContext, useContext } from 'react';
-import { SpriteEditorContextValue } from '../types';
+import { useStore } from 'zustand';
+import type { SpriteEditorStore, SpriteEditorState } from '../store/useSpriteEditorStore';
 
-const SpriteEditorContext = createContext<SpriteEditorContextValue | undefined>(undefined);
+const SpriteEditorStoreContext = createContext<SpriteEditorStore | null>(null);
 
-export const SpriteEditorProvider: React.FC<{ value: SpriteEditorContextValue; children: React.ReactNode }> = ({ value, children }) => {
-  return <SpriteEditorContext.Provider value={value}>{children}</SpriteEditorContext.Provider>;
+export const SpriteEditorStoreProvider: React.FC<{ store: SpriteEditorStore; children: React.ReactNode }> = ({ store, children }) => {
+  return <SpriteEditorStoreContext.Provider value={store}>{children}</SpriteEditorStoreContext.Provider>;
 };
 
-export const useSpriteEditorContext = () => {
-  const context = useContext(SpriteEditorContext);
-  if (context === undefined) {
-    throw new Error('useSpriteEditorContext must be used within a SpriteEditorProvider');
+/**
+ * Hook to access the SpriteEditor Zustand store.
+ * Use with a selector for optimal re-render performance:
+ * 
+ * const editedAsset = useSpriteEditorStore(s => s.editedAsset);
+ * const { zoom, setZoom } = useSpriteEditorStore(s => ({ zoom: s.zoom, setZoom: s.setZoom }));
+ */
+export function useSpriteEditorStore<T>(selector: (state: SpriteEditorState) => T): T {
+  const store = useContext(SpriteEditorStoreContext);
+  if (!store) {
+    throw new Error('useSpriteEditorStore must be used within a SpriteEditorStoreProvider');
   }
-  return context;
-};
+  return useStore(store, selector);
+}
+
+/** Get the raw store API (for imperative access, e.g. in effects) */
+export function useSpriteEditorStoreApi(): SpriteEditorStore {
+  const store = useContext(SpriteEditorStoreContext);
+  if (!store) {
+    throw new Error('useSpriteEditorStoreApi must be used within a SpriteEditorStoreProvider');
+  }
+  return store;
+}

@@ -3,25 +3,27 @@ import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { compositeFrame } from '@/lib/layerUtils';
-import { useSpriteEditorContext } from '../../context/SpriteEditorContext';
+import { useStore } from 'zustand';
+import { useShallow } from 'zustand/shallow';
+import { useSpriteEditorStore } from '../../context/SpriteEditorContext';
+import { selectVisibleFramesIndices, selectFrameLabels } from '../../store/derived';
 import { FrameThumb } from './FrameThumb';
 import { SortableFrameThumb } from './SortableFrameThumb';
 
-export const TimelineStrip = React.memo(() => {
-  const context = useSpriteEditorContext() as any;
-  const {
-    editedAsset,
-    viewingAnimation,
-    editingFrameIndex,
-    setEditingFrameIndex,
-    frameLabels,
-    visibleFramesIndices,
-    handleDuplicateFrame,
-    handleDeleteFrame,
-    handleInsertEmptyFrame,
-    handleDragEnd,
-    sensors
-  } = context;
+interface TimelineStripProps {
+  sensors: any;
+}
+
+export const TimelineStrip = React.memo(({ sensors }: TimelineStripProps) => {
+  const editedAsset = useSpriteEditorStore(s => s.editedAsset);
+  const editingFrameIndex = useSpriteEditorStore(s => s.editingFrameIndex);
+  const setEditingFrameIndex = useSpriteEditorStore(s => s.setEditingFrameIndex);
+  const visibleFramesIndices = useSpriteEditorStore(useShallow(selectVisibleFramesIndices));
+  const frameLabels = useSpriteEditorStore(useShallow(selectFrameLabels));
+  const handleDuplicateFrame = useSpriteEditorStore(s => s.duplicateFrame);
+  const handleDeleteFrame = useSpriteEditorStore(s => s.deleteFrame);
+  const handleInsertEmptyFrame = useSpriteEditorStore(s => s.insertEmptyFrame);
+  const handleDragEnd = useSpriteEditorStore(s => s.handleDragEnd);
 
   return (
     <div className="flex-1 min-w-0 max-w-full overflow-hidden flex flex-col bg-secondary/20 p-2 rounded-lg border border-border">

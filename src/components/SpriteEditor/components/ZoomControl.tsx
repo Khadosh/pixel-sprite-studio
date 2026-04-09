@@ -1,10 +1,11 @@
 import React from 'react';
 import { Minus, Plus, RotateCcw } from 'lucide-react';
-import { useSpriteEditorContext } from '../context/SpriteEditorContext';
+import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const ZoomControl: React.FC = () => {
-  const { zoom, setZoom } = useSpriteEditorContext();
+  const zoom = useSpriteEditorStore(s => s.zoom);
+  const setZoom = useSpriteEditorStore(s => s.setZoom);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 8));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.1));

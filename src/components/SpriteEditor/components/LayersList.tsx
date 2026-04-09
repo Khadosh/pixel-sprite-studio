@@ -1,22 +1,20 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Eye, EyeOff, Layers, Edit2, ChevronUp, ChevronDown, Trash2, Sword } from 'lucide-react';
-import { useSpriteEditorContext } from '../context/SpriteEditorContext';
+import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PROP_LIBRARY } from '@/lib/assets/props';
 
 export const LayersList = React.memo(() => {
-  const {
-    editedAsset,
-    activeLayerId,
-    setActiveLayerId,
-    handleAddLayer,
-    handleToggleLayerVisibility,
-    handleRenameLayer,
-    handleMoveLayer,
-    handleRemoveLayer,
-    handleAddPropLayer
-  } = useSpriteEditorContext() as any;
+  const editedAsset = useSpriteEditorStore(s => s.editedAsset);
+  const activeLayerId = useSpriteEditorStore(s => s.activeLayerId);
+  const setActiveLayerId = useSpriteEditorStore(s => s.setActiveLayerId);
+  const handleAddLayer = useSpriteEditorStore(s => s.addLayer);
+  const handleToggleLayerVisibility = useSpriteEditorStore(s => s.toggleLayerVisibility);
+  const handleRenameLayer = useSpriteEditorStore(s => s.renameLayer);
+  const handleMoveLayer = useSpriteEditorStore(s => s.moveLayer);
+  const handleRemoveLayer = useSpriteEditorStore(s => s.removeLayer);
+  const handleAddPropLayer = useSpriteEditorStore(s => s.addPropLayer);
 
   const layers = editedAsset.layers;
   const [editingLayerId, setEditingLayerId] = React.useState<string | null>(null);
