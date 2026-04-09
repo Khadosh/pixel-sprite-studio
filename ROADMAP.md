@@ -1,6 +1,6 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-08 (Post Selección + Rotación + Resize)
+> Última actualización: 2026-04-09 (Global Undo/Redo + Warning Fixes)
 
 ## Visión
 
@@ -109,7 +109,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 - [x] **Zoom del canvas** — Scroll para zoom, middle-click pan, hotkeys `+`/`-`, indicador de nivel
 - [x] **Herramienta de selección avanzada** — Rect select, move, rotation (free drag), resizing (handles), copy/paste, delete region, deselect on click.
-- [ ] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
+- [x] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
 - [ ] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)
 - [ ] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA
 - [ ] **TypeScript strict mode** — Habilitar `strict: true` en tsconfig y resolver warnings
