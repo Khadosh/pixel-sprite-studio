@@ -17,7 +17,7 @@ export const LayersList = React.memo(() => {
   const handleAddPropLayer = useSpriteEditorStore(s => s.addPropLayer);
   const handleMergeLayerDown = useSpriteEditorStore(s => s.mergeLayerDown);
 
-  const layers = editedAsset.layers;
+  const layers = editedAsset.layers!;
   const [editingLayerId, setEditingLayerId] = React.useState<string | null>(null);
   const [tempName, setTempName] = React.useState('');
 

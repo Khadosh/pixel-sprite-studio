@@ -59,7 +59,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
   // Handle asset ID change (different project opened)
   useEffect(() => {
     const state = store.getState();
-    if (initialAsset.id !== state.editedAsset.id || state.editedAsset.layers.length === 0) {
+    if (initialAsset.id !== state.editedAsset.id || !state.editedAsset.layers || state.editedAsset.layers.length === 0) {
       state.initFromAsset(initialAsset);
     }
   }, [initialAsset.id, store]);
@@ -157,7 +157,10 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <SpriteEditorStoreProvider store={store}>
         <PaletteProvider defaultPalette={editedAsset.palette}>
-          <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none flex flex-col bg-background p-4 gap-4 overflow-hidden border-none rounded-none translate-x-0 translate-y-0 [&>button]:hidden">
+          <DialogContent 
+            aria-describedby={undefined}
+            className="fixed inset-0 w-screen h-screen max-w-none max-h-none flex flex-col bg-background p-4 gap-4 overflow-hidden border-none rounded-none translate-x-0 translate-y-0 [&>button]:hidden"
+          >
             <EditorHeader />
 
             {/* MAIN BODY: 3 Columns */}

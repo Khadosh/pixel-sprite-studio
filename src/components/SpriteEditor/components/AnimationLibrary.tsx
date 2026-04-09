@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
 import { AVAILABLE_ANIMS } from '../types';
-import { CastElement, CastShape } from '@/lib/types';
+import { CastElement, CastShape, AnimationDef } from '@/lib/types';
 
 export const AnimationLibrary = React.memo(() => {
   const editedAsset = useSpriteEditorStore(s => s.editedAsset);
@@ -40,7 +40,7 @@ export const AnimationLibrary = React.memo(() => {
 
   const handleGenerateAI = async (type: string) => {
     // Access the bridge function stored on the store by SpriteEditor.tsx
-    const fn = (storeApi as any)._handleGenerateAnimationsAI;
+    const fn = storeApi.getState()._pixelEditorBridge?._handleGenerateAnimationsAI;
     if (fn) await fn(type);
   };
 

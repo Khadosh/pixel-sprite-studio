@@ -44,8 +44,9 @@ export function useAnimationGenerationBridge(store: SpriteEditorStore) {
           })],
         }));
       }, state.activeLayerId);
-    } catch (err: any) {
-      store.getState().setAnimError(err?.message || 'Error generating animation');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error generating animation';
+      store.getState().setAnimError(message);
     } finally {
       store.getState().setIsAnimGenerating(false);
     }

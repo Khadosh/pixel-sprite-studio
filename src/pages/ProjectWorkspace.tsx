@@ -64,7 +64,7 @@ export default function ProjectWorkspace() {
       onSuccess: () => {
         toast({ title: 'Eliminado' });
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
       }
     });

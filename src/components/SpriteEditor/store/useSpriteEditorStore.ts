@@ -16,7 +16,7 @@ import type { AnimationPreviewPanelHandle } from '../components/AnimationPreview
 
 // ─── Helpers ───
 
-const getNextAnimationName = (existing: { name: string }[], type: string) => {
+const getNextAnimationName = (existing: { name: string }[], type: string): { name: string; label: string } => {
   const baseName = type.toLowerCase();
   const baseLabel = type.toUpperCase();
   const existingNames = existing.map(a => a.name);
@@ -84,6 +84,7 @@ export interface SpriteEditorState {
     movingSelectionPixels: Frame | null;
     stampSelection: () => void;
     clearFloatingPixels: () => void;
+    _handleGenerateAnimationsAI: (type?: string) => Promise<void>;
   } | null;
 
   // --- Setters ---
@@ -178,7 +179,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
   return createStore<SpriteEditorState>((set, get) => ({
     // --- Initial State ---
     editedAsset: migrated,
-    activeLayerId: migrated.layers[0]?.id || null,
+    activeLayerId: migrated.layers![0]?.id || null,
     editingFrameIndex: 0,
     viewingAnimation: 'base',
     assetName: options.initialAsset.name,
@@ -309,23 +310,23 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     addLayer: () => {
       get().pushUndo();
       set(state => {
-        const updated = addNewLayer(state.editedAsset, `Layer ${state.editedAsset.layers.length + 1}`);
+        const updated = addNewLayer(state.editedAsset, `Layer ${state.editedAsset.layers!.length + 1}`);
         return {
           editedAsset: updated,
-          activeLayerId: updated.layers[updated.layers.length - 1].id,
+          activeLayerId: updated.layers![updated.layers!.length - 1].id,
         };
       });
     },
 
     removeLayer: (layerId) => {
-      if (get().editedAsset.layers.length <= 1) return;
+      if (get().editedAsset.layers!.length <= 1) return;
       get().pushUndo();
       set(state => {
         const updated = removeLayer(state.editedAsset, layerId);
         return {
           editedAsset: updated,
           activeLayerId: state.activeLayerId === layerId 
-            ? updated.layers[updated.layers.length - 1].id 
+            ? updated.layers![updated.layers!.length - 1].id 
             : state.activeLayerId,
         };
       });
@@ -345,14 +346,14 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
     mergeLayerDown: (layerId) => {
       const state = get();
-      const index = state.editedAsset.layers.findIndex(l => l.id === layerId);
+      const index = state.editedAsset.layers!.findIndex(l => l.id === layerId);
       if (index <= 0) return;
 
       state.pushUndo();
       set(state => {
         const updated = mergeLayerDown(state.editedAsset, layerId);
         // After merge, select the layer that was below (now it's sitting at index - 1)
-        const resultLayer = updated.layers[index - 1];
+        const resultLayer = updated.layers![index - 1];
         return {
           editedAsset: updated,
           activeLayerId: resultLayer?.id || state.activeLayerId,
@@ -363,7 +364,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     moveLayer: (fromIdx, direction) => {
       const state = get();
       const toIdx = direction === 'up' ? fromIdx + 1 : fromIdx - 1;
-      if (toIdx < 0 || toIdx >= state.editedAsset.layers.length) return;
+      if (toIdx < 0 || toIdx >= state.editedAsset.layers!.length) return;
       state.pushUndo();
       set({ editedAsset: reorderLayers(state.editedAsset, fromIdx, toIdx) });
     },
@@ -383,7 +384,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       state.pushUndo();
 
       const newLayerId = crypto.randomUUID();
-      const frameCount = state.editedAsset.layers[0]?.frames.length || 1;
+      const frameCount = state.editedAsset.layers![0]?.frames.length || 1;
       const newFrames = Array.from({ length: frameCount }, () =>
         propData.map(row => [...row])
       );
@@ -397,7 +398,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         editedAsset: {
           ...state.editedAsset,
           layers: [
-            ...state.editedAsset.layers,
+            ...state.editedAsset.layers!,
             {
               id: newLayerId,
               name: prop.name,
@@ -426,7 +427,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const updatedPalette = { ...state.editedAsset.palette, [newKey]: '#888888' };
       const updatedColorNames = { ...state.editedAsset.colorNames, [newKey]: `Color ${newKey}` };
 
-      const newLayers = state.editedAsset.layers.map(layer => {
+      const newLayers = state.editedAsset.layers!.map(layer => {
         if (layer.id === state.activeLayerId) {
           const pIds = layer.paletteIds || [];
           if (!pIds.includes(newKey)) {
@@ -497,7 +498,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
     clearSelection: () => set({ selectedAnims: [] }),
 
-    generateAnimations: (type) => {
+    generateAnimations: (type?: string) => {
       const state = get();
       state.pushUndo();
       const typeToGen = type || state.selectedAnims[0] || 'idle';
@@ -524,7 +525,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       state._previewPanelRef.current?.setIsPlaying(true);
     },
 
-    renameAnimation: (name, newLabel) => set(state => ({
+    renameAnimation: (name: string, newLabel: string) => set(state => ({
       editedAsset: {
         ...state.editedAsset,
         animations: state.editedAsset.animations.map(a =>
@@ -533,7 +534,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       },
     })),
 
-    removeAnimation: (name) => {
+    removeAnimation: (name: string) => {
       get().pushUndo();
       set(state => ({
         editedAsset: {
@@ -571,7 +572,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         }
       } else {
         const clipboard: Record<string, number[][]> = {};
-        state.editedAsset.layers.forEach(l => {
+        state.editedAsset.layers!.forEach(l => {
           const f = l.frames[state.editingFrameIndex];
           if (selectionRect) {
             const clip: number[][] = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
@@ -603,7 +604,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
       if (state.scope === 'layer') {
         if (state.layerClipboard) {
-          const baseFrame = state.editedAsset.layers.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
+          const baseFrame = state.editedAsset.layers!.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
           if (baseFrame && bridge) {
             const newFrame = baseFrame.map(row => [...row]);
             const clipH = state.layerClipboard.length;
@@ -626,7 +627,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
           set(s => ({
             editedAsset: {
               ...s.editedAsset,
-              layers: s.editedAsset.layers.map(l => {
+              layers: s.editedAsset.layers!.map(l => {
                 const clip = s.frameClipboard![l.id];
                 if (clip) {
                   const newFrames = [...l.frames];
@@ -661,7 +662,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const selectionRect = bridge?.selectionRect || null;
 
       if (state.scope === 'layer') {
-        const frame = state.editedAsset.layers.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
+        const frame = state.editedAsset.layers!.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
         if (!frame || !bridge) return;
 
         if (selectionRect) {
@@ -686,7 +687,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         set(s => ({
           editedAsset: {
             ...s.editedAsset,
-            layers: s.editedAsset.layers.map(l => {
+            layers: s.editedAsset.layers!.map(l => {
               const frame = l.frames[s.editingFrameIndex];
               const newFrames = [...l.frames];
               if (selectionRect) {
@@ -716,7 +717,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const selectionRect = bridge?.selectionRect || null;
 
       if (state.scope === 'layer') {
-        const frame = state.editedAsset.layers.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
+        const frame = state.editedAsset.layers!.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
         if (!frame || !bridge) return;
 
         if (selectionRect) {
@@ -741,7 +742,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         set(s => ({
           editedAsset: {
             ...s.editedAsset,
-            layers: s.editedAsset.layers.map(l => {
+            layers: s.editedAsset.layers!.map(l => {
               const frame = l.frames[s.editingFrameIndex];
               const newFrames = [...l.frames];
               if (selectionRect) {
@@ -771,7 +772,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const selectionRect = bridge?.selectionRect || null;
 
       if (state.scope === 'layer') {
-        const frame = state.editedAsset.layers.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
+        const frame = state.editedAsset.layers!.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
         if (!frame || !bridge) return;
 
         if (selectionRect) {
@@ -807,7 +808,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         set(s => ({
           editedAsset: {
             ...s.editedAsset,
-            layers: s.editedAsset.layers.map(l => {
+            layers: s.editedAsset.layers!.map(l => {
               const frame = l.frames[s.editingFrameIndex];
               const newFrames = [...l.frames];
               if (selectionRect) {
@@ -852,7 +853,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
       state.pushUndo();
       set(s => {
-        const animIndex = s.editedAsset.animations.findIndex(a => a.name === s.viewingAnimation);
+        const animIndex = (s.editedAsset.animations || []).findIndex(a => a.name === s.viewingAnimation);
         if (animIndex === -1) return s;
         const anim = s.editedAsset.animations[animIndex];
         const oldTimelineIndex = anim.frameIndices.indexOf(activeId);
@@ -876,7 +877,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
     handleExportGIF: async () => {
       const state = get();
-      const anim = state.editedAsset.animations.find(a => a.name === state.viewingAnimation);
+      const anim = (state.editedAsset.animations || []).find(a => a.name === state.viewingAnimation);
       const fps = anim?.fps || 10;
       await exportAsGIF(state.editedAsset, state.viewingAnimation, fps);
     },
@@ -900,7 +901,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         assetName: asset.name,
         editingFrameIndex: 0,
         viewingAnimation: 'base',
-        activeLayerId: migrated.layers[0]?.id || null,
+        activeLayerId: migrated.layers![0]?.id || null,
       });
     },
   }));

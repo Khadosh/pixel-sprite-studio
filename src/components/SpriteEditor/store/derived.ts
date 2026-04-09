@@ -3,18 +3,18 @@ import { compositeFrame } from '@/lib/layerUtils';
 
 /** Get the active layer object */
 export const selectActiveLayer = (state: SpriteEditorState) =>
-  state.editedAsset.layers.find(l => l.id === state.activeLayerId);
+  state.editedAsset.layers!.find(l => l.id === state.activeLayerId);
 
 /** Get the total frame count */
 export const selectFrameCount = (state: SpriteEditorState) =>
-  state.editedAsset.layers[0]?.frames.length || state.editedAsset.frames?.length || 0;
+  state.editedAsset.layers![0]?.frames.length || state.editedAsset.frames?.length || 0;
 
 /** Get visible frame indices based on viewing animation */
 export const selectVisibleFramesIndices = (state: SpriteEditorState): number[] => {
-  if (state.viewingAnimation === 'base' || state.editedAsset.animations.length === 0) {
+  if (state.viewingAnimation === 'base' || !state.editedAsset.animations || state.editedAsset.animations.length === 0) {
     return [0];
   }
-  const anim = state.editedAsset.animations.find(a => a.name === state.viewingAnimation);
+  const anim = state.editedAsset.animations!.find(a => a.name === state.viewingAnimation);
   if (!anim) return [0];
   return [...new Set(anim.frameIndices)];
 };
@@ -48,7 +48,7 @@ export const selectFrameLabels = (state: SpriteEditorState): string[] => {
   const frameCount = selectFrameCount(state);
   const labels: string[] = frameCount > 0 ? Array.from({ length: frameCount }, (_, i) => `F${i}`) : [];
 
-  for (const anim of state.editedAsset.animations) {
+  for (const anim of (state.editedAsset.animations || [])) {
     const uniqueIndices = [...new Set(anim.frameIndices)];
     uniqueIndices.forEach((fi, seq) => {
       if (fi < labels.length) {

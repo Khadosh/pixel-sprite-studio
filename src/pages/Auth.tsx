@@ -79,10 +79,10 @@ export default function Auth() {
         setRecoveryMode(false);
         setView('login');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message || 'Ha ocurrido un error inesperado.',
+        description: error instanceof Error ? error.message : 'Ha ocurrido un error inesperado.',
         variant: 'destructive',
       });
     } finally {
