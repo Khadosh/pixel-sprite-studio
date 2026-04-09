@@ -41,7 +41,8 @@ Key capabilities:
 | `src/lib/spriteTransforms.ts` | Pixel-level transforms: flip, rotate, draw shapes |
 | `src/lib/assets/` | Pre-loaded asset catalog (`ASSET_CATALOG` export) |
 | `src/components/SpriteEditor/` | Main editor modal — root component + context + sub-hooks + sub-components |
-| `src/components/SpriteEditor/context/SpriteEditorContext.tsx` | Global editor state via Context API |
+| `src/components/SpriteEditor/store/useSpriteEditorStore.ts` | Global editor state via Zustand |
+| `src/components/SpriteEditor/context/SpriteEditorContext.tsx` | Store provider and selector hooks (Context wrapper) |
 | `src/components/SpriteEditor/hooks/useSpriteEditor.ts` | Orchestrator hook — composes 7 specialized sub-hooks |
 | `src/components/SpriteEditor/components/` | Editor UI: LayersList, PaletteSection, AnimationLibrary, Timeline |
 | `src/components/SpritePixelEditor.tsx` | Canvas rendering + drawing input (pixel-by-pixel, 20× scale) |
@@ -69,7 +70,7 @@ Key capabilities:
 - A **sprite** (`SpriteAsset`) has `palette: Record<number, string>` (index → hex), `colorNames`, `layers[]`, and `animations[]`.
 
 ### Editor State
-- `SpriteEditorContext` holds the full mutable editor state.
+- `useSpriteEditorStore` (via `SpriteEditorStoreProvider`) holds the full mutable editor state.
 - `useSpriteEditor` orchestrates 7 focused sub-hooks:
   - `useAnimationActions` — animation CRUD
   - `useFrameActions` — duplicate, insert, delete, reorder frames
