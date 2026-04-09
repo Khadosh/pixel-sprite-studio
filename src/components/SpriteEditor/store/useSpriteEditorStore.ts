@@ -7,7 +7,7 @@ import type { Frame } from '@/lib/types';
 import type { BrushSize } from '@/components/EditorToolbar';
 import { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { ensureLayerSupport, compositeFrame, addNewLayer, removeLayer, reorderLayers, renameLayer, toggleLayerVisibility, toggleLayerLock, upscale2x } from '@/lib/layerUtils';
+import { ensureLayerSupport, compositeFrame, addNewLayer, removeLayer, reorderLayers, renameLayer, toggleLayerVisibility, toggleLayerLock, upscale2x, mergeLayerDown } from '@/lib/layerUtils';
 import { duplicateFrameInAllLayers, removeFrameFromAllLayers, addEmptyFrameToAllLayers, generateAnimationsClientSide } from '@/lib/spriteAnimations';
 import { flipHorizontal, flipVertical, rotate90 } from '@/lib/spriteTransforms';
 import { PROP_LIBRARY } from '@/lib/assets/props';
@@ -114,6 +114,7 @@ export interface SpriteEditorState {
   toggleLayerVisibility: (id: string) => void;
   toggleLayerLock: (id: string) => void;
   renameLayer: (id: string, name: string) => void;
+  mergeLayerDown: (id: string) => void;
   moveLayer: (idx: number, dir: 'up' | 'down') => void;
   addPropLayer: (propId: string) => void;
 
@@ -341,6 +342,23 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     renameLayer: (layerId, name) => set(state => ({
       editedAsset: renameLayer(state.editedAsset, layerId, name),
     })),
+
+    mergeLayerDown: (layerId) => {
+      const state = get();
+      const index = state.editedAsset.layers.findIndex(l => l.id === layerId);
+      if (index <= 0) return;
+
+      state.pushUndo();
+      set(state => {
+        const updated = mergeLayerDown(state.editedAsset, layerId);
+        // After merge, select the layer that was below (now it's sitting at index - 1)
+        const resultLayer = updated.layers[index - 1];
+        return {
+          editedAsset: updated,
+          activeLayerId: resultLayer?.id || state.activeLayerId,
+        };
+      });
+    },
 
     moveLayer: (fromIdx, direction) => {
       const state = get();

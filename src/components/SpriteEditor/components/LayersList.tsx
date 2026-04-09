@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, EyeOff, Layers, Edit2, ChevronUp, ChevronDown, Trash2, Sword } from 'lucide-react';
+import { Plus, Eye, EyeOff, Layers, Edit2, ChevronUp, ChevronDown, Trash2, Sword, ArrowDownToLine } from 'lucide-react';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PROP_LIBRARY } from '@/lib/assets/props';
@@ -15,6 +15,7 @@ export const LayersList = React.memo(() => {
   const handleMoveLayer = useSpriteEditorStore(s => s.moveLayer);
   const handleRemoveLayer = useSpriteEditorStore(s => s.removeLayer);
   const handleAddPropLayer = useSpriteEditorStore(s => s.addPropLayer);
+  const handleMergeLayerDown = useSpriteEditorStore(s => s.mergeLayerDown);
 
   const layers = editedAsset.layers;
   const [editingLayerId, setEditingLayerId] = React.useState<string | null>(null);
@@ -144,6 +145,14 @@ export const LayersList = React.memo(() => {
                   disabled={idx === 0}
                 >
                   <ChevronDown size={12} />
+                </button>
+                <button 
+                  className="text-muted-foreground hover:text-primary disabled:opacity-20 transition-colors"
+                  onClick={(e) => { e.stopPropagation(); handleMergeLayerDown(layer.id); }}
+                  disabled={idx === 0}
+                  title="Combinar con capa inferior"
+                >
+                  <ArrowDownToLine size={12} />
                 </button>
                 <button 
                   className="text-red-500/70 hover:text-red-400"

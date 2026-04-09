@@ -217,3 +217,53 @@ export function reorderLayers(asset: SpriteAsset, fromIdx: number, toIdx: number
   newLayers.splice(toIdx, 0, moved);
   return { ...asset, layers: newLayers };
 }
+/**
+ * Merges a layer with the one immediately below it.
+ * The top layer's non-transparent pixels override the bottom layer's pixels.
+ */
+export function mergeLayerDown(asset: SpriteAsset, layerId: string): SpriteAsset {
+  const index = asset.layers.findIndex(l => l.id === layerId);
+  // Cannot merge if it's the bottom-most layer (index 0) or not found
+  if (index <= 0) return asset;
+
+  const topLayer = asset.layers[index];
+  const bottomLayer = asset.layers[index - 1];
+
+  // Create merged frames
+  // Note: bottomLayer.frames length is used as baseline
+  const mergedFrames = bottomLayer.frames.map((bottomFrame, fIdx) => {
+    const topFrame = topLayer.frames[fIdx];
+    if (!topFrame) return bottomFrame;
+
+    return bottomFrame.map((row, rIdx) => {
+      const topRow = topFrame[rIdx];
+      if (!topRow) return row;
+      
+      return row.map((pixel, cIdx) => {
+        const topPixel = topRow[cIdx];
+        // If top pixel is not transparent (0), use it; otherwise use bottom pixel
+        return (topPixel !== 0 && topPixel !== undefined) ? topPixel : pixel;
+      });
+    });
+  });
+
+  const mergedPaletteIds = Array.from(new Set([
+    ...(topLayer.paletteIds || []),
+    ...(bottomLayer.paletteIds || [])
+  ]));
+
+  const mergedLayer: SpriteLayer = {
+    ...bottomLayer, // Keep properties of the bottom layer (like name, id etc)
+    frames: mergedFrames,
+    paletteIds: mergedPaletteIds,
+  };
+
+  const newLayers = [...asset.layers];
+  // Replace the two layers with the new merged one
+  newLayers.splice(index - 1, 2, mergedLayer);
+
+  return {
+    ...asset,
+    layers: newLayers
+  };
+}
