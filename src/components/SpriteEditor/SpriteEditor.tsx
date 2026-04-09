@@ -13,6 +13,7 @@ import { AnimationPreviewPanel } from './components/AnimationPreviewPanel';
 import { ZoomControl } from './components/ZoomControl';
 import { SpriteEditorModalProps } from './types';
 import { PaletteProvider } from '@/hooks/usePalette';
+import { DrawingToolbar } from '@/components/DrawingToolbar';
 
 export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
   const { open, onOpenChange } = props;
@@ -57,27 +58,39 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                     onRotate={editor.handleRotate}
                   />
                 </div>
-                <div className="flex-1 overflow-auto custom-scrollbar flex items-center justify-center p-4 relative">
-                  <SpritePixelEditor
-                    asset={editor.editedAsset}
-                    frameIndex={editor.editingFrameIndex}
-                    activeColorKey={editor.activeColorKey}
-                    activeLayerId={editor.activeLayerId}
-                    tool={editor.tool}
-                    brushSize={editor.brushSize}
-                    onPointerDown={editor.handlePointerDown}
-                    onPointerMove={editor.handlePointerMove}
-                    onPointerUp={editor.handlePointerUp}
-                    draftFrame={editor.draftFrame}
-                    moveOffset={editor.moveOffset}
-                    rotationAngle={editor.rotationAngle}
-                    rotationCenter={editor.rotationCenter}
-                    onionSkinPrevFrame={editor.onionGhostFrames.prev}
-                    onionSkinNextFrame={editor.onionGhostFrames.next}
-                    zoom={editor.zoom}
-                    setZoom={editor.setZoom}
-                  />
-                  <ZoomControl />
+                <div className="flex-1 flex flex-row overflow-hidden relative">
+                  {/* Drawing Tools Sidebar */}
+                  <div className="flex-shrink-0 flex items-center p-2">
+                    <DrawingToolbar
+                      tool={editor.tool}
+                      onToolChange={editor.setTool}
+                    />
+                  </div>
+
+                  <div className="flex-1 overflow-auto custom-scrollbar flex items-center justify-center p-4 relative">
+                    <SpritePixelEditor
+                      asset={editor.editedAsset}
+                      frameIndex={editor.editingFrameIndex}
+                      activeColorKey={editor.activeColorKey}
+                      activeLayerId={editor.activeLayerId}
+                      tool={editor.tool}
+                      brushSize={editor.brushSize}
+                      onPointerDown={editor.handlePointerDown}
+                      onPointerMove={editor.handlePointerMove}
+                      onPointerUp={editor.handlePointerUp}
+                      draftFrame={editor.draftFrame}
+                      moveOffset={editor.moveOffset}
+                      rotationAngle={editor.rotationAngle}
+                      rotationCenter={editor.rotationCenter}
+                      onionSkinPrevFrame={editor.onionGhostFrames.prev}
+                      onionSkinNextFrame={editor.onionGhostFrames.next}
+                      zoom={editor.zoom}
+                      setZoom={editor.setZoom}
+                      selectionRect={editor.selectionRect}
+                      movingSelectionPixels={editor.movingSelectionPixels}
+                    />
+                    <ZoomControl />
+                  </div>
                 </div>
               </div>
 

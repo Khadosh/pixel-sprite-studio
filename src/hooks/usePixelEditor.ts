@@ -5,7 +5,7 @@ import type { BrushSize } from '@/components/EditorToolbar';
 import { shiftFrame, getCenterOfMass, rotateFrameFree } from '@/lib/spriteTransforms';
 import { compositeFrame } from '@/lib/layerUtils';
 
-export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'move' | 'rotate';
+export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'move' | 'rotate' | 'select';
 
 export function usePixelEditor(
   asset: SpriteAsset,
@@ -23,6 +23,8 @@ export function usePixelEditor(
   const [rotationAngle, setRotationAngle] = useState<number | null>(null);
   const [rotationCenter, setRotationCenter] = useState<{ r: number; c: number; activeLayerId?: string | null } | null>(null);
   const [initialRotationAngle, setInitialRotationAngle] = useState<number>(0);
+  const [selectionRect, setSelectionRect] = useState<{ r: number; c: number; w: number; h: number } | null>(null);
+  const [movingSelectionPixels, setMovingSelectionPixels] = useState<Frame | null>(null);
 
   const undoStack = useRef<Frame[]>([]);
   const [undoLen, setUndoLen] = useState(0);
@@ -201,6 +203,38 @@ export function usePixelEditor(
       return;
     }
 
+    if (activeTool === 'select') {
+      // Check if clicking inside existing selection
+      if (selectionRect && r >= selectionRect.r && r < selectionRect.r + selectionRect.h && c >= selectionRect.c && c < selectionRect.c + selectionRect.w) {
+        // START MOVING SELECTION
+        pushUndo();
+        isDrawing.current = true;
+        strokeStart.current = { r, c };
+        
+        const pixels: Frame = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
+        const newFrame = frame.map(row => [...row]);
+        
+        for (let ir = 0; ir < selectionRect.h; ir++) {
+          for (let ic = 0; ic < selectionRect.w; ic++) {
+            const fr = selectionRect.r + ir;
+            const fc = selectionRect.c + ic;
+            pixels[ir][ic] = frame[fr][fc];
+            newFrame[fr][fc] = 0; // Clear original
+          }
+        }
+        
+        setMovingSelectionPixels(pixels);
+        updateActiveLayerFrame(newFrame); // Update frame with cleared area
+      } else {
+        // START NEW SELECTION
+        isDrawing.current = true;
+        strokeStart.current = { r, c };
+        setSelectionRect({ r, c, w: 1, h: 1 });
+        setMovingSelectionPixels(null);
+      }
+      return;
+    }
+
     if (activeTool === 'picker') {
       const colorId = frame[r][c];
       if (colorId !== 0) setActiveColorKey(colorId);
@@ -228,7 +262,7 @@ export function usePixelEditor(
       applyPixelsToFrame(emptyDraft, expandBrush(r, c, value, asset.size), asset.size);
       setDraftFrame(emptyDraft);
     }
-  }, [tool, activeColorKey, asset, frameIndex, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush, scope]);
+  }, [tool, activeColorKey, asset, frameIndex, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush, scope, selectionRect, movingSelectionPixels]);
 
   const handlePointerMove = useCallback((r: number, c: number, forceTool?: EditorTool) => {
     const activeTool = forceTool || tool;
@@ -244,6 +278,29 @@ export function usePixelEditor(
       const currentAngle = Math.atan2(r - rotationCenter.r, c - rotationCenter.c);
       const diff = ((currentAngle - initialRotationAngle) * 180) / Math.PI;
       setRotationAngle(diff);
+      return;
+    }
+
+    if (activeTool === 'select' && strokeStart.current) {
+      if (movingSelectionPixels) {
+        // MOVE EXISTING SELECTION
+        const dr = r - strokeStart.current.r;
+        const dc = c - strokeStart.current.c;
+        setSelectionRect(prev => prev ? { ...prev, r: prev.r + dr, c: prev.c + dc } : null);
+        strokeStart.current = { r, c };
+      } else {
+        // DRAW NEW SELECTION RECT
+        const minR = Math.min(strokeStart.current.r, r);
+        const maxR = Math.max(strokeStart.current.r, r);
+        const minC = Math.min(strokeStart.current.c, c);
+        const maxC = Math.max(strokeStart.current.c, c);
+        setSelectionRect({
+          r: minR,
+          c: minC,
+          w: maxC - minC + 1,
+          h: maxR - minR + 1
+        });
+      }
       return;
     }
 
@@ -265,7 +322,11 @@ export function usePixelEditor(
       applyPixelsToFrame(shapeDraft, pixels, asset.size);
       setDraftFrame(shapeDraft);
     }
-  }, [tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, getLinePixels, getShapePixels, activeLayerId, scope, rotationCenter, initialRotationAngle]);
+  }, [
+    tool, activeColorKey, asset.size, getActiveLayerFrame, updateActiveLayerFrame, 
+    brushSize, mirrorX, getLinePixels, getShapePixels, activeLayerId, scope, 
+    rotationCenter, initialRotationAngle, selectionRect, movingSelectionPixels
+  ]);
 
   const overwriteLayerFrame = useCallback((newFrame: Frame) => {
     pushUndo(); // Save current state before overwriting
@@ -328,6 +389,30 @@ export function usePixelEditor(
       return;
     }
 
+    if (tool === 'select') {
+      if (movingSelectionPixels && selectionRect) {
+        // STAMP MOVING SELECTION
+        const baseFrame = getActiveLayerFrame();
+        if (baseFrame) {
+          const mergedFrame = baseFrame.map(row => [...row]);
+          for (let ir = 0; ir < selectionRect.h; ir++) {
+            for (let ic = 0; ic < selectionRect.w; ic++) {
+              const tr = selectionRect.r + ir;
+              const tc = selectionRect.c + ic;
+              if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
+                const val = movingSelectionPixels[ir][ic];
+                if (val !== 0) mergedFrame[tr][tc] = val;
+              }
+            }
+          }
+          overwriteLayerFrame(mergedFrame);
+        }
+        setMovingSelectionPixels(null);
+      }
+      isDrawing.current = false;
+      return;
+    }
+
     if ((tool === 'rect' || tool === 'circle' || tool === 'line') && draftFrame) {
       const baseFrame = getActiveLayerFrame();
       if (!baseFrame) return;
@@ -356,8 +441,10 @@ export function usePixelEditor(
     handlePointerDown, handlePointerMove, handlePointerUp,
     undo, pushUndo, canUndo: undoLen > 0,
     overwriteLayerFrame,
-    moveOffset,
     rotationAngle,
     rotationCenter,
+    selectionRect,
+    setSelectionRect,
+    movingSelectionPixels,
   };
 }

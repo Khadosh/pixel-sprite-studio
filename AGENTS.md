@@ -8,10 +8,10 @@
 Pixel Sprite Studio is a browser-based pixel art editor with AI-assisted sprite and animation generation. Users can create, animate, and export pixel art sprites (16×16 or 32×32) with a full layer system, multi-frame timeline, and persistent cloud storage.
 
 Key capabilities:
-- Pixel-by-pixel canvas editor (brush, eraser, fill, shapes, symmetry, onion skin)
+- Pixel-by-pixel canvas editor (brush, eraser, fill, shapes, symmetry, onion skin, zoom & middle-click pan)
 - Layer system with visibility, lock, and opacity
 - Multi-frame animation timeline with drag-and-drop reordering
-- AI generation via Google Gemini 2.5 Pro (sprites + animations)
+- AI generation via Google Gemini 2.5 Flash (sprites + animations)
 - Props library (weapons, accessories injected as layers)
 - PNG and GIF export
 - Authentication and cloud persistence via Supabase
@@ -25,7 +25,7 @@ Key capabilities:
 - **TanStack Query v5** for async state and server cache
 - **React Router 6** for routing
 - **Supabase** — Auth, Postgres DB (JSONB storage), Edge Functions
-- **Google Gemini 2.5 Pro** — called from Supabase Edge Functions
+- **Google Gemini 2.5 Flash** — called from Supabase Edge Functions
 - **dnd-kit** — drag-and-drop for timeline and layers
 - **omggif** — GIF encoding for animation export
 - **Vitest** for unit tests, **Playwright** for E2E tests
@@ -89,7 +89,7 @@ Key capabilities:
 ### Backend
 - **Supabase Postgres** stores projects and sprites. Sprite data is stored as JSONB in `asset_data`.
 - **RLS policies** ensure users only access their own data.
-- **Edge Functions** handle AI calls (Gemini 2.5 Pro) server-side to keep API keys off the client:
+- **Edge Functions** handle AI calls (Gemini 2.5 Flash) server-side to keep API keys off the client:
   - `generate-sprite` — returns `{ palette, colorNames, frame }` from a text prompt
   - `generate-animation` — returns `{ frames[] }` given a base frame and animation type
 

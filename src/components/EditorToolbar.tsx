@@ -2,7 +2,7 @@ import {
   Pencil, Eraser, Undo2, Layers, PaintBucket, Pipette, 
   Minus, Square, Circle, SplitSquareHorizontal,
   Copy, ClipboardList, FlipHorizontal, FlipVertical, RotateCw, Monitor,
-  Move, LucideIcon
+  Move, Scan, LucideIcon
 } from 'lucide-react';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -48,6 +48,7 @@ const SHAPE_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
   { id: 'line', icon: Minus, tooltip: 'Línea' },
   { id: 'rect', icon: Square, tooltip: 'Rectángulo' },
   { id: 'circle', icon: Circle, tooltip: 'Círculo' },
+  { id: 'select', icon: Scan, tooltip: 'Selección (S)' },
 ];
 
 const TRANSFORM_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
@@ -94,22 +95,8 @@ export default React.memo(function EditorToolbar({
       <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1">
         
         <div className="flex items-center gap-1">
-          {PAINT_TOOLS.map(t => (
-            <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
-          ))}
-        </div>
-
-        <div className="w-px h-6 bg-border mx-1 shrink-0" />
-
-        <div className="flex items-center gap-1">
-          {SHAPE_TOOLS.map(t => (
-            <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
-          ))}
-        </div>
-
-        <div className="w-px h-6 bg-border mx-1 shrink-0" />
-
-        <div className="flex items-center gap-1">
+          <ToolButton t={{ id: 'select', icon: Scan, tooltip: 'Selección (S)' }} currentTool={tool} onToolChange={onToolChange} />
+          <div className="w-px h-6 bg-border mx-1 shrink-0" />
           {TRANSFORM_TOOLS.map(t => (
             <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
           ))}

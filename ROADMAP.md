@@ -1,6 +1,6 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-08 (Revisado tras auditoría estratégica + sesión de producto)
+> Última actualización: 2026-04-08 (Post refactor de hooks + Zoom/Pan)
 
 ## Visión
 
@@ -98,15 +98,16 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] Crear sistema de `Props`: Espadas, Báculos, Escudos pre-definidos
 - [x] Inyectar Props como nuevas capas automáticas (ajustadas a 16px/32px)
 
-### 6.3 — Operaciones de Proyecto
+### 6.3 — Operaciones de Proyecto & Arquitectura
 - [x] Clonar Sprite existente (Duplicar asset completo con nuevo ID)
+- [x] **Refactor de Arquitectura (Modular Hooks)**: Separación de `useSpriteEditor` en sub-hooks especializados con tests unitarios.
 
 ---
 
 ## Fase A — Paridad Competitiva 🔴
 *Prioridad: CRÍTICA — bloqueante para monetización*
 
-- [ ] **Zoom del canvas** — Scroll para zoom, hotkeys `+`/`-`, indicador de nivel
+- [x] **Zoom del canvas** — Scroll para zoom, middle-click pan, hotkeys `+`/`-`, indicador de nivel
 - [ ] **Herramienta de selección rectangular** — Select, move, copy/paste, delete región
 - [ ] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
 - [ ] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)

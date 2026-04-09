@@ -93,6 +93,8 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     undo, canUndo,
     overwriteLayerFrame,
     moveOffset, rotationAngle, rotationCenter,
+    selectionRect, setSelectionRect,
+    movingSelectionPixels,
   } = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
     setEditedAsset(updated);
   }, scope);
@@ -119,7 +121,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
 
   const transformActions = useTransformActions(
     editedAsset, setEditedAsset, editingFrameIndex, activeLayerId, 
-    viewingAnimation, scope, overwriteLayerFrame
+    viewingAnimation, scope, overwriteLayerFrame, selectionRect
   );
 
   // --- EFFECTS ---
@@ -128,13 +130,32 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
   }, [frameCount, editingFrameIndex]);
 
   useEffect(() => {
+    // Only reset if it's a DIFFERENT asset (e.g. changing project or opening a new one)
+    if (initialAsset.id === editedAsset.id && editedAsset.layers.length > 0) return;
+
     const migrated = ensureLayerSupport(initialAsset);
     setEditedAsset(migrated);
     setAssetName(initialAsset.name);
     setEditingFrameIndex(0);
     setViewingAnimation('base');
     if (migrated.layers[0]) setActiveLayerId(migrated.layers[0].id);
-  }, [initialAsset]);
+  }, [initialAsset.id]); // Only run on ID change
+
+  // --- ACTIONS ---
+  const handleCopy = useCallback(() => {
+    transformActions.handleCopy(setLayerClipboard, setFrameClipboard);
+  }, [transformActions.handleCopy]);
+
+  const handlePaste = useCallback(() => {
+    transformActions.handlePaste(layerClipboard, frameClipboard);
+  }, [transformActions.handlePaste, layerClipboard, frameClipboard]);
+
+  // Clear selection when switching away from select tool
+  useEffect(() => {
+    if (tool !== 'select') {
+      setSelectionRect(null);
+    }
+  }, [tool, setSelectionRect]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -146,8 +167,32 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
         case 'g': setTool('fill'); break;
         case 'v': setTool('move'); break;
         case 'r': setTool('rotate'); break;
+        case 's': setTool('select'); break;
         case 'm': setMirrorX((prev: boolean) => !prev); break;
         case 'z': if (e.ctrlKey || e.metaKey) { e.preventDefault(); undo(); } break;
+        case 'c': if (e.ctrlKey || e.metaKey) { e.preventDefault(); handleCopy(); } break;
+        case 'v': if (e.ctrlKey || e.metaKey) { e.preventDefault(); handlePaste(); } break;
+        case 'escape': 
+          setSelectionRect(null); 
+          break;
+        case 'backspace':
+        case 'delete':
+          if (tool === 'select' && selectionRect) {
+            e.preventDefault();
+            const baseFrame = editedAsset.layers.find(l => l.id === activeLayerId)?.frames[editingFrameIndex];
+            if (baseFrame) {
+              const newFrame = baseFrame.map(row => [...row]);
+              for (let r = selectionRect.r; r < selectionRect.r + selectionRect.h; r++) {
+                for (let c = selectionRect.c; c < selectionRect.c + selectionRect.w; c++) {
+                  if (r >= 0 && r < editedAsset.size && c >= 0 && c < editedAsset.size) {
+                    newFrame[r][c] = 0;
+                  }
+                }
+              }
+              overwriteLayerFrame(newFrame);
+            }
+          }
+          break;
         case '+':
         case '=':
           if (e.ctrlKey || e.metaKey) {
@@ -171,7 +216,7 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, setTool, setMirrorX, setZoom]); 
+  }, [undo, setTool, setMirrorX, setZoom, tool, selectionRect, setSelectionRect, editedAsset, activeLayerId, editingFrameIndex, overwriteLayerFrame, handleCopy, handlePaste]); 
 
   const handleSave = () => {
     onSave({ ...editedAsset, name: assetName });
@@ -208,8 +253,8 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     handleExportGIF: () => exportActions.handleExportGIF(viewingAnimation),
     
     // Transform specialized calls
-    handleCopy: () => transformActions.handleCopy(setLayerClipboard, setFrameClipboard),
-    handlePaste: () => transformActions.handlePaste(layerClipboard, frameClipboard),
+    handleCopy,
+    handlePaste,
     
     // Core engine
     draftFrame,
@@ -233,6 +278,8 @@ export function useSpriteEditor(props: SpriteEditorModalProps): SpriteEditorCont
     rotationCenter,
     zoom,
     setZoom,
+    selectionRect,
+    movingSelectionPixels,
     isGenerating: props.isGenerating,
     onRegenerate: props.onRegenerate,
     generatePrompt: props.generatePrompt
