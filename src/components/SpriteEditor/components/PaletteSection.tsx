@@ -3,12 +3,14 @@ import { useShallow } from 'zustand/shallow';
 import PaletteBar from '@/components/PaletteBar';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { selectFilteredPalette } from '../store/derived';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const PaletteSection = React.memo(() => {
   const editedAsset = useSpriteEditorStore(s => s.editedAsset);
   const showAllColors = useSpriteEditorStore(s => s.showAllColors);
   const setShowAllColors = useSpriteEditorStore(s => s.setShowAllColors);
   const filteredPalette = useSpriteEditorStore(useShallow(selectFilteredPalette));
+
   const activeColorKey = useSpriteEditorStore(s => s._pixelEditorBridge?.activeColorKey ?? 1);
   const setActiveColorKey = useSpriteEditorStore(s => s._pixelEditorBridge?.setActiveColorKey);
   const handleChangeColor = useSpriteEditorStore(s => s.changeColor);
@@ -17,14 +19,14 @@ export const PaletteSection = React.memo(() => {
   const handleRenameColor = useSpriteEditorStore(s => s.renameColor);
 
   return (
-    <div className="bg-secondary/30 rounded-lg border border-border p-4 flex flex-col min-h-0 overflow-hidden flex-1 mb-2">
+    <ScrollArea className="h-full pr-3">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
-        <span className="font-pixel text-[10px] text-muted-foreground tracking-wider block uppercase">Palette</span>
+         <span className="font-pixel text-[8px] text-muted-foreground uppercase opacity-50">Paleta Activa</span>
         <button
           onClick={() => setShowAllColors(!showAllColors)}
           className={`text-[8px] font-pixel px-2 py-0.5 rounded border transition-colors ${showAllColors ? 'bg-primary/10 border-primary text-primary' : 'border-border text-muted-foreground font-mono'}`}
         >
-          {showAllColors ? 'ALL' : 'LAYER SCOPED'}
+          {showAllColors ? 'ALL' : 'SCOPE'}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
@@ -39,7 +41,7 @@ export const PaletteSection = React.memo(() => {
           onRenameColor={handleRenameColor}
         />
       </div>
-    </div>
+    </ScrollArea>
   );
 });
 

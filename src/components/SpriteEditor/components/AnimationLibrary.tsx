@@ -4,6 +4,7 @@ import { Sparkles, Settings, Trash2, Edit3, Check, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AVAILABLE_ANIMS } from '../types';
 import { CastElement, CastShape, AnimationDef } from '@/lib/types';
 
@@ -45,7 +46,8 @@ export const AnimationLibrary = React.memo(() => {
   };
 
   return (
-    <div className="bg-secondary/30 rounded-lg border border-border p-4 space-y-6">
+    <ScrollArea className="h-full pr-3">
+      <div className="space-y-6">
       {/* SECTION: GENERATION PANEL - MOVED TO TOP */}
       <div className="space-y-3">
         <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Generar Nueva</span>
@@ -226,7 +228,8 @@ export const AnimationLibrary = React.memo(() => {
       {animError && (
         <div className="text-red-400 text-[10px] mt-2 p-2 rounded bg-red-400/5 border border-red-400/10 font-mono whitespace-pre-wrap">{animError}</div>
       )}
-    </div>
+      </div>
+    </ScrollArea>
   );
 });
 

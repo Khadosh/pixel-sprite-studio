@@ -1,6 +1,6 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-09 (Global Undo/Redo + Layer Merge Down)
+> Última actualización: 2026-04-09 (TS Strict Mode + AI Rate Limiting)
 
 ## Visión
 
@@ -94,9 +94,14 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] Panel de generación dedicado: elegir tipo → generar → agregar a la lista
 - [x] Eliminar/Renombrar animación individualmente
 
-### 6.2 — Librería de Props (Permanent Layers)
+### 6.2 — Librería de Assets (Evolución) ⚔️
 - [x] Crear sistema de `Props`: Espadas, Báculos, Escudos pre-definidos
 - [x] Inyectar Props como nuevas capas automáticas (ajustadas a 16px/32px)
+- [ ] **Visión Assets Pro**:
+    - [ ] Soporte para tamaños no restringidos (assets < 16x16 o 32x32, ej: pociones)
+    - [ ] Creación masiva de assets por categorías (objetos, consumibles, equipo)
+    - [ ] Sistema de búsqueda, agrupación y filtrado por tags
+    - [ ] Browser de assets con preview real-time
 
 ### 6.3 — Operaciones de Proyecto & Arquitectura
 - [x] Clonar Sprite existente (Duplicar asset completo con nuevo ID)
@@ -111,8 +116,8 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] **Herramienta de selección avanzada** — Rect select, move, rotation (free drag), resizing (handles), copy/paste, delete region, deselect on click.
 - [x] **Undo para operaciones de alto nivel** — Stack deshacer para: borrar frame, mover capa, eliminar animación
 - [x] **Merge de capas** — Flattenear capas seleccionadas (pendiente de Fase 3)
-- [ ] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA
-- [ ] **TypeScript strict mode** — Habilitar `strict: true` en tsconfig y resolver warnings
+- [x] **Rate limiting en Edge Functions** — Límite diario por usuario para llamadas IA
+- [x] **TypeScript strict mode** — Habilitar `strict: true` en tsconfig y resolver warnings
 - [ ] **Estandarización de nombres de animación** — Contrato fijo de nombres canónicos (`idle`, `walk`, `walk_left`, `walk_right`, `attack`, `hurt`, `die`); requerido por Fase B.2 y Fase B.3
 
 > **Nota:** La estandarización de nombres de animación es prerequisito para el Export JSON y el Character Preview. Definirla acá evita deuda en los pasos siguientes.

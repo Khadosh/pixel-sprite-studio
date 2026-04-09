@@ -18,6 +18,13 @@ import { ZoomControl } from './components/ZoomControl';
 import { SpriteEditorModalProps } from './types';
 import { PaletteProvider } from '@/hooks/usePalette';
 import { DrawingToolbar } from '@/components/DrawingToolbar';
+
+import { EditorSidebarNavigator } from './components/EditorSidebarNavigator';
+import { PaletteLibrary } from './components/PaletteLibrary';
+import { AssetLibrary } from './components/AssetLibrary';
+import { PropsLibrary } from './components/PropsLibrary';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/shallow';
@@ -69,12 +76,12 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
   const editingFrameIndex = useStore(store, s => s.editingFrameIndex);
   const activeLayerId = useStore(store, s => s.activeLayerId);
   const scope = useStore(store, s => s.scope);
-  const { pushUndo, undo, redo, canUndo, canRedo } = useStore(store, useShallow(s => ({ 
-    pushUndo: s.pushUndo, 
-    undo: s.undo, 
-    redo: s.redo, 
-    canUndo: s.canUndo, 
-    canRedo: s.canRedo 
+  const { pushUndo, undo, redo, canUndo, canRedo } = useStore(store, useShallow(s => ({
+    pushUndo: s.pushUndo,
+    undo: s.undo,
+    redo: s.redo,
+    canUndo: s.canUndo,
+    canRedo: s.canRedo
   })));
 
   // Pixel editor hook (local drawing state with refs)
@@ -146,6 +153,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
   const handleFlipV = useStore(store, s => s.handleFlipV);
   const handleRotate = useStore(store, s => s.handleRotate);
 
+  const leftSidebarTab = useStore(store, s => s.leftSidebarTab);
   const onionGhostFrames = useStore(store, useShallow(selectOnionGhostFrames));
 
   // Effects (keyboard shortcuts, side-effects)
@@ -157,7 +165,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <SpriteEditorStoreProvider store={store}>
         <PaletteProvider defaultPalette={editedAsset.palette}>
-          <DialogContent 
+          <DialogContent
             aria-describedby={undefined}
             className="fixed inset-0 w-screen h-screen max-w-none max-h-none flex flex-col bg-background p-4 gap-4 overflow-hidden border-none rounded-none translate-x-0 translate-y-0 [&>button]:hidden"
           >
@@ -165,10 +173,9 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
 
             {/* MAIN BODY: 3 Columns */}
             <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
-              
-              {/* LEFT: Layers & Palette */}
-              <div className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 overflow-hidden pr-1">
-                <LayersList />
+
+              {/* LEFT SIDEBAR: Active Palette (Drawing Context) */}
+              <div className="w-[250px] min-w-[250px] flex-shrink-0 flex flex-col bg-secondary/10 rounded-lg border border-border p-4 overflow-hidden">
                 <PaletteSection />
               </div>
 
@@ -198,7 +205,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                   />
                 </div>
                 <div className="flex-1 flex flex-row overflow-hidden relative">
-                  {/* Drawing Tools Sidebar */}
+                  {/* Drawing Tools Toolbar */}
                   <div className="flex-shrink-0 flex items-center p-2">
                     <DrawingToolbar
                       tool={pixelEditor.tool}
@@ -232,9 +239,27 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                 </div>
               </div>
 
-              {/* RIGHT: Preview & Animation Controls */}
-              <div className="w-full lg:w-[280px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pl-1 custom-scrollbar">
-                <AnimationLibrary />
+              {/* RIGHT SIDEBAR: Utility Navigator + Dynamic Panel */}
+              <div className="w-[350px] min-w-[350px] flex-shrink-0 flex bg-secondary/10 rounded-lg border border-border overflow-hidden">
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                  {leftSidebarTab && (
+                    <div className="flex-1 overflow-hidden flex flex-col p-3">
+                      {leftSidebarTab === 'layers' && (
+                        <LayersList />
+                      )}
+                      {leftSidebarTab === 'animations' && (
+                        <AnimationLibrary />
+                      )}
+                      {leftSidebarTab === 'themes' && (
+                        <PaletteLibrary />
+                      )}
+                      {leftSidebarTab === 'assets' && (
+                        <AssetLibrary />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <EditorSidebarNavigator />
               </div>
             </div>
 

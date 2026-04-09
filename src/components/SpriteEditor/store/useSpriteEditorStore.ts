@@ -13,6 +13,7 @@ import { flipHorizontal, flipVertical, rotate90 } from '@/lib/spriteTransforms';
 import { PROP_LIBRARY } from '@/lib/assets/props';
 import { exportAsPNG, exportAsGIF } from '../utils/exportUtils';
 import type { AnimationPreviewPanelHandle } from '../components/AnimationPreviewPanel';
+import { getColorName } from '@/lib/colorUtils';
 
 // ─── Helpers ───
 
@@ -45,6 +46,7 @@ export interface SpriteEditorState {
   zoom: number;
   layerClipboard: number[][] | null;
   frameClipboard: Record<string, number[][]> | null;
+  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | null;
 
   // Animation generation state
   selectedAnims: string[];
@@ -98,6 +100,9 @@ export interface SpriteEditorState {
   setShowAllColors: (on: boolean) => void;
   setScope: (scope: EditorScope) => void;
   setCastSettings: (settings: AdvancedCastSettings | ((prev: AdvancedCastSettings) => AdvancedCastSettings)) => void;
+  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | null) => void;
+  applyPalettePreset: (colors: string[]) => void;
+  addColorRamp: (colors: string[]) => void;
   setZoom: (z: number | ((prev: number) => number)) => void;
   setSelectedAnims: (anims: string[] | ((prev: string[]) => string[])) => void;
   setIsAnimGenerating: (g: boolean) => void;
@@ -174,7 +179,25 @@ export interface CreateSpriteEditorStoreOptions {
 // ─── Store factory ───
 
 export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions) {
-  const migrated = ensureLayerSupport(options.initialAsset);
+  const DEFAULT_THEORY_PALETTE = ['#1a0c24', '#4c1e3d', '#9e3a39', '#e87e35', '#ffce5e', '#fff1c7', '#141013', '#2b1b36', '#4e2d4d', '#7d4a41', '#b37748', '#e3a857', '#fee27d', '#3e3546', '#44a362', '#91db69'];
+
+  const initialAsset = { ...options.initialAsset };
+  const currentPaletteKeys = Object.keys(initialAsset.palette || {}).filter(k => k !== '0');
+  
+  // If the palette is empty or very basic (1-2 colors), inject the theory palette
+  if (currentPaletteKeys.length <= 2) {
+    const newPalette: Record<number, string> = { 0: 'transparent' };
+    const newColorNames: Record<number, string> = { 0: 'Transparent' };
+    DEFAULT_THEORY_PALETTE.forEach((color, i) => {
+      const key = i + 1;
+      newPalette[key] = color;
+      newColorNames[key] = getColorName(color);
+    });
+    initialAsset.palette = newPalette;
+    initialAsset.colorNames = newColorNames;
+  }
+
+  const migrated = ensureLayerSupport(initialAsset);
 
   return createStore<SpriteEditorState>((set, get) => ({
     // --- Initial State ---
@@ -194,6 +217,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     selectedAnims: [],
     isAnimGenerating: false,
     animError: null,
+    leftSidebarTab: 'layers',
     
     // History stacks
     past: [] as SpriteAsset[],
@@ -425,7 +449,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       const keys = Object.keys(state.editedAsset.palette).map(Number).filter(k => k > 0);
       const newKey = keys.length > 0 ? Math.max(...keys) + 1 : 1;
       const updatedPalette = { ...state.editedAsset.palette, [newKey]: '#888888' };
-      const updatedColorNames = { ...state.editedAsset.colorNames, [newKey]: `Color ${newKey}` };
+      const updatedColorNames = { ...state.editedAsset.colorNames, [newKey]: getColorName('#888888') };
 
       const newLayers = state.editedAsset.layers!.map(layer => {
         if (layer.id === state.activeLayerId) {
@@ -485,6 +509,69 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       },
     })),
 
+    applyPalettePreset: (colors) => {
+      const state = get();
+      state.pushUndo();
+      
+      const newPalette: Record<number, string> = { 0: 'transparent' };
+      const newColorNames: Record<number, string> = { 0: 'Transparent' };
+      
+      colors.forEach((color, i) => {
+        const key = i + 1;
+        newPalette[key] = color;
+        newColorNames[key] = getColorName(color);
+      });
+
+      set({
+        editedAsset: {
+          ...state.editedAsset,
+          palette: newPalette,
+          colorNames: newColorNames,
+          // We don't touch layers paletteIds here because it might 
+          // break existing drawings, but for NEW drawings it's fine.
+          // Actually, we should update all layers to include the new keys
+          // to make them selectable.
+          layers: state.editedAsset.layers!.map(layer => ({
+            ...layer,
+            paletteIds: Object.keys(newPalette).map(Number).filter(k => k > 0)
+          }))
+        }
+      });
+    },
+
+    addColorRamp: (colors) => {
+      const state = get();
+      state.pushUndo();
+      
+      const currentKeys = Object.keys(state.editedAsset.palette).map(Number).filter(k => k > 0);
+      let nextKey = currentKeys.length > 0 ? Math.max(...currentKeys) + 1 : 1;
+      
+      const updatedPalette = { ...state.editedAsset.palette };
+      const updatedColorNames = { ...state.editedAsset.colorNames };
+      const addedKeys: number[] = [];
+
+      colors.forEach(color => {
+        updatedPalette[nextKey] = color;
+        updatedColorNames[nextKey] = getColorName(color);
+        addedKeys.push(nextKey);
+        nextKey++;
+      });
+
+      set({
+        editedAsset: {
+          ...state.editedAsset,
+          palette: updatedPalette,
+          colorNames: updatedColorNames,
+          layers: state.editedAsset.layers!.map(layer => {
+            if (layer.id === state.activeLayerId) {
+               return { ...layer, paletteIds: [...(layer.paletteIds || []), ...addedKeys] };
+            }
+            return layer;
+          })
+        }
+      });
+    },
+
     // --- Animation Actions ---
     toggleAnim: (anim) => set(state => ({
       selectedAnims: state.selectedAnims.includes(anim)
@@ -497,6 +584,10 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
     },
 
     clearSelection: () => set({ selectedAnims: [] }),
+
+    setLeftSidebarTab: (tab) => set((s) => ({ 
+      leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
+    })),
 
     generateAnimations: (type?: string) => {
       const state = get();

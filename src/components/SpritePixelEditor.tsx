@@ -2,9 +2,8 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { rotateFrameFree } from '@/lib/spriteTransforms';
 
-const BASE_PIXEL_SCALE = 20;
-const CHECKER_SIZE = 5;
-const GRID_COLOR = '#2a2a42';
+const BASE_PIXEL_SCALE = 16;
+const GRID_COLOR = 'rgba(255, 255, 255, 0.03)';
 
 interface SpritePixelEditorProps {
   asset: SpriteAsset;
@@ -48,7 +47,7 @@ export default function SpritePixelEditor({
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
-  
+
   // Panning state
   const panStart = useRef<{ x: number; y: number } | null>(null);
   const scrollStart = useRef<{ left: number; top: number } | null>(null);
@@ -56,7 +55,7 @@ export default function SpritePixelEditor({
 
   const PIXEL_SCALE = BASE_PIXEL_SCALE * zoom;
   const canvasSize = asset.size * PIXEL_SCALE;
-  
+
   // No longer using a single 'frame' variable at the top level
   // as we index into layers inside the draw loop.
 
@@ -84,12 +83,12 @@ export default function SpritePixelEditor({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Checkerboard background
-    for (let y = 0; y < canvas.height; y += CHECKER_SIZE) {
-      for (let x = 0; x < canvas.width; x += CHECKER_SIZE) {
-        const isEven = ((x / CHECKER_SIZE) + (y / CHECKER_SIZE)) % 2 === 0;
-        ctx.fillStyle = isEven ? '#1a1a2e' : '#22223a';
-        ctx.fillRect(x, y, CHECKER_SIZE, CHECKER_SIZE);
+    // Checkerboard background (aligned with logical pixels)
+    for (let row = 0; row < asset.size; row++) {
+      for (let col = 0; col < asset.size; col++) {
+        const isEven = (row + col) % 2 === 0;
+        ctx.fillStyle = isEven ? '#ababab' : '#ededed';
+        ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
       }
     }
 
@@ -100,13 +99,13 @@ export default function SpritePixelEditor({
         for (let col = 0; col < asset.size; col++) {
           const val = ghostFrame[row][col];
           if (val === 0) continue;
-          
+
           if (colorOverride) {
-             ctx.fillStyle = colorOverride;
+            ctx.fillStyle = colorOverride;
           } else {
-             const color = asset.palette[val];
-             if (!color || color === 'transparent') continue;
-             ctx.fillStyle = color;
+            const color = asset.palette[val];
+            if (!color || color === 'transparent') continue;
+            ctx.fillStyle = color;
           }
           ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
         }
@@ -126,8 +125,8 @@ export default function SpritePixelEditor({
         for (let col = 0; col < cols; col++) {
           const val = data[row][col];
           if (val === -1) continue; // Always meaning "no pixel here"
-          if (treatZeroAsTransparent && val === 0) continue; 
-          
+          if (treatZeroAsTransparent && val === 0) continue;
+
           if (val === 0) {
             ctx.fillStyle = '#ff000055';
           } else {
@@ -135,7 +134,7 @@ export default function SpritePixelEditor({
             if (!color || color === 'transparent') continue;
             ctx.fillStyle = color;
           }
-          
+
           const tr = row + dr;
           const tc = col + dc;
           if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
@@ -193,19 +192,19 @@ export default function SpritePixelEditor({
 
     // Grid lines
     for (let i = 0; i <= asset.size; i++) {
-        const isMajor = i % 8 === 0;
-        ctx.strokeStyle = isMajor ? '#3f3f5a' : GRID_COLOR;
-        ctx.lineWidth = isMajor ? 1 : 0.5;
+      const isMajor = i % 8 === 0;
+      ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.08)' : GRID_COLOR;
+      ctx.lineWidth = isMajor ? 1 : 0.5;
 
-        ctx.beginPath();
-        ctx.moveTo(i * PIXEL_SCALE, 0);
-        ctx.lineTo(i * PIXEL_SCALE, canvasSize);
-        ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(i * PIXEL_SCALE, 0);
+      ctx.lineTo(i * PIXEL_SCALE, canvasSize);
+      ctx.stroke();
 
-        ctx.beginPath();
-        ctx.moveTo(0, i * PIXEL_SCALE);
-        ctx.lineTo(canvasSize, i * PIXEL_SCALE);
-        ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, i * PIXEL_SCALE);
+      ctx.lineTo(canvasSize, i * PIXEL_SCALE);
+      ctx.stroke();
     }
 
     // Draw selection rectangle
@@ -229,7 +228,7 @@ export default function SpritePixelEditor({
         selectionRect.w * PIXEL_SCALE,
         selectionRect.h * PIXEL_SCALE
       );
-      
+
       ctx.strokeStyle = '#4f46e5';
       ctx.lineDashOffset = 5;
       ctx.strokeRect(
@@ -246,7 +245,7 @@ export default function SpritePixelEditor({
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = '#4f46e5';
       ctx.lineWidth = 1;
-      
+
       const handles = [
         { r: selectionRect.r, c: selectionRect.c },
         { r: selectionRect.r, c: selectionRect.c + selectionRect.w },
@@ -268,8 +267,8 @@ export default function SpritePixelEditor({
       // Draw floating pixels if moving
       if (movingSelectionPixels) {
         let pixelsToDraw = movingSelectionPixels;
-        if (rotationAngle !== 0 && rotationCenter) {
-           pixelsToDraw = rotateFrameFree(pixelsToDraw, rotationAngle, rotationCenter);
+        if (rotationAngle && rotationCenter) {
+          pixelsToDraw = rotateFrameFree(pixelsToDraw, rotationAngle, rotationCenter);
         }
         drawFrameData(pixelsToDraw, true, 0, 0);
       }
@@ -281,7 +280,7 @@ export default function SpritePixelEditor({
     e.currentTarget.setPointerCapture(e.pointerId);
 
     const cell = getCell(e);
-    
+
     if (e.button === 1) { // Middle Click (Wheel)
       // START PANNING
       panStart.current = { x: e.clientX, y: e.clientY };
@@ -289,7 +288,7 @@ export default function SpritePixelEditor({
       if (parent) {
         scrollStart.current = { left: parent.scrollLeft, top: parent.scrollTop };
       }
-      isPanning.current = false; 
+      isPanning.current = false;
       return;
     }
 
@@ -315,7 +314,7 @@ export default function SpritePixelEditor({
       // Middle Click Pan
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
-      
+
       const parent = e.currentTarget.parentElement?.parentElement;
       if (parent) {
         parent.scrollLeft = scrollStart.current.left - dx;
