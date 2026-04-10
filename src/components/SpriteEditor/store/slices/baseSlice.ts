@@ -1,3 +1,5 @@
+import { SpriteAsset, Frame } from '@/lib/types';
+import { normalizeTags, normalizeTag } from '@/lib/tagUtils';
 import { SpriteEditorState, StoreSlice } from '../types';
 
 export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
@@ -29,6 +31,41 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
   setCanvasBg: (bg) => set({ canvasBg: bg }),
+
+  setCategory: (category) => set(state => ({
+    editedAsset: { ...state.editedAsset, category },
+    isDirty: true
+  })),
+
+  setDescription: (description) => set(state => ({
+    editedAsset: { ...state.editedAsset, description },
+    isDirty: true
+  })),
+
+  setTags: (tags) => set(state => ({
+    editedAsset: { ...state.editedAsset, tags: normalizeTags(tags) },
+    isDirty: true
+  })),
+
+  addTag: (tag) => set(state => {
+    const newTag = normalizeTag(tag);
+    if (!newTag) return state;
+    const currentTags = state.editedAsset.tags || [];
+    if (currentTags.includes(newTag)) return state;
+    
+    return {
+      editedAsset: { ...state.editedAsset, tags: [...currentTags, newTag] },
+      isDirty: true
+    };
+  }),
+
+  removeTag: (tag) => set(state => ({
+    editedAsset: {
+      ...state.editedAsset,
+      tags: (state.editedAsset.tags || []).filter(t => t !== tag)
+    },
+    isDirty: true
+  })),
 
   // Meta actions
   handleSave: () => {

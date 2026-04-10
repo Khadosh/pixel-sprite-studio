@@ -20,7 +20,7 @@ export interface SpriteEditorState {
   zoom: number;
   layerClipboard: number[][] | null;
   frameClipboard: Record<string, number[][]> | null;
-  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | null;
+  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | null;
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
 
@@ -85,6 +85,11 @@ export interface SpriteEditorState {
   setAnimError: (e: string | null) => void;
   setPixelEditorBridge: (bridge: SpriteEditorState['_pixelEditorBridge']) => void;
   setCanvasBg: (bg: 'light' | 'dark') => void;
+  setCategory: (cat: SpriteAsset['category']) => void;
+  setDescription: (desc: string) => void;
+  setTags: (tags: string[]) => void;
+  addTag: (tag: string) => void;
+  removeTag: (tag: string) => void;
 
   duplicateFrame: (idx: number) => void;
   deleteFrame: (idx: number) => void;

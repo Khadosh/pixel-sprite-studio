@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Palette, Sword, Film } from 'lucide-react';
+import { Layers, Palette, Sword, Film, Settings2 } from 'lucide-react';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -13,6 +13,7 @@ export const EditorSidebarNavigator = () => {
     { id: 'layers', icon: Layers, label: 'LAYERS' },
     { id: 'themes', icon: Palette, label: 'THEMES' },
     { id: 'assets', icon: Sword, label: 'ASSETS' },
+    { id: 'config', icon: Settings2, label: 'CONFIG' },
   ] as const;
 
   return (

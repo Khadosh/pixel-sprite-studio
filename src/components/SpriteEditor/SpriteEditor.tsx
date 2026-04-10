@@ -11,6 +11,7 @@ import { useAnimationGenerationBridge } from './hooks/useAnimationGeneration';
 import { EditorHeader } from './components/EditorHeader';
 import { LayersList } from './components/LayersList';
 import { PaletteSection } from './components/PaletteSection';
+import { MetadataPanel } from './components/MetadataPanel';
 import { AnimationLibrary } from './components/AnimationLibrary';
 import { TimelineStrip } from './components/Timeline/TimelineStrip';
 import { AnimationPreviewPanel, AnimationPreviewPanelHandle } from './components/AnimationPreviewPanel';
@@ -279,6 +280,9 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                       )}
                       {leftSidebarTab === 'assets' && (
                         <AssetLibrary />
+                      )}
+                      {leftSidebarTab === 'config' && (
+                        <MetadataPanel />
                       )}
                     </div>
                   )}

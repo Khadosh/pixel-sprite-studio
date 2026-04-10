@@ -37,6 +37,7 @@ export default function ProjectWorkspace() {
   const [editorAsset, setEditorAsset] = useState<SpriteAsset | null>(null);
   const [editorIsNew, setEditorIsNew] = useState(false); // true = saving new, false = updating existing
   const [editingSpriteId, setEditingSpriteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // When generation completes, open editor
   useEffect(() => {
@@ -112,6 +113,54 @@ export default function ProjectWorkspace() {
     setEditorAsset(null);
     setEditingSpriteId(null);
   };
+
+  const toggleTag = (tag: string) => {
+    const tokens = searchQuery.split(/\s+/).filter(Boolean);
+    const tagToken = `#${tag.toLowerCase()}`;
+    const index = tokens.findIndex(t => t.toLowerCase() === tagToken);
+    
+    if (index >= 0) {
+      tokens.splice(index, 1);
+    } else {
+      tokens.push(tagToken);
+    }
+    setSearchQuery(tokens.join(' ') + (tokens.length > 0 ? ' ' : ''));
+  };
+
+  const filteredSprites = sprites.filter(s => {
+    if (!searchQuery.trim()) return true;
+    const tokens = searchQuery.toLowerCase().trim().split(/\s+/);
+    const asset = s.asset_data as SpriteAsset;
+    
+    const tagTokens = tokens.filter(t => t.startsWith('#')).map(t => t.slice(1));
+    const textTokens = tokens.filter(t => !t.startsWith('#'));
+    
+    // AND logic for tags: all required tags must be present
+    const hasAllTags = tagTokens.every(t => 
+      asset.tags?.some(at => at.toLowerCase() === t) ||
+      asset.category.toLowerCase() === t
+    );
+    
+    // ANY logic for text: at least one text token matches name
+    const matchesText = textTokens.length === 0 || textTokens.some(t => 
+      asset.name.toLowerCase().includes(t)
+    );
+    
+    return hasAllTags && matchesText;
+  });
+
+  const topTags = Object.entries(
+    sprites.reduce((acc, s) => {
+      const asset = s.asset_data as SpriteAsset;
+      asset.tags?.forEach(t => {
+        acc[t] = (acc[t] || 0) + 1;
+      });
+      return acc;
+    }, {} as Record<string, number>)
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([tag]) => tag);
 
   const handleCloneSprite = async (e: React.MouseEvent, sprite: ProjectSprite) => {
     e.stopPropagation();
@@ -308,9 +357,57 @@ export default function ProjectWorkspace() {
           </div>
         )}
 
-        {/* Sprites Grid */}
+        {/* Assets Gallery Grid */}
         <div className="bg-card border border-border p-6 md:p-8 rounded-lg min-h-[50vh]">
-          <h2 className="font-pixel text-[10px] text-muted-foreground tracking-wider mb-6">SPRITES GUARDADOS</h2>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+            <div className="space-y-1">
+              <h2 className="font-pixel text-[11px] text-primary tracking-widest uppercase">GALERÍA DE ACTIVOS</h2>
+              <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-tight opacity-60">Gestiona y organiza tus creaciones</p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
+              {/* Quick Filter Chips */}
+              {topTags.length > 0 && (
+                <div className="flex items-center gap-2 pr-2 border-r border-border/50 hidden md:flex">
+                  <span className="text-[8px] font-pixel text-muted-foreground/40 uppercase">Top:</span>
+                  {topTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`text-[9px] font-mono px-2 py-1 rounded border transition-all ${
+                        searchQuery.toLowerCase().includes(`#${tag.toLowerCase()}`)
+                          ? 'bg-primary/20 border-primary text-primary shadow-[0_0_8px_rgba(34,197,94,0.15)]'
+                          : 'bg-secondary/20 border-border/50 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="relative w-full sm:w-72 group">
+                <div className="absolute -inset-0.5 bg-primary/20 rounded-lg blur opacity-0 group-focus-within:opacity-100 transition duration-300"></div>
+                <div className="relative">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="BUSCAR POR NOMBRE O TAG..."
+                    className="bg-background border-primary/20 font-mono text-[10px] h-10 pl-10 border-2 focus-visible:ring-primary/30 focus-visible:border-primary/50 transition-all"
+                  />
+                  <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary/40 group-focus-within:text-primary transition-colors" size={16} />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {sprites.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 border border-dashed border-border rounded text-center">
@@ -320,9 +417,21 @@ export default function ProjectWorkspace() {
               <p className="font-pixel text-muted-foreground text-xs mb-2">PROYECTO VACIO</p>
               <p className="font-mono text-muted-foreground text-[10px] max-w-sm mb-6">Genera un sprite con IA o agrega uno desde el catalogo.</p>
             </div>
+          ) : filteredSprites.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <p className="font-pixel text-muted-foreground text-[10px] mb-2">SIN RESULTADOS</p>
+              <p className="font-mono text-muted-foreground text-[9px]">No encontramos nada que coincida con "{searchQuery}"</p>
+              <Button 
+                variant="link" 
+                onClick={() => setSearchQuery('')}
+                className="text-primary font-pixel text-[8px] mt-2"
+              >
+                LIMPIAR BUSQUEDA
+              </Button>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sprites.map((s) => {
+              {filteredSprites.map((s) => {
                 const asset = s.asset_data as SpriteAsset;
                 return (
                   <div
@@ -361,21 +470,38 @@ export default function ProjectWorkspace() {
                           />
                         </PaletteProvider>
                       </div>
+
+                      {/* Resolution Badge - Moved from bottom info panel */}
+                      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-background/60 backdrop-blur-md border border-border/40 rounded text-[8px] font-mono text-primary/70 z-10 shadow-sm">
+                        {asset.size}x{asset.size}
+                      </div>
                     </div>
                     
                     {/* Info Panel */}
                     <div className="p-4 border-t border-border bg-card/50 relative z-10">
-                      <h3 className="font-pixel text-[10px] text-foreground tracking-wider truncate mb-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-pixel text-[10px] text-foreground tracking-wider truncate mb-2 group-hover:text-primary transition-colors">
                         {asset.name.toUpperCase()}
                       </h3>
-                      <div className="flex items-center justify-between">
-                        <p className="font-mono text-[8px] text-muted-foreground">
-                          {asset.layers?.[0]?.frames.length || asset.frames?.length || 0} frames
-                        </p>
-                        <span className="font-mono text-[8px] text-primary/40 font-bold group-hover:text-primary/70 transition-colors">
-                          {asset.size}x{asset.size}
-                        </span>
-                      </div>
+                      
+                      {/* Tags display - Increased font size */}
+                      {asset.tags && asset.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {asset.tags.slice(0, 3).map(tag => (
+                            <span 
+                              key={tag}
+                              className="text-[9px] font-mono bg-secondary/80 text-muted-foreground px-2 py-0.5 rounded border border-border/50"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                          {asset.tags.length > 3 && (
+                            <span className="text-[8px] font-mono text-muted-foreground/40 self-center">+{asset.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                      {(!asset.tags || asset.tags.length === 0) && (
+                        <p className="text-[8px] font-mono text-muted-foreground/30 italic">Sin etiquetas</p>
+                      )}
                     </div>
                   </div>
                 );
