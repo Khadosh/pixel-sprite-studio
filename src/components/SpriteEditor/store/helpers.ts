@@ -9,3 +9,15 @@ export const getNextAnimationName = (existing: { name: string }[], type: string)
   while (existingNames.includes(`${baseName}_${i}`)) i++;
   return { name: `${baseName}_${i}`, label: `${baseLabel} ${i}` };
 };
+
+export function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(deepClone) as any;
+  const clone = {} as any;
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      clone[key] = deepClone(obj[key]);
+    }
+  }
+  return clone;
+}

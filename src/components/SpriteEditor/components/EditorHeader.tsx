@@ -25,6 +25,7 @@ export const EditorHeader = React.memo(() => {
   const handleSave = useSpriteEditorStore(s => s.handleSave);
   const handleClose = useSpriteEditorStore(s => s.handleClose);
   const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
+  const isDirty = useSpriteEditorStore(s => s.isDirty);
 
   return (
     <DialogHeader className="flex flex-row items-center justify-between space-y-0 flex-shrink-0">
@@ -50,12 +51,15 @@ export const EditorHeader = React.memo(() => {
             className="bg-background border border-primary rounded px-2 py-1 text-sm font-pixel text-primary outline-none focus:shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all"
           />
         ) : (
-          <DialogTitle
+           <DialogTitle
             className="font-pixel text-sm text-primary tracking-wider flex items-center gap-2 cursor-pointer hover:text-green-400 transition-colors"
             onClick={() => setIsEditingName(true)}
             title="Click para editar nombre"
           >
             {assetName.toUpperCase()} — EDITOR
+            {isDirty && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse" title="Cambios sin guardar" />
+            )}
             <Edit2 size={12} className="opacity-50" />
           </DialogTitle>
         )}
@@ -117,10 +121,10 @@ export const EditorHeader = React.memo(() => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
+           <Button
             onClick={handleSave}
             size="sm"
-            className="font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all"
+            className={`font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all ${isDirty ? 'animate-pulse-glow border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)]' : ''}`}
           >
             <Save size={15} strokeWidth={2.5} className="mr-2" />
             GUARDAR

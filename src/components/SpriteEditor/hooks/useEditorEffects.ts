@@ -58,7 +58,14 @@ export function useEditorEffects(store: SpriteEditorStore) {
           }
           break;
         case 'r': bridge.setTool('rotate'); break;
-        case 's': bridge.setTool('select'); break;
+        case 's':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            state.handleSave();
+          } else {
+            bridge.setTool('select');
+          }
+          break;
         case 'm': bridge.setMirrorX((prev: boolean) => !prev); break;
         case 'z':
           if (e.ctrlKey || e.metaKey) {
@@ -95,7 +102,7 @@ export function useEditorEffects(store: SpriteEditorStore) {
             if (bridge.movingSelectionPixels) {
               bridge.clearFloatingPixels();
             } else {
-              const baseFrame = state.editedAsset.layers.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
+              const baseFrame = state.editedAsset.layers!.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
               if (baseFrame) {
                 const selRect = bridge.selectionRect;
                 const newFrame = baseFrame.map(row => [...row]);
@@ -130,6 +137,14 @@ export function useEditorEffects(store: SpriteEditorStore) {
             e.preventDefault();
             state.setZoom(1.0);
           }
+          break;
+        case '[':
+          e.preventDefault();
+          bridge.setBrushSize(Math.max(1, bridge.brushSize - 1) as any);
+          break;
+        case ']':
+          e.preventDefault();
+          bridge.setBrushSize(Math.min(5, bridge.brushSize + 1) as any);
           break;
       }
     };

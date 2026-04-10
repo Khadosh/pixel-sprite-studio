@@ -1,4 +1,5 @@
 import { SpriteEditorState, StoreSlice } from '../types';
+import { deepClone } from '../helpers';
 
 export const createHistorySlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
   past: [],
@@ -7,7 +8,7 @@ export const createHistorySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
   canRedo: false,
 
   pushUndo: () => set(state => {
-    const snapshot = JSON.parse(JSON.stringify(state.editedAsset));
+    const snapshot = deepClone(state.editedAsset);
     const newPast = [snapshot, ...state.past].slice(0, 50);
     return { 
       past: newPast, 
@@ -21,7 +22,7 @@ export const createHistorySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
   undo: () => set(state => {
     if (state.past.length === 0) return state;
     const [previous, ...rest] = state.past;
-    const current = JSON.parse(JSON.stringify(state.editedAsset));
+    const current = deepClone(state.editedAsset);
     
     return {
       editedAsset: previous,
@@ -35,7 +36,7 @@ export const createHistorySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
   redo: () => set(state => {
     if (state.future.length === 0) return state;
     const [next, ...rest] = state.future;
-    const current = JSON.parse(JSON.stringify(state.editedAsset));
+    const current = deepClone(state.editedAsset);
     
     return {
       editedAsset: next,
