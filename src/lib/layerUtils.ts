@@ -258,7 +258,7 @@ export function mergeLayerDown(asset: SpriteAsset, layerId: string): SpriteAsset
     paletteIds: mergedPaletteIds,
   };
 
-  const newLayers = [...asset.layers];
+  const newLayers = [...asset.layers!];
   // Replace the two layers with the new merged one
   newLayers.splice(index - 1, 2, mergedLayer);
 

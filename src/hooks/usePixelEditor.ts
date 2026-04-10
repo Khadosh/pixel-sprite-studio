@@ -53,7 +53,7 @@ export function usePixelEditor(
     }
 
     const newLayers = asset.layers!.map(l => {
-      if (l.id === activeLayerId || (!activeLayerId && l === asset.layers[0])) {
+      if (l.id === activeLayerId || (!activeLayerId && l === asset.layers![0])) {
         const newFrames = [...l.frames];
         newFrames[frameIndex] = newFrame;
         return { ...l, frames: newFrames };
