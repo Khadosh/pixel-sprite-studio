@@ -76,7 +76,7 @@ export interface SpriteEditorState {
   setShowAllColors: (on: boolean) => void;
   setScope: (scope: EditorScope) => void;
   setCastSettings: (settings: AdvancedCastSettings | ((prev: AdvancedCastSettings) => AdvancedCastSettings)) => void;
-  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | null) => void;
+  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | null) => void;
   applyPalettePreset: (colors: string[]) => void;
   addColorRamp: (colors: string[]) => void;
   setZoom: (z: number | ((prev: number) => number)) => void;

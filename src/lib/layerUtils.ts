@@ -86,7 +86,7 @@ export function ensureLayerSupport(asset: SpriteAsset): SpriteAsset {
  */
 export function addEmptyFrameToAllLayers(asset: SpriteAsset, frameIndex: number): SpriteAsset {
   const size = asset.size;
-  const newLayers = asset.layers.map(layer => {
+  const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     const emptyFrame = Array.from({ length: size }, () => Array(size).fill(0));
     newFrames.splice(frameIndex + 1, 0, emptyFrame);
@@ -103,7 +103,7 @@ export function addEmptyFrameToAllLayers(asset: SpriteAsset, frameIndex: number)
  * Removes a frame index from all layers.
  */
 export function removeFrameFromAllLayers(asset: SpriteAsset, frameIndex: number): SpriteAsset {
-  const newLayers = asset.layers.map(layer => {
+  const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     newFrames.splice(frameIndex, 1);
     return { ...layer, frames: newFrames };
@@ -119,7 +119,7 @@ export function removeFrameFromAllLayers(asset: SpriteAsset, frameIndex: number)
  * Duplicates a frame index in all layers.
  */
 export function duplicateFrameInAllLayers(asset: SpriteAsset, frameIndex: number): SpriteAsset {
-  const newLayers = asset.layers.map(layer => {
+  const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     // Deep clone the frame matrix
     const frameToCopy = layer.frames[frameIndex];
@@ -139,7 +139,7 @@ export function duplicateFrameInAllLayers(asset: SpriteAsset, frameIndex: number
  * Adds a new layer to the top of the stack.
  */
 export function addNewLayer(asset: SpriteAsset, name: string): SpriteAsset {
-  const frameCount = asset.layers[0]?.frames.length || asset.frames?.length || 1;
+  const frameCount = asset.layers![0]?.frames.length || asset.frames?.length || 1;
   const size = asset.size;
 
   const newLayer: SpriteLayer = {
@@ -156,7 +156,7 @@ export function addNewLayer(asset: SpriteAsset, name: string): SpriteAsset {
 
   return {
     ...asset,
-    layers: [...asset.layers, newLayer]
+    layers: [...asset.layers!, newLayer]
   };
 }
 
@@ -164,7 +164,7 @@ export function addNewLayer(asset: SpriteAsset, name: string): SpriteAsset {
  * Removes a layer by ID (only if there's more than one layer).
  */
 export function removeLayer(asset: SpriteAsset, layerId: string): SpriteAsset {
-  if (asset.layers.length <= 1) return asset;
+  if (!asset.layers || asset.layers.length <= 1) return asset;
 
   return {
     ...asset,
@@ -178,7 +178,7 @@ export function removeLayer(asset: SpriteAsset, layerId: string): SpriteAsset {
 export function toggleLayerVisibility(asset: SpriteAsset, layerId: string): SpriteAsset {
   return {
     ...asset,
-    layers: asset.layers.map(l => 
+    layers: asset.layers!.map(l => 
       l.id === layerId ? { ...l, isVisible: !l.isVisible } : l
     )
   };
@@ -190,7 +190,7 @@ export function toggleLayerVisibility(asset: SpriteAsset, layerId: string): Spri
 export function toggleLayerLock(asset: SpriteAsset, layerId: string): SpriteAsset {
   return {
     ...asset,
-    layers: asset.layers.map(l => 
+    layers: asset.layers!.map(l => 
       l.id === layerId ? { ...l, isLocked: !l.isLocked } : l
     )
   };
@@ -202,7 +202,7 @@ export function toggleLayerLock(asset: SpriteAsset, layerId: string): SpriteAsse
 export function renameLayer(asset: SpriteAsset, layerId: string, newName: string): SpriteAsset {
   return {
     ...asset,
-    layers: asset.layers.map(l => 
+    layers: asset.layers!.map(l => 
       l.id === layerId ? { ...l, name: newName } : l
     )
   };
@@ -212,7 +212,7 @@ export function renameLayer(asset: SpriteAsset, layerId: string, newName: string
  * Reorders layers in the asset.
  */
 export function reorderLayers(asset: SpriteAsset, fromIdx: number, toIdx: number): SpriteAsset {
-  const newLayers = [...asset.layers];
+  const newLayers = [...asset.layers!];
   const [moved] = newLayers.splice(fromIdx, 1);
   newLayers.splice(toIdx, 0, moved);
   return { ...asset, layers: newLayers };
@@ -222,12 +222,12 @@ export function reorderLayers(asset: SpriteAsset, fromIdx: number, toIdx: number
  * The top layer's non-transparent pixels override the bottom layer's pixels.
  */
 export function mergeLayerDown(asset: SpriteAsset, layerId: string): SpriteAsset {
-  const index = asset.layers.findIndex(l => l.id === layerId);
+  const index = asset.layers!.findIndex(l => l.id === layerId);
   // Cannot merge if it's the bottom-most layer (index 0) or not found
   if (index <= 0) return asset;
 
-  const topLayer = asset.layers[index];
-  const bottomLayer = asset.layers[index - 1];
+  const topLayer = asset.layers![index];
+  const bottomLayer = asset.layers![index - 1];
 
   // Create merged frames
   // Note: bottomLayer.frames length is used as baseline
@@ -258,7 +258,7 @@ export function mergeLayerDown(asset: SpriteAsset, layerId: string): SpriteAsset
     paletteIds: mergedPaletteIds,
   };
 
-  const newLayers = [...asset.layers];
+  const newLayers = [...asset.layers!];
   // Replace the two layers with the new merged one
   newLayers.splice(index - 1, 2, mergedLayer);
 

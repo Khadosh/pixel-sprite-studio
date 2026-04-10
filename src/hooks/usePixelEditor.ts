@@ -52,8 +52,8 @@ export function usePixelEditor(
       return;
     }
 
-    const newLayers = asset.layers.map(l => {
-      if (l.id === activeLayerId || (!activeLayerId && l === asset.layers[0])) {
+    const newLayers = asset.layers!.map(l => {
+      if (l.id === activeLayerId || (!activeLayerId && l === asset.layers![0])) {
         const newFrames = [...l.frames];
         newFrames[frameIndex] = newFrame;
         return { ...l, frames: newFrames };
@@ -485,7 +485,7 @@ export function usePixelEditor(
             pushUndo();
             onAssetChange({
               ...asset,
-              layers: asset.layers.map(l => {
+              layers: asset.layers!.map(l => {
                 const newFrames = [...l.frames];
                 newFrames[frameIndex] = rotateFrameFree(l.frames[frameIndex], rotationAngle, rotationCenter);
                 return { ...l, frames: newFrames };
