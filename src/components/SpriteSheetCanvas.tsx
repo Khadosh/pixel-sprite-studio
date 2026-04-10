@@ -11,6 +11,7 @@ interface SpriteSheetCanvasProps {
   asset: SpriteAsset;
   scale?: number;
   showLabels?: boolean;
+  transparent?: boolean;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
 }
 
@@ -30,10 +31,33 @@ function drawCheckerboard(
   }
 }
 
+function isFrameEmpty(frame: (number | undefined)[][] | null): boolean {
+  if (!frame) return true;
+  for (const row of frame) {
+    for (const val of row) {
+      if (val !== 0 && val !== undefined) return false;
+    }
+  }
+  return true;
+}
+
+function framesAreIdentical(f1: (number | undefined)[][] | null, f2: (number | undefined)[][] | null): boolean {
+  if (!f1 || !f2) return f1 === f2;
+  if (f1.length !== f2.length) return false;
+  for (let r = 0; r < f1.length; r++) {
+    if (f1[r].length !== f2[r].length) return false;
+    for (let c = 0; c < f1[r].length; c++) {
+      if (f1[r][c] !== f2[r][c]) return false;
+    }
+  }
+  return true;
+}
+
 export default function SpriteSheetCanvas({ 
   asset, 
   scale = 4, 
   showLabels: showLabelsProp = true,
+  transparent = false,
   onCanvasReady 
 }: SpriteSheetCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,22 +68,55 @@ export default function SpriteSheetCanvas({
   const checkerSize = Math.max(2, Math.floor(CHECKER_SIZE_BASE * (scale / 4)));
 
   // Calculate grid dimensions
-  let rows: { label: string; frameIndices: number[] }[];
+  const frameCount = asset.layers?.[0]?.frames.length ?? asset.frames?.length ?? 1;
+  const previewCountBase = Math.min(4, frameCount);
+  
+  const getCompiledFrame = (idx: number) => {
+    return asset.layers && asset.layers.length > 0 
+      ? compositeFrame(asset, idx) 
+      : ((asset.frames?.[idx] as (number | undefined)[][]) || null);
+  };
+
+  const rows: { label: string; frameIndices: number[] }[] = [];
+
+  // BASE row with deduplication and empty check
+  const baseIndices: number[] = [];
+  for (let i = 0; i < previewCountBase; i++) {
+    const current = getCompiledFrame(i);
+    if (isFrameEmpty(current)) continue;
+    
+    if (baseIndices.length > 0) {
+      const prev = getCompiledFrame(baseIndices[baseIndices.length - 1]);
+      if (framesAreIdentical(current, prev)) continue;
+    }
+    baseIndices.push(i);
+  }
+  
+  if (baseIndices.length > 0) {
+    rows.push({
+      label: 'BASE',
+      frameIndices: baseIndices,
+    });
+  }
 
   if (hasAnimations) {
-    rows = asset.animations.map(a => ({
-      label: a.label,
-      frameIndices: a.frameIndices,
-    }));
-  } else {
-    // Static: show all frames or just the first few
-    const frameCount = asset.layers?.[0]?.frames.length ?? asset.frames?.length ?? 1;
-    // Limit static preview to 4 frames to avoid infinite horizontal cards
-    const previewCount = Math.min(4, frameCount);
-    rows = [{
-      label: 'BASE',
-      frameIndices: Array.from({ length: previewCount }, (_, i) => i),
-    }];
+    asset.animations.forEach(a => {
+      // Avoid duplicating the base row if an animation is explicitly named BASE
+      if (a.label.toUpperCase() === 'BASE') return;
+      
+      const indices = [...a.frameIndices];
+      // Trim trailing empty frames
+      while (indices.length > 0 && isFrameEmpty(getCompiledFrame(indices[indices.length - 1]))) {
+        indices.pop();
+      }
+      
+      if (indices.length > 0) {
+        rows.push({
+          label: a.label,
+          frameIndices: indices,
+        });
+      }
+    });
   }
 
   const maxCols = Math.max(...rows.map(r => r.frameIndices.length));
@@ -67,8 +124,8 @@ export default function SpriteSheetCanvas({
   const effectiveShowLabels = showLabelsProp;
   const labelW = effectiveShowLabels ? (LABEL_WIDTH_BASE * Math.max(0.8, scale / 4)) : 0;
 
-  const totalWidth = labelW + maxCols * (CELL_SIZE + GRID_GAP) + GRID_GAP;
-  const totalHeight = rows.length * (CELL_SIZE + GRID_GAP) + GRID_GAP;
+  const totalWidth = labelW + maxCols * (CELL_SIZE + GRID_GAP);
+  const totalHeight = rows.length * (CELL_SIZE + GRID_GAP);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -78,13 +135,15 @@ export default function SpriteSheetCanvas({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Main background
-    ctx.fillStyle = '#050508';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Main background - skip if transparent to show CSS grid
+    if (!transparent) {
+      ctx.fillStyle = '#050508';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // Label column background highlight
     if (effectiveShowLabels) {
-      ctx.fillStyle = '#0a0a0f';
+      ctx.fillStyle = transparent ? 'rgba(10, 10, 15, 0.85)' : '#0a0a0f';
       ctx.fillRect(0, 0, labelW, totalHeight);
       ctx.strokeStyle = '#22c55e33'; // Faint emerald border
       ctx.lineWidth = 1;
@@ -95,7 +154,7 @@ export default function SpriteSheetCanvas({
     }
 
     rows.forEach((row, rowIdx) => {
-      const y = GRID_GAP + rowIdx * (CELL_SIZE + GRID_GAP);
+      const y = rowIdx * (CELL_SIZE + GRID_GAP);
 
       // Draw row label
       if (effectiveShowLabels) {
@@ -110,7 +169,7 @@ export default function SpriteSheetCanvas({
 
       // Draw each frame in this row
       row.frameIndices.forEach((frameIdx, colIdx) => {
-        const x = labelW + GRID_GAP + colIdx * (CELL_SIZE + GRID_GAP);
+        const x = labelW + colIdx * (CELL_SIZE + GRID_GAP);
         drawCheckerboard(ctx, x, y, CELL_SIZE, CELL_SIZE, checkerSize);
         
         ctx.strokeStyle = '#1e1e2e';

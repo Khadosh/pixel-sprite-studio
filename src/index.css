@@ -60,4 +60,15 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-white/30;
   }
+
+  .bg-pixel-grid {
+    background-color: #0c0c14;
+    background-image: 
+      linear-gradient(45deg, #09090f 25%, transparent 25%),
+      linear-gradient(-45deg, #09090f 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #09090f 75%),
+      linear-gradient(-45deg, transparent 75%, #09090f 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  }
 }

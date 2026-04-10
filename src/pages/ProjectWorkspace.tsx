@@ -459,14 +459,15 @@ export default function ProjectWorkspace() {
                       </button>
                     </div>
                     
-                    {/* Preview Area - Fixed overflow-hidden as requested */}
-                    <div className="aspect-square bg-secondary/10 flex flex-col items-start justify-start p-4 relative overflow-hidden">
+                    {/* Preview Area - Fixed overflow-hidden with pseudo-canvas background */}
+                    <div className="aspect-square bg-pixel-grid bg-fixed flex flex-col items-start justify-start p-0 relative overflow-hidden">
                       <div className="pointer-events-none origin-top-left transition-transform duration-500 group-hover:scale-[1.02]">
                         <PaletteProvider defaultPalette={asset.palette}>
                           <SpriteSheetCanvas 
                             asset={asset} 
                             scale={2} 
                             showLabels={true}
+                            transparent={true}
                           />
                         </PaletteProvider>
                       </div>
