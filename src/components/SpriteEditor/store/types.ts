@@ -22,6 +22,7 @@ export interface SpriteEditorState {
   frameClipboard: Record<string, number[][]> | null;
   leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | null;
   isDirty: boolean;
+  canvasBg: 'light' | 'dark';
 
   // Animation generation state
   selectedAnims: string[];
@@ -83,6 +84,7 @@ export interface SpriteEditorState {
   setIsAnimGenerating: (g: boolean) => void;
   setAnimError: (e: string | null) => void;
   setPixelEditorBridge: (bridge: SpriteEditorState['_pixelEditorBridge']) => void;
+  setCanvasBg: (bg: 'light' | 'dark') => void;
 
   duplicateFrame: (idx: number) => void;
   deleteFrame: (idx: number) => void;

@@ -70,6 +70,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         animError: null,
         leftSidebarTab: 'animations',
         isDirty: false,
+        canvasBg: 'light',
 
         // Props from parent
         _onSave: options.onSave,
@@ -88,7 +89,8 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         partialize: (state) => ({ 
           editedAsset: state.editedAsset, 
           isDirty: state.isDirty,
-          assetName: state.assetName
+          assetName: state.assetName,
+          canvasBg: state.canvasBg
         }),
       }
     )

@@ -25,6 +25,7 @@ interface SpritePixelEditorProps {
   setZoom: (z: number | ((prev: number) => number)) => void;
   selectionRect?: { r: number; c: number; w: number; h: number } | null;
   movingSelectionPixels?: number[][] | null;
+  canvasBg: 'light' | 'dark';
 }
 
 export default function SpritePixelEditor({
@@ -44,6 +45,7 @@ export default function SpritePixelEditor({
   setZoom,
   selectionRect,
   movingSelectionPixels,
+  canvasBg,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
@@ -84,10 +86,13 @@ export default function SpritePixelEditor({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Checkerboard background (aligned with logical pixels)
+    const colorA = canvasBg === 'light' ? '#e5e5e5' : '#121212';
+    const colorB = canvasBg === 'light' ? '#f5f5f5' : '#1e1e1e';
+    
     for (let row = 0; row < asset.size; row++) {
       for (let col = 0; col < asset.size; col++) {
         const isEven = (row + col) % 2 === 0;
-        ctx.fillStyle = isEven ? '#ababab' : '#ededed';
+        ctx.fillStyle = isEven ? colorA : colorB;
         ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
       }
     }
@@ -273,7 +278,7 @@ export default function SpritePixelEditor({
         drawFrameData(pixelsToDraw, true, 0, 0);
       }
     }
-  }, [asset, activeLayerId, draftFrame, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame, selectionRect, movingSelectionPixels, PIXEL_SCALE]);
+  }, [asset, activeLayerId, draftFrame, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame, selectionRect, movingSelectionPixels, PIXEL_SCALE, canvasBg]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     // Attempt pointer capture to track outside canvas

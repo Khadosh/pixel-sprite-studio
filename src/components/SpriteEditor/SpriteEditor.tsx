@@ -150,6 +150,8 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
   const handleFlipH = useStore(store, s => s.handleFlipH);
   const handleFlipV = useStore(store, s => s.handleFlipV);
   const handleRotate = useStore(store, s => s.handleRotate);
+  const canvasBg = useStore(store, s => s.canvasBg);
+  const setCanvasBg = useStore(store, s => s.setCanvasBg);
 
   const leftSidebarTab = useStore(store, s => s.leftSidebarTab);
   const onionGhostFrames = useStore(store, useShallow(selectOnionGhostFrames));
@@ -220,6 +222,8 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                     onFlipH={handleFlipH}
                     onFlipV={handleFlipV}
                     onRotate={handleRotate}
+                    canvasBg={canvasBg}
+                    onToggleCanvasBg={() => setCanvasBg(canvasBg === 'light' ? 'dark' : 'light')}
                   />
                 </div>
                 <div className="flex-1 flex flex-row overflow-hidden relative">
@@ -251,6 +255,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                       setZoom={setZoom}
                       selectionRect={pixelEditor.selectionRect}
                       movingSelectionPixels={pixelEditor.movingSelectionPixels}
+                      canvasBg={canvasBg}
                     />
                     <ZoomControl />
                   </div>

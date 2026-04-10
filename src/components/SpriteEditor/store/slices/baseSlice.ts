@@ -28,6 +28,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setLeftSidebarTab: (tab) => set((s) => ({ 
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
+  setCanvasBg: (bg) => set({ canvasBg: bg }),
 
   // Meta actions
   handleSave: () => {

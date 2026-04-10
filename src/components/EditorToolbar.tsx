@@ -2,7 +2,7 @@ import {
   Pencil, Eraser, Undo2, Redo2, Layers, PaintBucket, Pipette, 
   Minus, Square, Circle, SplitSquareHorizontal,
   RotateCw, Monitor, Copy, ClipboardList, FlipHorizontal, FlipVertical,
-  Scan, LucideIcon
+  Scan, Sun, Moon, LucideIcon
 } from 'lucide-react';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -31,6 +31,8 @@ interface EditorToolbarProps {
   onFlipH: () => void;
   onFlipV: () => void;
   onRotate: () => void;
+  canvasBg: 'light' | 'dark';
+  onToggleCanvasBg: () => void;
 }
 
 const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
@@ -65,7 +67,8 @@ export default React.memo(function EditorToolbar({
   onionSkin, onToggleOnionSkin,
   mirrorX, onToggleMirrorX,
   scope, onScopeChange,
-  onCopy, onPaste, onFlipH, onFlipV, onRotate
+  onCopy, onPaste, onFlipH, onFlipV, onRotate,
+  canvasBg, onToggleCanvasBg
 }: EditorToolbarProps) {
   const btnBase = 'p-2 rounded border transition-all';
   const btnActive = 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(34,197,94,0.2)]';
@@ -253,6 +256,20 @@ export default React.memo(function EditorToolbar({
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel border-border">
               Onion Skin
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggleCanvasBg}
+                className={`${btnBase} ${btnInactive}`}
+              >
+                {canvasBg === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+              Fondo: {canvasBg === 'light' ? 'OSCURO' : 'CLARO'}
             </TooltipContent>
           </Tooltip>
         </div>
