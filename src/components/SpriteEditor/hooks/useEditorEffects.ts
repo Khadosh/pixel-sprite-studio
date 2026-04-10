@@ -21,20 +21,6 @@ export function useEditorEffects(store: SpriteEditorStore) {
   // Reset state when a different asset is loaded (initialAsset.id changes)
   // This is handled by SpriteEditor.tsx via initFromAsset
 
-  // Clear selection when switching away from select tool
-  useEffect(() => {
-    const unsub = store.subscribe((state) => {
-      const bridge = state._pixelEditorBridge;
-      if (!bridge) return;
-      const tool = bridge.tool;
-      if (tool !== 'select' && tool !== 'rotate') {
-        if (bridge.movingSelectionPixels) bridge.stampSelection();
-        bridge.setSelectionRect(null);
-      }
-    });
-    return unsub;
-  }, [store]);
-
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

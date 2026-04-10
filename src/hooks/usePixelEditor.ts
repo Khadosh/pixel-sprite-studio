@@ -534,8 +534,20 @@ export function usePixelEditor(
     strokeStart.current = null;
   }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo, rotationAngle, rotationCenter]);
   
+  const handleSetTool = useCallback((newTool: EditorTool) => {
+    if (newTool !== tool) {
+      if (newTool !== 'select' && newTool !== 'rotate') {
+        if (movingSelectionPixels) {
+          stampSelection();
+        }
+        setSelectionRect(null);
+      }
+      setTool(newTool);
+    }
+  }, [tool, movingSelectionPixels, stampSelection]);
+
   return {
-    tool, setTool,
+    tool, setTool: handleSetTool,
     activeColorKey, setActiveColorKey,
     brushSize, setBrushSize,
     mirrorX, setMirrorX,
