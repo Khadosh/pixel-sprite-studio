@@ -41,7 +41,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
     if (hasAnimations) {
       rows = asset.animations.map(a => ({ frameIndices: a.frameIndices }));
     } else {
-      rows = [{ frameIndices: asset.frames.map((_, i) => i) }];
+      rows = [{ frameIndices: (asset.frames || []).map((_, i) => i) }];
     }
 
     const maxCols = Math.max(...rows.map(r => r.frameIndices.length));
@@ -58,7 +58,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
       const y = rowIdx * (CELL_SIZE + GRID_GAP);
       row.frameIndices.forEach((frameIdx, colIdx) => {
         const x = colIdx * (CELL_SIZE + GRID_GAP);
-        const frame = asset.frames[frameIdx];
+        const frame = (asset.frames || [])[frameIdx];
         for (let fRow = 0; fRow < asset.size; fRow++) {
           for (let fCol = 0; fCol < asset.size; fCol++) {
             const val = frame[fRow][fCol];
@@ -211,7 +211,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
 
             {/* Tags area */}
             <div className="flex flex-wrap gap-2 pt-2">
-              {asset.tags.map(tag => (
+              {(asset.tags || []).map(tag => (
                 <span key={tag} className="px-3 py-1 bg-secondary/30 border border-border/50 rounded-full font-mono text-[9px] text-muted-foreground hover:text-primary transition-colors cursor-default">
                   #{tag}
                 </span>

@@ -17,7 +17,7 @@ export const exportAsPNG = (asset: SpriteAsset, options: { includeLabels?: boole
   if (hasAnims) {
     exportRows = asset.animations.map(a => ({ label: a.label, frameIndices: a.frameIndices }));
   } else {
-    exportRows = [{ label: 'Base', frameIndices: asset.layers[0]?.frames.map((_, i) => i) || [0] }];
+    exportRows = [{ label: 'Base', frameIndices: asset.layers?.[0]?.frames.map((_, i) => i) || [0] }];
   }
 
   const cellSize = asset.size * PIXEL_SCALE;

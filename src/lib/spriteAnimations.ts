@@ -34,7 +34,7 @@ export function generateAnimationsClientSide(
     }
 
     // Existing simple generation...
-    const newLayers: SpriteLayer[] = currentAsset.layers.map(layer => ({
+    const newLayers: SpriteLayer[] = currentAsset.layers!.map(layer => ({
       ...layer,
       frames: layer.frames.map(f => f.map(r => [...r]))
     }));
@@ -78,7 +78,7 @@ export function generateAdvancedCastSequence(
   settings: AdvancedCastSettings
 ): SpriteAsset {
   const size = asset.size;
-  const layers = [...asset.layers];
+  const layers = [...asset.layers!];
   
   // 1. Ensure/Find the "Cast Effect" layer
   let effectLayerIdx = layers.findIndex(l => l.name.toLowerCase().includes('effect'));
@@ -298,16 +298,16 @@ export function addExternalAnimation(
   // Find which layer to inject into
   let targetIdx = 0;
   if (targetLayerId) {
-    const found = layeredAsset.layers.findIndex(l => l.id === targetLayerId);
+    const found = layeredAsset.layers!.findIndex(l => l.id === targetLayerId);
     if (found >= 0) targetIdx = found;
   } else {
     // Fallback: search for "Base" or "Main"
-    const baseIdx = layeredAsset.layers.findIndex(l => l.name.toLowerCase().includes('base') || l.name.toLowerCase().includes('main'));
+    const baseIdx = layeredAsset.layers!.findIndex(l => l.name.toLowerCase().includes('base') || l.name.toLowerCase().includes('main'));
     if (baseIdx >= 0) targetIdx = baseIdx;
   }
 
-  const startIndex = layeredAsset.layers[0].frames.length;
-  const newLayers = layeredAsset.layers.map((layer, idx) => {
+   const startIndex = layeredAsset.layers![0].frames.length;
+   const newLayers = layeredAsset.layers!.map((layer, idx) => {
     const frames = [...layer.frames];
     if (idx === targetIdx) {
       frames.push(...newFrames);
@@ -348,7 +348,7 @@ export function addExternalAnimation(
  * Duplicates the frame index in all layers.
  */
 export function duplicateFrameInAllLayers(asset: SpriteAsset, targetIdx: number): SpriteAsset {
-  const newLayers = asset.layers.map(layer => {
+   const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     const frameToCopy = newFrames[targetIdx].map(row => [...row]);
     newFrames.splice(targetIdx + 1, 0, frameToCopy);
@@ -371,7 +371,7 @@ export function duplicateFrameInAllLayers(asset: SpriteAsset, targetIdx: number)
  */
 export function addEmptyFrameToAllLayers(asset: SpriteAsset, afterIdx: number): SpriteAsset {
   const size = asset.size;
-  const newLayers = asset.layers.map(layer => {
+   const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     const emptyFrame = Array.from({ length: size }, () => Array(size).fill(0));
     newFrames.splice(afterIdx + 1, 0, emptyFrame);
@@ -393,10 +393,10 @@ export function addEmptyFrameToAllLayers(asset: SpriteAsset, afterIdx: number): 
  * Removes a frame index from all layers.
  */
 export function removeFrameFromAllLayers(asset: SpriteAsset, targetIdx: number): SpriteAsset {
-  const firstLayer = asset.layers[0];
+  const firstLayer = asset.layers![0];
   if (firstLayer.frames.length <= 1) return asset;
 
-  const newLayers = asset.layers.map(layer => {
+   const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     newFrames.splice(targetIdx, 1);
     return { ...layer, frames: newFrames };
@@ -417,12 +417,12 @@ export function removeFrameFromAllLayers(asset: SpriteAsset, targetIdx: number):
  * Moves a frame from one index to another, updating all layers.
  */
 export function moveFrame(asset: SpriteAsset, fromIdx: number, toIdx: number): SpriteAsset {
-  const frameCount = asset.layers[0]?.frames.length || 0;
+  const frameCount = asset.layers![0]?.frames.length || 0;
   if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= frameCount || toIdx >= frameCount) {
     return asset;
   }
 
-  const newLayers = asset.layers.map(layer => {
+  const newLayers = asset.layers!.map(layer => {
     const newFrames = [...layer.frames];
     const [movedFrame] = newFrames.splice(fromIdx, 1);
     newFrames.splice(toIdx, 0, movedFrame);
