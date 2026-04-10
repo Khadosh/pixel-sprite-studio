@@ -64,6 +64,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_usage: {
+        Row: {
+          call_count: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          call_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          call_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
