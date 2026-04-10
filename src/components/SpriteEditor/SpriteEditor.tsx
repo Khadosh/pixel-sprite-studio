@@ -22,9 +22,7 @@ import { DrawingToolbar } from '@/components/DrawingToolbar';
 import { EditorSidebarNavigator } from './components/EditorSidebarNavigator';
 import { PaletteLibrary } from './components/PaletteLibrary';
 import { AssetLibrary } from './components/AssetLibrary';
-import { PropsLibrary } from './components/PropsLibrary';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { CloseConfirmationDialog } from './components/CloseConfirmationDialog';
 import { PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/shallow';
@@ -161,12 +159,32 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
 
 
 
+  // Close confirmation logic
+  const isDirty = useStore(store, s => s.isDirty);
+  const handleSave = useStore(store, s => s.handleSave);
+  const [showCloseConfirm, setShowCloseConfirm] = React.useState(false);
+
+  const handleRequestClose = React.useCallback(() => {
+    if (isDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [isDirty, onOpenChange]);
+
+  // Sync handleClose in store
+  useEffect(() => {
+    store.setState({ handleClose: handleRequestClose });
+  }, [store, handleRequestClose]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(val) => { if (!val) handleRequestClose(); }}>
       <SpriteEditorStoreProvider store={store}>
         <PaletteProvider defaultPalette={editedAsset.palette}>
           <DialogContent
             aria-describedby={undefined}
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
             className="fixed inset-0 w-screen h-screen max-w-none max-h-none flex flex-col bg-background p-4 gap-4 overflow-hidden border-none rounded-none translate-x-0 translate-y-0 [&>button]:hidden"
           >
             <EditorHeader />
@@ -241,6 +259,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
 
               {/* RIGHT SIDEBAR: Utility Navigator + Dynamic Panel */}
               <div className="w-[350px] min-w-[350px] flex-shrink-0 flex bg-secondary/10 rounded-lg border border-border overflow-hidden">
+
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                   {leftSidebarTab && (
                     <div className="flex-1 overflow-hidden flex flex-col p-3">
@@ -259,6 +278,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                     </div>
                   )}
                 </div>
+
                 <EditorSidebarNavigator />
               </div>
             </div>
@@ -269,6 +289,19 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
               <AnimationPreviewPanel ref={previewPanelRef} />
             </div>
           </DialogContent>
+
+          <CloseConfirmationDialog
+            open={showCloseConfirm}
+            onOpenChange={setShowCloseConfirm}
+            onConfirmSave={() => {
+              handleSave();
+              setShowCloseConfirm(false);
+            }}
+            onConfirmDiscard={() => {
+              setShowCloseConfirm(false);
+              onOpenChange(false);
+            }}
+          />
         </PaletteProvider>
       </SpriteEditorStoreProvider>
     </Dialog>
