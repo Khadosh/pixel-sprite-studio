@@ -199,7 +199,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                 </div>
               </div>
               <div className="p-8 overflow-auto flex justify-center bg-[#050508] min-h-[400px]">
-                <div className="scale-[1.5] origin-center">
+                <div className="scale-[1.5] origin-top">
                   <SpriteSheetCanvas 
                     asset={asset} 
                     // Dynamic scale to keep things visible but not overwhelming

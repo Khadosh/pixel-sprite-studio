@@ -124,8 +124,8 @@ export default function SpriteSheetCanvas({
   const effectiveShowLabels = showLabelsProp;
   const labelW = effectiveShowLabels ? (LABEL_WIDTH_BASE * Math.max(0.8, scale / 4)) : 0;
 
-  const totalWidth = labelW + maxCols * (CELL_SIZE + GRID_GAP);
-  const totalHeight = rows.length * (CELL_SIZE + GRID_GAP);
+  const totalWidth = labelW + maxCols * (CELL_SIZE + GRID_GAP) + 1;
+  const totalHeight = rows.length * (CELL_SIZE + GRID_GAP) + 1;
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
