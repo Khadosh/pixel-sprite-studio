@@ -21,7 +21,7 @@ export const AssetLibrary = () => {
 
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-4">
-          {['weapon', 'shield', 'accessory'].map(category => {
+          {['weapon', 'shield', 'accessory', 'item', 'nature', 'terrain'].map(category => {
             const items = PROP_LIBRARY.filter(p => p.category === category);
             if (items.length === 0) return null;
 

@@ -53,6 +53,36 @@ export function upscale2x(frame: Frame): Frame {
   }
   return out;
 }
+/**
+ * Fits a frame of any size into a target size frame, centering it.
+ * Does not upscale pixels (1:1 mapping).
+ */
+export function fitFrame(source: Frame, targetSize: number): Frame {
+  const sourceSize = source.length;
+  const out: Frame = Array.from({ length: targetSize }, () => Array(targetSize).fill(0));
+  
+  if (sourceSize > targetSize) {
+    // Crop from center if source is somehow larger
+    const offset = Math.floor((sourceSize - targetSize) / 2);
+    for (let r = 0; r < targetSize; r++) {
+      for (let c = 0; c < targetSize; c++) {
+        out[r][c] = source[r + offset]?.[c + offset] || 0;
+      }
+    }
+  } else {
+    // Place in center
+    const offset = Math.floor((targetSize - sourceSize) / 2);
+    for (let r = 0; r < sourceSize; r++) {
+      for (let c = 0; c < sourceSize; c++) {
+        const val = source[r][c];
+        if (val !== undefined && val !== 0) {
+          out[r + offset][c + offset] = val;
+        }
+      }
+    }
+  }
+  return out;
+}
 
 /**
  * Ensures a SpriteAsset has at least one layer and migrates legacy 'frames' if needed.

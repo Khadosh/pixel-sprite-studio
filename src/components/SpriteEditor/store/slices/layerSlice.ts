@@ -1,5 +1,5 @@
 import { SpriteEditorState, StoreSlice } from '../types';
-import { addNewLayer, removeLayer, reorderLayers, renameLayer, toggleLayerVisibility, toggleLayerLock, upscale2x, mergeLayerDown } from '@/lib/layerUtils';
+import { addNewLayer, removeLayer, reorderLayers, renameLayer, toggleLayerVisibility, toggleLayerLock, upscale2x, mergeLayerDown, fitFrame } from '@/lib/layerUtils';
 import { PROP_LIBRARY } from '@/lib/assets/props';
 
 export const createLayerSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
@@ -71,27 +71,65 @@ export const createLayerSlice: StoreSlice<Partial<SpriteEditorState>> = (set, ge
 
     const size = state.editedAsset.size || 16;
     let propData = size === 32 ? prop.data32 : prop.data16;
-    if (!propData && size === 32 && prop.data16) {
-      propData = upscale2x(prop.data16);
+    
+    if (!propData && prop.data16) {
+      propData = fitFrame(prop.data16, size);
     }
+    
     if (!propData) return;
 
     state.pushUndo();
 
+    // -- SMART PALETTE REMAPPING --
+    const currentPalette = { ...state.editedAsset.palette };
+    const currentColorNames = { ...state.editedAsset.colorNames };
+    
+    // Reverse palette for hex lookup: hex -> index
+    const hexToIndexIndex: Record<string, number> = {};
+    Object.entries(currentPalette).forEach(([idx, hex]) => {
+      hexToIndexIndex[hex.toLowerCase()] = Number(idx);
+    });
+
+    const indexMapping: Record<number, number> = { 0: 0 }; // 0 is always transparency
+
+    // Find next available index
+    let nextIdx = Math.max(0, ...Object.keys(currentPalette).map(Number)) + 1;
+
+    // Build the mapping
+    Object.entries(prop.palette).forEach(([propIdxStr, hex]) => {
+      const propIdx = Number(propIdxStr);
+      const lowerHex = hex.toLowerCase();
+      
+      if (hexToIndexIndex[lowerHex] !== undefined) {
+        // Color already exists in palette, reuse index
+        indexMapping[propIdx] = hexToIndexIndex[lowerHex];
+      } else {
+        // New color! Add to global palette
+        currentPalette[nextIdx] = hex;
+        currentColorNames[nextIdx] = `${prop.name} - ${prop.colorNames?.[propIdx] || `Color ${propIdx}`}`;
+        indexMapping[propIdx] = nextIdx;
+        hexToIndexIndex[lowerHex] = nextIdx;
+        nextIdx++;
+      }
+    });
+
+    // Remap frame data
     const newLayerId = crypto.randomUUID();
     const frameCount = state.editedAsset.layers![0]?.frames.length || 1;
     const newFrames = Array.from({ length: frameCount }, () =>
-      propData.map(row => [...row])
+      propData!.map(row => 
+        row.map(pixel => indexMapping[pixel] ?? 0)
+      )
     );
 
-    const uniqueColors = new Set<number>();
-    propData.forEach(row => {
-      row.forEach(pixel => { if (pixel > 0) uniqueColors.add(pixel); });
-    });
+    const usedIndices = new Set<number>();
+    newFrames[0].forEach(row => row.forEach(p => { if (p > 0) usedIndices.add(p); }));
 
     set({
       editedAsset: {
         ...state.editedAsset,
+        palette: currentPalette,
+        colorNames: currentColorNames,
         layers: [
           ...state.editedAsset.layers!,
           {
@@ -101,7 +139,7 @@ export const createLayerSlice: StoreSlice<Partial<SpriteEditorState>> = (set, ge
             isVisible: true,
             isLocked: false,
             opacity: 1,
-            paletteIds: Array.from(uniqueColors),
+            paletteIds: Array.from(usedIndices),
           },
         ],
       },

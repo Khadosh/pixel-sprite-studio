@@ -85,27 +85,30 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 ---
 
-## Fase 6 — Gestión Pro & Librería de Props ⚔️ ✅
-*Completada 2026-04-08*
+## Fase 6 — Gestión Pro & Librería de Assets ✅
+*Completada 2026-04-08 (Fase Base)*
 
-### 6.1 — Refactor del Animation Library
+### 6.1 — Refactor del Animation Library ✅
 - [x] Eliminar checkboxes confusos
-- [x] Lista real de animaciones guardadas (soporte para duplicados: Attack 1, Attack 2)
-- [x] Panel de generación dedicado: elegir tipo → generar → agregar a la lista
+- [x] Lista real de animaciones guardadas
+- [x] Panel de generación dedicado
 - [x] Eliminar/Renombrar animación individualmente
 
 ### 6.2 — Librería de Assets (Evolución) ⚔️
-- [x] Crear sistema de `Props`: Espadas, Báculos, Escudos pre-definidos
-- [x] Inyectar Props como nuevas capas automáticas (ajustadas a 16px/32px)
-- [ ] **Visión Assets Pro**:
-    - [ ] Soporte para tamaños no restringidos (assets < 16x16 o 32x32, ej: pociones)
-    - [ ] Creación masiva de assets por categorías (objetos, consumibles, equipo)
-    - [ ] Sistema de búsqueda, agrupación y filtrado por tags
-    - [ ] Browser de assets con preview real-time
+- [x] Sistema de `Props` inyectables como capas
+- [x] **Smart Importing**: Soporte para encajar 16px en 32px (centering)
+- [ ] Creación masiva de assets por categorías (objetos, consumibles, equipo)
+- [ ] Browser de assets con preview real-time
 
-### 6.3 — Operaciones de Proyecto & Arquitectura
-- [x] Clonar Sprite existente (Duplicar asset completo con nuevo ID)
-- [x] **Refactor de Arquitectura (Modular Hooks)**: Separación de `useSpriteEditor` en sub-hooks especializados con tests unitarios.
+---
+
+## Fase 7 — Expansión de Contenido y Composición 🎨
+*Prioridad: ALTA — Enfoque en crear escenas y personajes ricos*
+
+- [x] **Smart Importing**: Lógica para importar 16x16 dentro de 32x32 sin reescalar (centrado).
+- [ ] **Librería Esencial (16x16)**: Pociones, naturaleza, cofres y items listos para usar.
+- [ ] **Tilemap Support**: Generación de tiles de terreno (pasto, agua, muros) compatibles entre sí.
+- [ ] **Composición Multicapa**: Herramientas para alinear assets importados rápidamente.
 
 ---
 
@@ -124,25 +127,6 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 
 ---
 
-## Fase B — Diferenciación, Engine Integration y Monetización 💰
-*Prioridad: ALTA — features que justifican el pago y construyen retención real*
-
-### B.1 — Export y contrato de datos
-- [ ] **Export Spritesheet JSON (Texture Packer format)** — Spritesheet PNG plano + JSON con nombre de animación, índices de frames, duración por frame y rect coordinates. Importable directamente en Godot, Unity y Defold sin plugins.
-- [ ] **Import PNG** — Cargar imagen externa como referencia o sprite base
-- [ ] **Resize / crop canvas** — Anchor configurable, presets 8×8 / 16×16 / 32×32 / 64×64
-
-### B.2 — Character Preview (mini-juego interactivo)
-*El loop completo: generás → animás → jugás → exportás.*
-
-- [ ] **Canvas de preview interactivo** — Canvas separado del editor, loop con `requestAnimationFrame`
-- [ ] **Character controller mínimo** — Movimiento con teclado (WASD / flechas), sin física; colisión simple por celda
-- [ ] **Tilemap fijo seleccionable** — 2-3 tilemaps de ejemplo (interior, exterior, dungeon); no es un editor de mapas
-- [ ] **Mapeo animación-estado** — `idle` sin input · `walk`/`walk_left`/`walk_right` en movimiento · `attack` en tecla de acción · `hurt` / `die` si se expande
-- [ ] **Driven por el mismo JSON de export** — El preview consume el Texture Packer JSON; lo que funciona acá funciona en Godot
-
-> **Por qué importa:** El momento en que el sprite generado reacciona al input del usuario es el punto de mayor retención del producto. Convierte un archivo en un personaje. Además valida en tiempo real que el export va a funcionar en el engine — el preview *es* la prueba de integración.
-
 ### B.3 — Color y paletas
 - [ ] **Paletas históricas** — NES, Game Boy, CGA, EGA, Pico-8 como templates
 - [ ] **HSL Color Picker visual** — Reemplazar el picker nativo HTML
@@ -152,6 +136,25 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [ ] **Sistema de créditos IA + Stripe** — Integración de pagos, planes Free/Pro, cobro por generación
 - [ ] **Onboarding interactivo** — Tutorial paso a paso para nuevos usuarios
 - [ ] **Changelog público en la app** — Mostrar últimas updates; builds confianza
+
+---
+
+## Fase E — Integración y Exportación Pro 💰
+*Prioridad: BAJA — Desplazada al final para priorizar el contenido creativo*
+
+### E.1 — Export y contrato de datos
+- [ ] **Export Spritesheet JSON (Texture Packer format)** — Spritesheet PNG plano + JSON con nombre de animación, índices de frames, duración por frame y rect coordinates. Importable directamente en Godot, Unity y Defold sin plugins.
+- [ ] **Import PNG** — Cargar imagen externa como referencia o sprite base
+- [ ] **Resize / crop canvas** — Anchor configurable, presets 8×8 / 16×16 / 32×32 / 64×64
+
+### E.2 — Character Preview (mini-juego interactivo)
+*El loop completo: generás → animás → jugás → exportás.*
+
+- [ ] **Canvas de preview interactivo** — Canvas separado del editor, loop con `requestAnimationFrame`
+- [ ] **Character controller mínimo** — Movimiento con teclado (WASD / flechas), sin física; colisión simple por celda
+- [ ] **Tilemap fijo seleccionable** — 2-3 tilemaps de ejemplo (interior, exterior, dungeon); no es un editor de mapas
+- [ ] **Mapeo animación-estado** — `idle` sin input · `walk`/`walk_left`/`walk_right` en movimiento · `attack` en tecla de acción · `hurt` / `die` si se expande
+- [ ] **Driven por el mismo JSON de export** — El preview consume el Texture Packer JSON; lo que funciona acá funciona en Godot
 
 ---
 
