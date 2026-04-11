@@ -5,11 +5,14 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-10 (Hoy)
-**6 commits realizados**
+**7 commits realizados**
 
-- **Agregado**: Sistema de etiquetas (Tags) con normalización y sugerencias inteligentes por categoría.
+- **Agregado**: Navegador de Assets universal con búsqueda por nombre/tags y soporte para importar creaciones propias ("Mis Sprites").
+- **Agregado**: Sistema de composición inteligente con remapeo automático de paletas y aplanado de capas al importar assets multi-capa.
+- **Agregado**: Etiquetas (Tags) con normalización y sugerencias inteligentes por categoría.
 - **Agregado**: Panel de metadatos (Categoría y Descripción) para una organización profesional.
 - **Agregado**: Filtrado avanzado multi-select en la galería (soporta combinaciones como `#warrior #fire`).
+- **Mejoras de interfaz**: Restricciones de tamaño en tiempo real (solo 16x16 dentro de 32x32) para facilitar la composición coherente.
 - **Mejoras de interfaz**: Consistencia visual en miniaturas con fondo de canvas pixel-art y alineación perfecta.
 - **Mejoras de interfaz**: Rediseño de diálogos de confirmación con iconos pixel-art personalizados.
 - **Corregido**: Bug crítico de recursión infinita al cambiar de herramienta con una selección activa.

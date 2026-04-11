@@ -73,6 +73,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         canvasBg: 'light',
 
         // Props from parent
+        projectId: options.projectId,
         _onSave: options.onSave,
         _onOpenChange: options.onOpenChange,
         _previewPanelRef: options.previewPanelRef,

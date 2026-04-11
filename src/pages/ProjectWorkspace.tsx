@@ -525,6 +525,7 @@ export default function ProjectWorkspace() {
           generatePrompt={editorIsNew && generatePrompt ? generatePrompt : undefined}
           onRegenerate={editorIsNew ? () => generate(generatePrompt, canvasSize) : undefined}
           isGenerating={isGenerating}
+          projectId={id}
         />
       )}
     </div>
