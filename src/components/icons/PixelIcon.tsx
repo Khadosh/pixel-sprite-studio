@@ -538,3 +538,17 @@ export const PIXEL_ICONS = {
   monitor: PxMonitor,
   resetRotate: PxResetRotate,
 } as const;
+
+export const PxFolder: React.FC<PixelIconProps> = (p) => (
+  <Px {...p}>
+    <path d="M1 3h5v1h1v1h7v1h1v7H1V3z" />
+    <path d="M2 5h12v7H2V5z" fill="var(--background, #000)" />
+  </Px>
+);
+
+export const PxLogOut: React.FC<PixelIconProps> = (p) => (
+  <Px {...p}>
+    <path d="M2 2h6v2H4v8h4v2H2V2z" />
+    <path d="M8 7h5V5h1v1h1v1h1v2h-1v1h-1v1h-1V9H8V7z" />
+  </Px>
+);
