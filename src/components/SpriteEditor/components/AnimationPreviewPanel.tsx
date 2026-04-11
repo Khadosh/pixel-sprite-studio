@@ -42,7 +42,7 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
             className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all hover:scale-105 ${isPlaying ? 'bg-purple-600/20 text-purple-400 border-purple-500/50' : 'bg-background text-muted-foreground border-border'}`}
             title={isPlaying ? "Pause" : "Play"}
           >
-            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+            {isPlaying ? <PxPause size={18} /> : <PxPlay size={18} />}
           </button>
 
           <div className="flex items-center gap-3 bg-black/40 rounded-lg p-2 border border-border/50 h-10">
@@ -56,14 +56,14 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 title="Increase FPS"
               >
-                <PlusIcon size={12} />
+                <PxPlus size={12} />
               </button>
               <button 
                 onClick={() => setFps(Math.max(1, fps - 1))} 
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 title="Decrease FPS"
               >
-                <MinusIcon size={12} />
+                <PxMinus size={12} />
               </button>
             </div>
           </div>

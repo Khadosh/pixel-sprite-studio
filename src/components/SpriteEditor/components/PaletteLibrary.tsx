@@ -15,7 +15,7 @@ export const PaletteLibrary = () => {
     <div className="flex flex-col h-full bg-background/40">
       <div className="p-3 border-b border-border bg-secondary/20 shrink-0">
         <h3 className="font-pixel text-[12px] text-primary flex items-center gap-2">
-          <PaletteIcon size={14} /> LIBRERÍA DE TEMAS
+          <PxPalette size={14} /> LIBRERÍA DE TEMAS
         </h3>
         <p className="text-[8px] text-muted-foreground mt-1 font-mono uppercase tracking-wider leading-tight">
           Slynyrd Pixel Theory & Retro Consoles
@@ -60,7 +60,7 @@ export const PaletteLibrary = () => {
                         onClick={() => applyPalettePreset(preset.colors)}
                         className="h-6 w-full text-[7px] font-pixel border-primary/20 hover:bg-primary/20 flex items-center justify-center gap-1"
                       >
-                        <Check size={10} /> REEMPLAZAR
+                        <PxCheck size={10} /> REEMPLAZAR
                       </Button>
                       <Button
                         size="sm"
@@ -68,7 +68,7 @@ export const PaletteLibrary = () => {
                         onClick={() => addColorRamp(preset.colors)}
                         className="h-6 w-full text-[7px] font-pixel bg-secondary/30 hover:bg-secondary/50 flex items-center justify-center gap-1"
                       >
-                        <Plus size={10} /> AÑADIR RAMPA
+                        <PxPlus size={10} /> AÑADIR RAMPA
                       </Button>
                     </div>
                   </div>

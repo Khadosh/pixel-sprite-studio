@@ -49,7 +49,7 @@ export const CloseConfirmationDialog: React.FC<CloseConfirmationDialogProps> = (
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-pixel text-[11px] h-14 border-b-4 border-r-4 border-primary/40 rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.3)] hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.4)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all uppercase px-6"
           >
             <div className="w-8 flex justify-center shrink-0">
-              <Save size={18} />
+              <PxSave size={18} />
             </div>
             <span className="flex-1 text-center pr-8">GUARDAR Y SALIR</span>
           </Button>
@@ -60,7 +60,7 @@ export const CloseConfirmationDialog: React.FC<CloseConfirmationDialogProps> = (
             className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground font-pixel text-[11px] h-14 border-b-4 border-r-4 border-destructive/40 rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.3)] hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[6px_6px_0_0_rgba(0,0,0,0.4)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all uppercase px-6"
           >
             <div className="w-8 flex justify-center shrink-0">
-              <Trash2 size={18} />
+              <PxTrash size={18} />
             </div>
             <span className="flex-1 text-center pr-8">DESCARTAR CAMBIOS</span>
           </Button>
@@ -71,7 +71,7 @@ export const CloseConfirmationDialog: React.FC<CloseConfirmationDialogProps> = (
               className="w-full font-pixel text-[10px] h-12 border-[4px] border-muted-foreground/30 text-muted-foreground hover:bg-secondary rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.3)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all uppercase mt-2 px-6"
             >
               <div className="w-8 flex justify-center shrink-0">
-                <XCircle size={16} />
+                <PxXCircle size={16} />
               </div>
               <span className="flex-1 text-center pr-8">SEGUIR EDITANDO</span>
             </Button>
