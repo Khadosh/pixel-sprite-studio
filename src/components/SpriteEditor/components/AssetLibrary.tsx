@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sword, Search, Package, User, LayoutGrid, ChevronRight } from 'lucide-react';
+import { PxSword, PxSearch, PxPackage, PxUser, PxGrid, PxChevronRight } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { PROP_LIBRARY } from '@/lib/assets/props';
 import { ScrollArea } from '@/components/ui/scroll-area';

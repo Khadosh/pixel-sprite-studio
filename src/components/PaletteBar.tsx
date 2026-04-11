@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, X } from 'lucide-react';
+import { PxPlus, PxX } from '@/components/icons/PixelIcon';
 
 interface PaletteBarProps {
   palette: Record<number, string>;

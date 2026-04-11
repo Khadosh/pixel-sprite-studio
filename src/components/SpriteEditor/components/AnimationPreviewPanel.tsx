@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { Play, Pause, Plus as PlusIcon, Minus as MinusIcon } from 'lucide-react';
+import { PxPlay, PxPause, PxPlus, PxMinus } from '@/components/icons/PixelIcon';
 import { useAssetPreview } from '@/hooks/useAssetPreview';
 import SpritePreview from '@/components/SpritePreview';
 import { PaletteProvider } from '@/hooks/usePalette';

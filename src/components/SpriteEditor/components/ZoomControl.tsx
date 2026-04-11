@@ -1,5 +1,5 @@
 import React from 'react';
-import { Minus, Plus, RotateCcw } from 'lucide-react';
+import { PxMinus, PxPlus, PxResetRotate } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -22,7 +22,7 @@ export const ZoomControl: React.FC = () => {
               onClick={handleZoomOut}
               className="p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
-              <Minus size={14} />
+              <PxMinus size={14} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[10px] font-pixel border-border">Zoom Out (Ctrl -)</TooltipContent>
@@ -46,7 +46,7 @@ export const ZoomControl: React.FC = () => {
               onClick={handleZoomIn}
               className="p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
-              <Plus size={14} />
+              <PxPlus size={14} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[10px] font-pixel border-border">Zoom In (Ctrl +)</TooltipContent>
@@ -60,7 +60,7 @@ export const ZoomControl: React.FC = () => {
               onClick={handleReset}
               className="p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
-              <RotateCcw size={12} />
+              <PxResetRotate size={12} />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-[10px] font-pixel border-border">Reset Zoom</TooltipContent>

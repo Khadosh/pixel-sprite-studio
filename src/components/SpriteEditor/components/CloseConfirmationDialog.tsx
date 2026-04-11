@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2, XCircle } from 'lucide-react';
+import { PxSave, PxTrash, PxXCircle } from '@/components/icons/PixelIcon';
 import { PixelWarningIcon } from './PixelWarningIcon';
 
 interface CloseConfirmationDialogProps {

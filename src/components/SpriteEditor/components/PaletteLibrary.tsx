@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PALETTE_LIBRARY } from '@/lib/assets/palettes';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
-import { Check, Plus, Palette as PaletteIcon } from 'lucide-react';
+import { PxCheck, PxPlus, PxPalette } from '@/components/icons/PixelIcon';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const PaletteLibrary = () => {
