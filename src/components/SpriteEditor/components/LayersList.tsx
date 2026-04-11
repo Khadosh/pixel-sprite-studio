@@ -14,7 +14,7 @@ export const LayersList = React.memo(() => {
   const handleRenameLayer = useSpriteEditorStore(s => s.renameLayer);
   const handleMoveLayer = useSpriteEditorStore(s => s.moveLayer);
   const handleRemoveLayer = useSpriteEditorStore(s => s.removeLayer);
-  const handleAddPropLayer = useSpriteEditorStore(s => s.addPropLayer);
+  const handleImportAssetLayer = useSpriteEditorStore(s => s.importAssetLayer);
   const handleMergeLayerDown = useSpriteEditorStore(s => s.mergeLayerDown);
 
   const layers = editedAsset.layers!;
