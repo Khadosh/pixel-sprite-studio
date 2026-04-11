@@ -12,7 +12,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Settings2, Tag, Plus, X, Sparkles, Hash } from 'lucide-react';
+import { PxSettings, PxTag, PxPlus, PxX, PxSparkles, PxHash } from '@/components/icons/PixelIcon';
 import { getSuggestedTags, normalizeTag } from '@/lib/tagUtils';
 import { CATEGORIES } from '@/lib/types';
 

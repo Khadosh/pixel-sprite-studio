@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import AssetCard from '@/components/AssetCard';
 import CategoryFilter from '@/components/CategoryFilter';
-import { ArrowLeft, Loader2, X } from 'lucide-react';
+import { PxArrowLeft, PxLoader, PxX } from '@/components/icons/PixelIcon';
 import { useAssets, useAssetCategoryCounts } from '@/hooks/useAssetQueries';
 
 export default function Catalog() {

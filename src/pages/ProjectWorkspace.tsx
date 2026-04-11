@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Image as ImageIcon, Trash2, Sparkles, Loader2, X, Copy } from 'lucide-react';
+import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCopy } from '@/components/icons/PixelIcon';
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSprite } from '@/hooks/useGenerateSprite';

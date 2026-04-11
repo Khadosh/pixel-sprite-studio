@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { PaletteProvider, usePalette } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
-import { Download, RotateCcw, ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { PxDownload, PxResetRotate, PxArrowLeft, PxSave, PxLoader } from '@/components/icons/PixelIcon';
 import { Button } from '@/components/ui/button';
 import type { SpriteAsset } from '@/lib/types';
 import { useSearchParams } from 'react-router-dom';
