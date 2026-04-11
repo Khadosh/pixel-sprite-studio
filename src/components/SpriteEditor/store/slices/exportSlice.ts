@@ -13,4 +13,14 @@ export const createExportSlice: StoreSlice<Partial<SpriteEditorState>> = (set, g
     const fps = anim?.fps || 10;
     await exportAsGIF(state.editedAsset, state.viewingAnimation, fps);
   },
+
+  handleExportJSON: () => {
+    const state = get();
+    const json = JSON.stringify(state.editedAsset, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+      alert('Asset JSON copiado al portapapeles (DEBUG)');
+    }).catch(err => {
+      console.error('Error al copiar JSON:', err);
+    });
+  },
 });

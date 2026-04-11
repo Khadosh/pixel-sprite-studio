@@ -4,7 +4,14 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-10 (Hoy)
+## 2026-04-11 (Hoy)
+**1 commit realizado**
+
+- **Utilitario**: Agregada función "DEBUG: COPIAR JSON" en el menú de exportación (visible solo en localhost) para facilitar el desarrollo de assets.
+
+---
+
+## 2026-04-10
 **7 commits realizados**
 
 - **Agregado**: Navegador de Assets universal con búsqueda por nombre/tags y soporte para importar creaciones propias ("Mis Sprites").

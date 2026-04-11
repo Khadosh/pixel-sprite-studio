@@ -131,6 +131,7 @@ export interface SpriteEditorState {
 
   handleExportPNG: (options?: { includeLabels?: boolean }) => void;
   handleExportGIF: () => Promise<void>;
+  handleExportJSON: () => void;
 
   handleSave: () => void;
   handleClose: () => void;
