@@ -52,7 +52,23 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         ...createExportSlice(set as any, get),
 
         // --- Initial State Overrides (from options) ---
-        editedAsset: migrated,
+        editedAsset: options.isIconMode ? {
+          ...migrated,
+          palette: { 
+            0: 'transparent', 
+            1: '#ffffff', // Default white base, will be rendered as var(--px-base)
+            2: 'rgba(255,255,255,0.7)', // Light
+            3: 'rgba(0,0,0,0.3)', // Dark
+            4: 'rgba(0,0,0,0.6)'  // Black
+          },
+          colorNames: {
+            0: 'Transparent',
+            1: 'Base Color',
+            2: 'Highlight',
+            3: 'Shadow',
+            4: 'Deep Black'
+          }
+        } : migrated,
         activeLayerId: migrated.layers![0]?.id || null,
         editingFrameIndex: 0,
         viewingAnimation: 'base',
@@ -62,15 +78,17 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         showAllColors: false,
         scope: 'layer' as EditorScope,
         castSettings: { shape: 'burst', element: 'generic' } as AdvancedCastSettings,
-        zoom: 1.0,
+        zoom: options.isIconMode ? 3.0 : 1.0, // Zoom in more for icons
         layerClipboard: null,
         frameClipboard: null,
         selectedAnims: [],
         isAnimGenerating: false,
         animError: null,
-        leftSidebarTab: 'animations',
+        leftSidebarTab: options.isIconMode ? 'layers' : 'animations',
         isDirty: false,
-        canvasBg: 'light',
+        canvasBg: 'dark',
+        isIconMode: options.isIconMode,
+        iconId: options.iconId,
 
         // Props from parent
         projectId: options.projectId,

@@ -23,4 +23,25 @@ export const createExportSlice: StoreSlice<Partial<SpriteEditorState>> = (set, g
       console.error('Error al copiar JSON:', err);
     });
   },
+  
+  handleExportIcon: () => {
+    const state = get();
+    const iconId = state.iconId || 'new_icon';
+    // Get first frame of first layer
+    const matrix = state.editedAsset.layers[0].frames[0];
+    
+    // Format as a proper JS array string
+    const matrixStr = JSON.stringify(matrix)
+      .replace(/\],\[/g, '],\n    [')
+      .replace('[[', '[\n    [')
+      .replace(']]', ']\n  ]');
+      
+    const code = `  ${iconId}: ${matrixStr},`;
+    
+    navigator.clipboard.writeText(code).then(() => {
+      alert(`Datos del icono '${iconId}' copiados al portapapeles.\n\nPégalo en src/lib/icons/iconRegistry.ts`);
+    }).catch(err => {
+      console.error('Error al copiar datos del icono:', err);
+    });
+  },
 });

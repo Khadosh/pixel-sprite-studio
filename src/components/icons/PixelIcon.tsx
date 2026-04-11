@@ -1,4 +1,6 @@
 import React from 'react';
+import { ICON_REGISTRY } from '@/lib/icons/iconRegistry';
+import { matrixToSvgPaths } from '@/lib/icons/iconParser';
 
 export interface PixelIconProps {
   size?: number;
@@ -36,6 +38,23 @@ const Px: React.FC<PixelIconProps & { children: React.ReactNode }> = ({
     )}
   </svg>
 );
+
+/** Dynamic Icon — Renders from the icon registry matrix */
+export const DynamicPx: React.FC<PixelIconProps & { iconId: string }> = ({ iconId, ...p }) => {
+  const matrix = ICON_REGISTRY[iconId];
+  if (!matrix) return null;
+
+  const paths = matrixToSvgPaths(matrix);
+
+  return (
+    <Px {...p}>
+      {paths.primary && <path d={paths.primary} fill="var(--px-base)" />}
+      {paths.light && <path d={paths.light} fill="var(--px-light)" />}
+      {paths.dark && <path d={paths.dark} fill="var(--px-dark)" />}
+      {paths.black && <path d={paths.black} fill="var(--px-black)" />}
+    </Px>
+  );
+};
 
 // ─── Drawing Tools ───────────────────────────────────
 
@@ -187,37 +206,11 @@ export const PxPaste: React.FC<PixelIconProps> = (p) => (
 );
 
 export const PxUndo: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Exact JSON Grid Reconstruction */}
-    <path d="M6 1h5v1H6V1z" />
-    <path d="M2 2h1v1H2V2zM5 2h1v1H5V2zM11 2h2v1h-2V2z" />
-    <path d="M2 3h1v1H2V3zM4 3h1v1H4V3zM12 3h2v1h-2V3z" />
-    <path d="M2 4h2v1H2V4zM13 4h1v2h-1v-2z" />
-    <path d="M2 5h4v1H2V5zM14 5h1v5h-1V5z" />
-    <path d="M3 10h1v1H3v-1zM13 10h1v1h-1v-1z" />
-    <path d="M3 11h2v1H3v-1zM12 11h2v1h-2v-1z" />
-    <path d="M4 12h2v1H4v-1zM11 12h2v1h-2v-1z" />
-    <path d="M6 13h5v1H6v-1z" />
-    {/* Highlight for volume */}
-    <path d="M6 1h5v1H6V1zM11 2h2v1h-2V2z" fill="var(--px-light)" opacity="0.3" />
-  </Px>
+  <DynamicPx {...p} iconId="undo" />
 );
 
 export const PxRedo: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Flipped JSON Grid Reconstruction */}
-    <path d="M5 1h5v1H5V1z" />
-    <path d="M13 2h1v1h-1V2zM10 2h1v1h-1V2zM3 2h2v1H3V2z" />
-    <path d="M13 3h1v1h-1V3zM11 3h1v1h-1V3zM2 3h2v1H2V3z" />
-    <path d="M12 4h2v1h-2V4zM2 4h1v2h-1V4z" />
-    <path d="M10 5h4v1h-4V5zM1 5h1v5H1V5z" />
-    <path d="M12 10h1v1h-1v-1zM2 10h1v1H2v-1z" />
-    <path d="M11 11h2v1h-2v-1zM2 11h2v1H2v-1z" />
-    <path d="M10 12h2v1h-2v-1zM3 12h2v1H3v-1z" />
-    <path d="M5 13h5v1H5v-1z" />
-    {/* Highlight for volume */}
-    <path d="M5 1h5v1H5V1zM3 2h2v1H3V2z" fill="var(--px-light)" opacity="0.3" />
-  </Px>
+  <DynamicPx {...p} iconId="redo" />
 );
 
 // ─── UI Icons ────────────────────────────────────────
@@ -315,38 +308,11 @@ export const PxMoon: React.FC<PixelIconProps> = (p) => (
 );
 
 export const PxSave: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Body */}
-    <path d="M2 1h9v1h1v1h1v1h1v10H2V1z" />
-    {/* Highlights */}
-    <path d="M3 2h8v1H3V2zM3 3h1v8H3V3z" fill="var(--px-light)" />
-    {/* Shadows */}
-    <path d="M12 4h1v9h-9v1h10V4h-1z" fill="var(--px-dark)" />
-    {/* Floppy top slot */}
-    <path d="M4 2h6v4H4V2z" fill="rgba(0,0,0,0.5)" />
-    {/* Metal slider with texture */}
-    <path d="M7 2h2v4H7V2z" fill="var(--px-light)" />
-    <path d="M7 3h2v1H7V3zM7 5h2v1H7V5z" fill="rgba(255,255,255,0.4)" />
-    {/* Write-lock notch */}
-    <path d="M11 12h1v1h-1v-1z" fill="rgba(0,0,0,0.4)" />
-    {/* Label area */}
-    <path d="M4 9h8v4H4V9z" fill="rgba(255,255,255,0.7)" />
-    <path d="M5 10h6v1H5v-1z" fill="rgba(0,0,0,0.15)" />
-    <path d="M5 12h4v1H5v-1z" fill="rgba(0,0,0,0.15)" />
-  </Px>
+  <DynamicPx {...p} iconId="save" />
 );
 
 export const PxDownload: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Arrow shaft */}
-    <path d="M7 1h2v6h3v1h-1v1h-1v1H9v1H7v-1H6V9H5V8H4V7h3V1z" />
-    {/* Arrow shadow */}
-    <path d="M8 1h1v6h1V6h1V5h1V4h-3V1z" fill="var(--px-light)" opacity="0.4" />
-    <path d="M9 7h3v1h-1v1h-1v1h-1V7z" fill="var(--px-dark)" />
-    {/* Platform */}
-    <path d="M2 12h12v2H2v-2z" />
-    <path d="M2 12h12v1H2v-1z" fill="var(--px-light)" />
-  </Px>
+  <DynamicPx {...p} iconId="download" />
 );
 
 export const PxSearch: React.FC<PixelIconProps> = (p) => (
@@ -425,21 +391,7 @@ export const PxFilm: React.FC<PixelIconProps> = (p) => (
 );
 
 export const PxPalette: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    <path d="M5 2h6v1h2v1h1v2h-1v1h-1V6h-1v1h1v1h1v1h-1v1h-1v1h-1v1H5v-1H4v-1H3v-1H2V5h1V4h1V3h1V2z" />
-    {/* Wood grain highlights */}
-    <path d="M5 3h6v1H5V3zM4 5h1v1H4V5zM3 7h1v1H3V7zM6 10h4v1H6v-1z" fill="var(--px-light)" opacity="0.4" />
-    {/* Wood grain shadows */}
-    <path d="M11 5h1v3h-1V5zM5 8h4v1H5V8z" fill="var(--px-dark)" opacity="0.3" />
-    {/* Deep paint wells - RGB */}
-    <path d="M5 5h2v2H5V5z" fill="#ff4444" />
-    <path d="M8 4h2v2H8V4z" fill="#44ff44" />
-    <path d="M5 9h2v2H5V9z" fill="#4444ff" />
-    {/* Well shadows */}
-    <path d="M5 5h1v2H5V5zM5 5h2v1H5V5z" fill="black" opacity="0.3" />
-    <path d="M8 4h1v2H8V4zM8 4h2v1H8V4z" fill="black" opacity="0.3" />
-    <path d="M5 9h1v2H5V9zM5 9h2v1H5V9z" fill="black" opacity="0.3" />
-  </Px>
+  <DynamicPx {...p} iconId="palette" />
 );
 
 export const PxSword: React.FC<PixelIconProps> = (p) => (

@@ -24,6 +24,8 @@ export interface SpriteEditorState {
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
   projectId?: string;
+  isIconMode?: boolean;
+  iconId?: string;
 
   // Animation generation state
   selectedAnims: string[];
@@ -132,6 +134,7 @@ export interface SpriteEditorState {
   handleExportPNG: (options?: { includeLabels?: boolean }) => void;
   handleExportGIF: () => Promise<void>;
   handleExportJSON: () => void;
+  handleExportIcon: () => void;
 
   handleSave: () => void;
   handleClose: () => void;
@@ -155,6 +158,8 @@ export interface CreateSpriteEditorStoreOptions {
   onRegenerate?: () => void;
   isGenerating?: boolean;
   projectId?: string;
+  isIconMode?: boolean;
+  iconId?: string;
 }
 
 export type StoreSlice<T> = (

@@ -27,6 +27,8 @@ export const EditorHeader = React.memo(() => {
   const handleClose = useSpriteEditorStore(s => s.handleClose);
   const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
   const isDirty = useSpriteEditorStore(s => s.isDirty);
+  const isIconMode = useSpriteEditorStore(s => s.isIconMode);
+  const handleExportIcon = useSpriteEditorStore(s => s.handleExportIcon);
 
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -134,14 +136,25 @@ export const EditorHeader = React.memo(() => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            onClick={handleSave}
-            size="sm"
-            className={`font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all ${isDirty ? 'animate-pulse-glow border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)]' : ''}`}
-          >
-            <PxSave size={15} className="mr-2" />
-            GUARDAR
-          </Button>
+          {isIconMode ? (
+            <Button
+              onClick={handleExportIcon}
+              size="sm"
+              className="font-pixel text-[9px] h-8 bg-purple-600 text-white hover:bg-purple-500 border border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all"
+            >
+              <PxDownload size={15} className="mr-2" />
+              COPY ICON DATA
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSave}
+              size="sm"
+              className={`font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all ${isDirty ? 'animate-pulse-glow border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)]' : ''}`}
+            >
+              <PxSave size={15} className="mr-2" />
+              GUARDAR
+            </Button>
+          )}
         </div>
       </div>
     </DialogHeader>

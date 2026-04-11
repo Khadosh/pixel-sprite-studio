@@ -2,7 +2,11 @@ import React from 'react';
 import { PIXEL_ICONS } from '@/components/icons/PixelIcon';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Info, Terminal } from 'lucide-react';
+import { Search, Info, Terminal, Settings2 } from 'lucide-react';
+import { SpriteEditorModal } from '@/components/SpriteEditor';
+import { ICON_REGISTRY } from '@/lib/icons/iconRegistry';
+import { SpriteAsset } from '@/lib/types';
+import { Button } from '@/components/ui/button';
 
 const IconPreview = () => {
   const [search, setSearch] = React.useState('');
@@ -18,6 +22,40 @@ const IconPreview = () => {
   const icons = Object.entries(PIXEL_ICONS).filter(([name]) => 
     name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const [editorOpen, setEditorOpen] = React.useState(false);
+  const [editingIconId, setEditingIconId] = React.useState<string | null>(null);
+
+  const handleEditIcon = (name: string) => {
+    // Normalize name PxSave -> save
+    const id = name.toLowerCase().replace(/^px/, '');
+    setEditingIconId(id);
+    setEditorOpen(true);
+  };
+
+  // Create a mock asset for the editor
+  const getIconAsset = (id: string): SpriteAsset => {
+    const matrix = ICON_REGISTRY[id] || Array.from({ length: 16 }, () => Array(16).fill(0));
+    return {
+      id: `icon-${id}`,
+      name: `Icon: ${id}`,
+      description: 'System Icon',
+      category: 'ui',
+      size: 16,
+      palette: { 0: 'transparent', 1: '#ffffff', 2: '#cccccc', 3: '#666666', 4: '#000000' },
+      colorNames: { 0: 'Transparent', 1: 'Base', 2: 'Light', 3: 'Dark', 4: 'Black' },
+      layers: [{
+        id: 'icon-layer',
+        name: 'Icon Path',
+        isVisible: true,
+        isLocked: false,
+        opacity: 1,
+        frames: [matrix]
+      }],
+      animations: [],
+      tags: []
+    };
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-slate-200 p-8 font-mono">
@@ -70,18 +108,38 @@ const IconPreview = () => {
                   <p className="text-[9px] text-slate-500 font-mono">Px{name.charAt(0).toUpperCase() + name.slice(1)}</p>
                 </div>
 
-                <div className="w-full pt-4 mt-2 border-t border-slate-800/50">
+                <div className="w-full pt-4 mt-2 border-t border-slate-800/50 flex flex-col gap-2">
                   <div className="flex justify-between gap-1">
                     <div className="w-4 h-4 bg-primary rounded-sm opacity-100" />
                     <div className="w-4 h-4 bg-primary rounded-sm opacity-60" />
                     <div className="w-4 h-4 bg-primary rounded-sm opacity-30" />
                     <div className="w-4 h-4 bg-white rounded-sm opacity-10" />
                   </div>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleEditIcon(name)}
+                    className="w-full text-[9px] h-7 font-pixel bg-slate-950 border border-slate-800 hover:bg-primary/20 hover:text-primary transition-all gap-1.5"
+                  >
+                    <Settings2 size={12} /> EDIT STUDIO
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </ScrollArea>
+
+        {editorOpen && editingIconId && (
+          <SpriteEditorModal
+            open={editorOpen}
+            onOpenChange={setEditorOpen}
+            initialAsset={getIconAsset(editingIconId)}
+            onSave={() => {}} // No-op, we use COPY ICON DATA instead
+            isIconMode={true}
+            iconId={editingIconId}
+          />
+        )}
 
         {icons.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-slate-600">
