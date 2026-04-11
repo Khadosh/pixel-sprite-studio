@@ -66,16 +66,15 @@ export const PxEraser: React.FC<PixelIconProps> = (p) => (
 
 export const PxFill: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Bucket body - tilted */}
-    <path d="M4 3h5v1h1v1h1v5h-1v1H11v1H4v-1H3V5h1V3z" />
-    <path d="M4 4h5v1H4v-1z" fill="var(--px-light)" opacity="0.4" />
+    {/* Bucket body */}
+    <path d="M3 4h6v1h1v1h1v5h-2v1H3V4z" />
+    <path d="M4 5h5v1H4v-1z" fill="var(--px-light)" opacity="0.4" />
     {/* Handle */}
-    <path d="M5 1h6v1h1v3h-1v1h-3V5h4V2H5v3h1V2h5v1H6V1z" fill="var(--px-dark)" />
-    {/* Paint Liquid */}
-    <path d="M4 9h6v2H4V9z" fill="var(--px-base)" />
-    {/* Drip */}
-    <path d="M11 11h2v3h-2v-3z" />
-    <path d="M12 11h1v2h-1v-2z" fill="var(--px-light)" opacity="0.5" />
+    <path d="M4 2h7v1H4V2zM11 2h1v3h-1V2zM3 2h1v2H3V2z" fill="var(--px-dark)" />
+    {/* Thick Paint Stream */}
+    <path d="M10 10h4v4h-4v-4z" />
+    <path d="M11 11h2v3h-2v-3z" fill="var(--px-light)" opacity="0.4" />
+    <path d="M10 10h1v4h-1v-4z" fill="var(--px-dark)" opacity="0.4" />
   </Px>
 );
 
@@ -123,30 +122,38 @@ export const PxSelect: React.FC<PixelIconProps> = (p) => (
 
 export const PxRotateCw: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    <path d="M6 2h5v1h1v1h1v2h-1v1h-1v1h-1V7h1V6h1V5h-1V4H6v1H5v1H4v3h1v1h1v1h5V9H7V8h5v3h-1v1H6v-1H5v-1H4v-1H3V5h1V4h1V3h1V2z" />
-    <path d="M12 2h2v1h-1v1h-1V2z" />
+    {/* Thick Sweep Arrow */}
+    <path d="M3 7h1V5h1V4h1V3h2v1H6v1H5v2h1v1h1v1h5V9H7V8h6V5h-1V4h-1V3h-1V2h2v1h1v1h1v4h-1v3h-1v1h-1v1H5v-1H4v-1H3V7z" />
+    <path d="M5 4h1v1H5V4zM6 3h2v1H6V3zM10 9h2v1h-2V9z" fill="var(--px-light)" opacity="0.4" />
+    {/* Arrow Head */}
+    <path d="M11 2h4v4h-4V2z" />
+    <path d="M12 3h2v1h-2V3z" fill="var(--px-light)" opacity="0.5" />
   </Px>
 );
 
 export const PxFlipH: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Left arrow */}
-    <path d="M3 7h1V5h1V4h1V3h1v10H6v-1H5v-1H4V9H3V7z" />
-    {/* Center line */}
-    <path d="M8 2h1v12H8V2z" />
-    {/* Right arrow */}
-    <path d="M11 3h1v1h1v1h1v2h-1v2h-1v1h-1v1h-1V3h1z" />
+    {/* Mirror Mirror Metaphor */}
+    {/* Source Triangle */}
+    <path d="M2 4h4v8H2V4z" />
+    <path d="M3 5h2v6H3V5z" fill="var(--px-light)" opacity="0.3" />
+    {/* Axis */}
+    <path d="M8 1h1v14H8V1z" fill="var(--px-black)" />
+    {/* Mirrored Outline Triangle */}
+    <path d="M11 4h4v1h-4V4zM11 5h1v6h-1V5zM11 11h4v1h-4v-1zM14 5h1v6h-1V5z" fill="var(--px-base)" />
   </Px>
 );
 
 export const PxFlipV: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Top arrow */}
-    <path d="M7 3h2v1h2v1h1v1h1v1H3V6h1V5h1V4h2V3z" />
-    {/* Center line */}
-    <path d="M2 8h12v1H2V8z" />
-    {/* Bottom arrow */}
-    <path d="M3 10h10v1h-1v1h-1v1H7v-1H6v-1H5v-1H3v-1z" />
+    {/* Mirror Mirror Metaphor */}
+    {/* Source Triangle */}
+    <path d="M4 2h8v4H4V2z" />
+    <path d="M5 3h6v2H5V3z" fill="var(--px-light)" opacity="0.3" />
+    {/* Axis */}
+    <path d="M1 8h14v1H1V8z" fill="var(--px-black)" />
+    {/* Mirrored Outline Triangle */}
+    <path d="M4 11h8v1H4v-1zM4 12h1v3H4v-3zM4 14h8v1H4v-1zM11 12h1v3h-1v-3z" fill="var(--px-base)" />
   </Px>
 );
 
@@ -181,13 +188,23 @@ export const PxPaste: React.FC<PixelIconProps> = (p) => (
 
 export const PxUndo: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    <path d="M2 5h1V4h1V3h1V2h2v2H6v1H5v1h7v1h1v1h1v3h-1v1h-1v1H7v-1h4v-1h1V8h-1V7H4v1H3v1H2V5z" />
+    {/* Thick Sweeping Undo Arrow */}
+    <path d="M2 5h2v1H2V5zM4 4h1v1H4V4zM5 3h2v1H5V3zM7 2h5v1H7V2z" />
+    <path d="M12 3h1v1h1v1h1v4h-1v1h-1v1h-5v-1h4v-1h1V7h-1V6H5v1H4v1H3v1H2V5h1v-1h1v-1z" />
+    <path d="M7 3h5v1H7V3zM12 4h1v1h-7V4h6z" fill="var(--px-light)" opacity="0.3" />
+    {/* Arrow Head */}
+    <path d="M1 5h4v4H1V5z" />
+    <path d="M2 6h2v1H2V6z" fill="var(--px-light)" opacity="0.5" />
   </Px>
 );
 
 export const PxRedo: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    <path d="M12 5V4h-1V3h-1V2H8v2h1v1h1v1H3v1H2v1H1v3h1v1h1v1h5v-1H4v-1H3V8h1V7h8v1h1v1h1V5h-1z" />
+    {/* Thick Sweeping Redo Arrow */}
+    <path d="M12 2h2v1h-2V2zM10 3h2v1h-2V3zM9 4h1v1H9V4zM7 5h2V4H7V2h5v1h1v1h1v5h-1v1h-1v1H9v-1h4v-1h1V7h-1V6H4v1H3v1H2v1h-1V5h1V4h1V3h1V2h3v1h1v1h1v1z" />
+    <path d="M4 3h5v1H4V3zM9 4h1v1H3v-1h6z" fill="var(--px-light)" opacity="0.3" />
+    <path d="M11 5h4v4h-4V5z" />
+    <path d="M12 6h2v1h-2V6z" fill="var(--px-light)" opacity="0.5" />
   </Px>
 );
 
@@ -267,15 +284,19 @@ export const PxSun: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     {/* Rays */}
     <path d="M7 0h2v2H7V0zM7 14h2v2H7v-2zM0 7h2v2H0V7zM14 7h2v2h-2V7z" />
-    <path d="M2 2h2v2H2V2zM12 2h2v2h-2V2zM2 12h2v2H2v-2zM12 12h2v2h-2v-2z" />
-    {/* Center circle */}
+    <path d="M2 2h2v2H2V2zM12 2h2v2h-2V2zM2 12h2v2H2v-2zM12 12h2v2h-2v-2z" fill="var(--px-light)" opacity="0.6" />
+    {/* Center circle with volume */}
     <path d="M6 4h4v1h1v1h1v4h-1v1h-1v1H6v-1H5v-1H4V6h1V5h1V4z" />
+    <path d="M6 5h3v1H6V5zM5 6h1v3H5V6z" fill="var(--px-light)" opacity="0.5" />
   </Px>
 );
 
 export const PxMoon: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    <path d="M6 1h4v1h1v1h1v2h-1V4h-1V3H9v1H8v1H7v1H6V4h-1V3H6V1z" fill="var(--px-light)" opacity="0.2" />
     <path d="M6 1h3v1h1v1h1v2h-1V4h-1V3H8v1H7v1H6v1H5v4h1v1h1v1h1v1h2v-1h1v-1h1v-1h1v2h-1v1h-1v1H6v-1H5v-1H4v-1H3V5h1V4h1V3h1V1z" />
+    {/* Craters */}
+    <path d="M5 6h2v2H5V6zM8 10h1v1H8v-1z" fill="var(--px-dark)" opacity="0.3" />
   </Px>
 );
 
@@ -423,15 +444,16 @@ export const PxSword: React.FC<PixelIconProps> = (p) => (
 
 export const PxSettings: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Configuration Sliders */}
-    {/* Tracks */}
-    <path d="M4 2h1v12H4V2zM8 2h1v12H8V2zM12 2h1v12h-1V2z" fill="var(--px-black)" />
-    {/* Knobs */}
-    <path d="M3 4h3v2H3V4zM7 9h3v2H7V9zM11 5h3v2h-3V5z" />
-    {/* Knob Highlights */}
-    <path d="M3 4h3v1H3V4z" fill="var(--px-light)" opacity="0.4" />
-    <path d="M7 9h3v1H7V9z" fill="var(--px-light)" opacity="0.4" />
-    <path d="M11 5h3v1h-3V5z" fill="var(--px-light)" opacity="0.4" />
+    {/* 12x12 Centered Premium Gear */}
+    {/* Gear teeth */}
+    <path d="M7 1h2v3H7V1zM7 12h2v3H7v-3zM1 7h3v2H1V7zM12 7h3v2h-3V7z" />
+    <path d="M3 3h2v2H3V3zM11 3h2v2h-2V3zM3 11h2v2H3v-2zM11 11h2v2h-2v-2z" />
+    {/* Gear base body */}
+    <path d="M5 4h6v1h1v1h1v4h-1v1h-1v1H5v-1H4v-1H3V6h1V5h1V4z" />
+    {/* Top bevel highlight */}
+    <path d="M5 4h6v1H5V4zM4 5h1v4H4V5z" fill="var(--px-light)" opacity="0.4" />
+    {/* Center hole */}
+    <path d="M7 7h2v2H7V7z" fill="var(--px-black)" />
   </Px>
 );
 
@@ -502,12 +524,16 @@ export const PxUser: React.FC<PixelIconProps> = (p) => (
 
 export const PxPackage: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    {/* Asset Crate / Supply box */}
     <path d="M2 3h12v11H2V3z" />
-    <path d="M3 4h10v3H3V4z" fill="var(--px-light)" opacity="0.3" />
-    <path d="M2 3h12v3H2V3z" />
-    <path d="M6 1h4v5H6V1z" />
-    {/* Center line */}
-    <path d="M7 6h2v6H7V6z" fill="var(--px-black)" />
+    {/* Lid detail */}
+    <path d="M2 3h12v2H2V3zM6 1h4v3H6V1z" />
+    {/* Highlights and wood planks */}
+    <path d="M3 4h10v1H3V4z" fill="var(--px-light)" opacity="0.4" />
+    {/* Planks & Reinforcement */}
+    <path d="M2 7h12v1H2V7zM2 10h12v1H2v-1z" fill="var(--px-black)" opacity="0.4" />
+    <path d="M7 5h2v9H7V5z" fill="var(--px-black)" />
+    <path d="M7 5h2v1H7V5z" fill="var(--px-light)" opacity="0.3" />
   </Px>
 );
 
