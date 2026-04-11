@@ -1,9 +1,10 @@
-import { 
-  Pencil, Eraser, Undo2, Redo2, Layers, PaintBucket, Pipette, 
-  Minus, Square, Circle, SplitSquareHorizontal,
-  RotateCw, Monitor, Copy, ClipboardList, FlipHorizontal, FlipVertical,
-  Scan, Sun, Moon, LucideIcon
-} from 'lucide-react';
+import {
+  PxPencil, PxEraser, PxFill, PxPipette,
+  PxLine, PxRect, PxCircle, PxSelect,
+  PxRotateCw, PxCopy, PxPaste, PxFlipH, PxFlipV,
+  PxMirror, PxUndo, PxRedo, PxLayers, PxSun, PxMoon,
+  type PixelIconProps
+} from '@/components/icons/PixelIcon';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import React from 'react';
@@ -41,22 +42,24 @@ const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
   { value: 16, label: '4x4', tooltip: 'Pincel 4px' },
 ];
 
-const PAINT_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
-  { id: 'pencil', icon: Pencil, tooltip: 'Lápiz (B)' },
-  { id: 'eraser', icon: Eraser, tooltip: 'Borrador (E)' },
-  { id: 'fill', icon: PaintBucket, tooltip: 'Relleno (G)' },
-  { id: 'picker', icon: Pipette, tooltip: 'Cuentagotas (I)' },
+type PxIcon = React.FC<PixelIconProps>;
+
+const PAINT_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
+  { id: 'pencil', icon: PxPencil, tooltip: 'Lápiz (B)' },
+  { id: 'eraser', icon: PxEraser, tooltip: 'Borrador (E)' },
+  { id: 'fill', icon: PxFill, tooltip: 'Relleno (G)' },
+  { id: 'picker', icon: PxPipette, tooltip: 'Cuentagotas (I)' },
 ];
 
-const SHAPE_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
-  { id: 'line', icon: Minus, tooltip: 'Línea' },
-  { id: 'rect', icon: Square, tooltip: 'Rectángulo' },
-  { id: 'circle', icon: Circle, tooltip: 'Círculo' },
-  { id: 'select', icon: Scan, tooltip: 'Selección (S)' },
+const SHAPE_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
+  { id: 'line', icon: PxLine, tooltip: 'Línea' },
+  { id: 'rect', icon: PxRect, tooltip: 'Rectángulo' },
+  { id: 'circle', icon: PxCircle, tooltip: 'Círculo' },
+  { id: 'select', icon: PxSelect, tooltip: 'Selección (S)' },
 ];
 
-const TRANSFORM_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
-  { id: 'rotate', icon: RotateCw, tooltip: 'Rotación Libre (R)' },
+const TRANSFORM_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
+  { id: 'rotate', icon: PxRotateCw, tooltip: 'Rotación Libre (R)' },
 ];
 
 export default React.memo(function EditorToolbar({ 
@@ -75,18 +78,18 @@ export default React.memo(function EditorToolbar({
   const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
   const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
 
-  const ToolButton = ({ t, currentTool, onToolChange }: { 
-    t: { id: EditorTool; icon: LucideIcon; tooltip: string }, 
+  const ToolButton = ({ t, currentTool, onToolChange: onTC }: { 
+    t: { id: EditorTool; icon: PxIcon; tooltip: string }, 
     currentTool: EditorTool, 
     onToolChange: (t: EditorTool) => void 
   }) => (
     <Tooltip key={t.id}>
       <TooltipTrigger asChild>
         <button 
-          onClick={() => onToolChange(t.id)} 
+          onClick={() => onTC(t.id)} 
           className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
         >
-          <t.icon size={16} strokeWidth={2.5} />
+          <t.icon size={16} />
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -100,7 +103,7 @@ export default React.memo(function EditorToolbar({
       <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1">
         
         <div className="flex items-center gap-1">
-          <ToolButton t={{ id: 'select', icon: Scan, tooltip: 'Selección (S)' }} currentTool={tool} onToolChange={onToolChange} />
+          <ToolButton t={{ id: 'select', icon: PxSelect, tooltip: 'Selección (S)' }} currentTool={tool} onToolChange={onToolChange} />
           <div className="w-px h-6 bg-border mx-1 shrink-0" />
           {TRANSFORM_TOOLS.map(t => (
             <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
@@ -114,7 +117,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onCopy} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <Copy size={15} strokeWidth={2} />
+                <PxCopy size={15} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">COPIAR ({scope})</TooltipContent>
@@ -123,7 +126,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onPaste} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <ClipboardList size={15} strokeWidth={2} />
+                <PxPaste size={15} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">PEGAR ({scope})</TooltipContent>
@@ -134,7 +137,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onFlipH} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <FlipHorizontal size={15} strokeWidth={2} />
+                <PxFlipH size={15} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">FLIP H ({scope})</TooltipContent>
@@ -143,7 +146,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onFlipV} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <FlipVertical size={15} strokeWidth={2} />
+                <PxFlipV size={15} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">FLIP V ({scope})</TooltipContent>
@@ -152,7 +155,7 @@ export default React.memo(function EditorToolbar({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onRotate} className={`${btnBase} ${btnInactive} border-none p-1.5`}>
-                <RotateCw size={15} strokeWidth={2} />
+                <PxRotateCw size={15} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel">ROTAR 90° ({scope})</TooltipContent>
@@ -185,7 +188,7 @@ export default React.memo(function EditorToolbar({
                 onClick={onToggleMirrorX}
                 className={`${btnBase} ${mirrorX ? btnActive : btnInactive}`}
               >
-                <SplitSquareHorizontal size={16} strokeWidth={2.5} />
+                <PxMirror size={16} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -222,7 +225,7 @@ export default React.memo(function EditorToolbar({
                   disabled={!canUndo}
                   className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
                 >
-                  <Undo2 size={14} />
+                  <PxUndo size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -237,7 +240,7 @@ export default React.memo(function EditorToolbar({
                   disabled={!canRedo}
                   className={`${btnBase} border-border text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
                 >
-                  <Redo2 size={14} />
+                  <PxRedo size={14} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -251,7 +254,7 @@ export default React.memo(function EditorToolbar({
                 onClick={onToggleOnionSkin}
                 className={`${btnBase} ${onionSkin ? btnActive : btnInactive}`}
               >
-                <Layers size={14} />
+                <PxLayers size={14} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel border-border">
@@ -265,7 +268,7 @@ export default React.memo(function EditorToolbar({
                 onClick={onToggleCanvasBg}
                 className={`${btnBase} ${btnInactive}`}
               >
-                {canvasBg === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+                {canvasBg === 'light' ? <PxMoon size={14} /> : <PxSun size={14} />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-[10px] font-pixel border-border">

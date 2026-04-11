@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { Edit2, Sparkles, Download, Save, Image as ImageIcon, FileVideo, HardDrive, ChevronLeft } from 'lucide-react';
+import { PxEdit, PxSparkles, PxDownload, PxSave, PxImage, PxFileVideo, PxHardDrive, PxChevronLeft } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 
 export const EditorHeader = React.memo(() => {
@@ -36,7 +36,7 @@ export const EditorHeader = React.memo(() => {
           onClick={handleClose}
           className="text-muted-foreground hover:text-foreground font-pixel text-[10px] gap-1"
         >
-          <ChevronLeft size={14} /> SALIR
+          <PxChevronLeft size={14} /> SALIR
         </Button>
         <div className="w-px h-4 bg-border mx-1" />
         <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export const EditorHeader = React.memo(() => {
             {isDirty && (
               <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse" title="Cambios sin guardar" />
             )}
-            <Edit2 size={12} className="opacity-50" />
+            <PxEdit size={12} className="opacity-50" />
           </DialogTitle>
         )}
       </div>
@@ -80,7 +80,7 @@ export const EditorHeader = React.memo(() => {
               className="font-pixel text-[10px] border-primary/50 text-primary hover:bg-primary/10 transition-all"
             >
               {isGenerating ? 'GENERANDO...' : 'REGENERAR'}
-              {!isGenerating && <Sparkles size={14} strokeWidth={2.5} className="ml-1" />}
+              {!isGenerating && <PxSparkles size={14} className="ml-1" />}
             </Button>
           </div>
         )}
@@ -93,7 +93,7 @@ export const EditorHeader = React.memo(() => {
                 size="sm"
                 className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
               >
-                <Download size={15} strokeWidth={2.5} className="mr-2" />
+                <PxDownload size={15} className="mr-2" />
                 EXPORTAR
               </Button>
             </DropdownMenuTrigger>
@@ -103,19 +103,19 @@ export const EditorHeader = React.memo(() => {
               </DropdownMenuLabel>
               
               <DropdownMenuItem onClick={() => handleExportPNG()} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
-                <ImageIcon size={14} />
+                <PxImage size={14} />
                 PNG SPRITE SHEET
               </DropdownMenuItem>
               
               <DropdownMenuItem onClick={() => handleExportPNG({ includeLabels: true })} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
-                <HardDrive size={14} />
+                <PxHardDrive size={14} />
                 PNG CON ETIQUETAS
               </DropdownMenuItem>
               
               <DropdownMenuSeparator className="bg-border" />
               
               <DropdownMenuItem onClick={handleExportGIF} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
-                <FileVideo size={14} />
+                <PxFileVideo size={14} />
                 EXPORTAR GIF ({viewingAnimation.toUpperCase()})
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -126,7 +126,7 @@ export const EditorHeader = React.memo(() => {
             size="sm"
             className={`font-pixel text-[9px] h-8 bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-all ${isDirty ? 'animate-pulse-glow border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)]' : ''}`}
           >
-            <Save size={15} strokeWidth={2.5} className="mr-2" />
+            <PxSave size={15} className="mr-2" />
             GUARDAR
           </Button>
         </div>
