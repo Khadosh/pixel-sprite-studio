@@ -147,6 +147,8 @@ chore(deps): actualizado omggif y dnd-kit a últimas versiones
 
 No usar descripciones largas, no listar archivos modificados, no usar bullet points en el mensaje. Un solo renglón siempre.
 
+**Changelog:** Es mandatorio actualizar `CHANGELOG.md` con cada cambio significativo, incrementando el contador de commits del día y resumiendo las funcionalidades agregadas o corregidas.
+
 ## Do NOT
 
 - Edit files in `src/components/ui/` manually — these are shadcn/ui generated components
