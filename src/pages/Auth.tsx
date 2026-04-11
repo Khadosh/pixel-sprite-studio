@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft } from 'lucide-react';
+import { PxArrowLeft } from '@/components/icons/PixelIcon';
 
 type AuthView = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
@@ -120,7 +120,7 @@ export default function Auth() {
         onClick={() => navigate('/')}
         className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
       >
-        <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+        <PxArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
         Volver al inicio
       </button>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Palette, Sword, Film, Settings2 } from 'lucide-react';
+import { PxFilm, PxLayers, PxPalette, PxSword, PxSettings } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -9,11 +9,11 @@ export const EditorSidebarNavigator = () => {
   const setTab = useSpriteEditorStore(s => s.setLeftSidebarTab);
 
   const tabs = [
-    { id: 'animations', icon: Film, label: 'ANIMS' },
-    { id: 'layers', icon: Layers, label: 'LAYERS' },
-    { id: 'themes', icon: Palette, label: 'THEMES' },
-    { id: 'assets', icon: Sword, label: 'ASSETS' },
-    { id: 'config', icon: Settings2, label: 'CONFIG' },
+    { id: 'animations', icon: PxFilm, label: 'ANIMS' },
+    { id: 'layers', icon: PxLayers, label: 'LAYERS' },
+    { id: 'themes', icon: PxPalette, label: 'THEMES' },
+    { id: 'assets', icon: PxSword, label: 'ASSETS' },
+    { id: 'config', icon: PxSettings, label: 'CONFIG' },
   ] as const;
 
   return (
@@ -34,7 +34,7 @@ export const EditorSidebarNavigator = () => {
                   }`}
                   onClick={() => setTab(tab.id)}
                 >
-                  <tab.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  <tab.icon size={20} />
                   <span className="[writing-mode:vertical-rl] rotate-180 font-pixel text-[9px] tracking-[0.2em] uppercase">
                     {tab.label}
                   </span>

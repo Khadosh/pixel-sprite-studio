@@ -1,8 +1,9 @@
 import React from 'react';
-import { 
-  Pencil, Eraser, PaintBucket, Pipette, 
-  Minus, Square, Circle, LucideIcon 
-} from 'lucide-react';
+import {
+  PxPencil, PxEraser, PxFill, PxPipette,
+  PxLine, PxRect, PxCircle,
+  type PixelIconProps
+} from '@/components/icons/PixelIcon';
 import type { EditorTool } from '@/hooks/usePixelEditor';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -13,14 +14,16 @@ interface DrawingToolbarProps {
   onToolChange: (t: EditorTool) => void;
 }
 
-const DRAWING_TOOLS: { id: EditorTool; icon: LucideIcon; tooltip: string }[] = [
-  { id: 'pencil', icon: Pencil, tooltip: 'Lápiz (B)' },
-  { id: 'eraser', icon: Eraser, tooltip: 'Borrador (E)' },
-  { id: 'fill', icon: PaintBucket, tooltip: 'Relleno (G)' },
-  { id: 'picker', icon: Pipette, tooltip: 'Cuentagotas (I)' },
-  { id: 'line', icon: Minus, tooltip: 'Línea' },
-  { id: 'rect', icon: Square, tooltip: 'Rectángulo' },
-  { id: 'circle', icon: Circle, tooltip: 'Círculo' },
+type PxIcon = React.FC<PixelIconProps>;
+
+const DRAWING_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
+  { id: 'pencil', icon: PxPencil, tooltip: 'Lápiz (B)' },
+  { id: 'eraser', icon: PxEraser, tooltip: 'Borrador (E)' },
+  { id: 'fill', icon: PxFill, tooltip: 'Relleno (G)' },
+  { id: 'picker', icon: PxPipette, tooltip: 'Cuentagotas (I)' },
+  { id: 'line', icon: PxLine, tooltip: 'Línea' },
+  { id: 'rect', icon: PxRect, tooltip: 'Rectángulo' },
+  { id: 'circle', icon: PxCircle, tooltip: 'Círculo' },
 ];
 
 export function DrawingToolbar({ tool, onToolChange }: DrawingToolbarProps) {
@@ -39,7 +42,7 @@ export function DrawingToolbar({ tool, onToolChange }: DrawingToolbarProps) {
                 )}
                 onClick={() => onToolChange(id)}
               >
-                <Icon className={cn("h-5 w-5", tool === id ? "scale-110" : "opacity-70")} />
+                <Icon className={cn("h-5 w-5", tool === id ? "scale-110" : "opacity-70")} size={20} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">

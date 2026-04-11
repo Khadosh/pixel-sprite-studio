@@ -3,7 +3,7 @@ import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
 import { ANIMATIONS, FRAME_SIZE, PALETTE } from '@/lib/pixelCharacter';
 import { usePalette } from '@/hooks/usePalette';
-import { Download, RotateCcw } from 'lucide-react';
+import { PxDownload, PxResetRotate } from '@/components/icons/PixelIcon';
 import type { SpriteAsset } from '@/lib/types';
 
 const PIXEL_SCALE = 4;
@@ -102,7 +102,7 @@ export default function Index() {
                   onClick={handleExportPNG}
                   className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-primary text-primary-foreground rounded border border-primary hover:brightness-110 transition-all"
                 >
-                  <Download size={14} />
+                  <PxDownload size={14} />
                   EXPORT PNG
                 </button>
               </div>
@@ -129,7 +129,7 @@ export default function Index() {
               onClick={resetPalette}
               className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-pixel text-muted-foreground bg-secondary rounded border border-border hover:border-primary/50 transition-colors"
             >
-              <RotateCcw size={10} />
+              <PxResetRotate size={10} />
               RESET
             </button>
           </div>

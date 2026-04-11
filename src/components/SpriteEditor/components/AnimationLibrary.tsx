@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Settings, Trash2, Edit3, Check, X } from 'lucide-react';
+import { PxSparkles, PxSettings, PxTrash, PxEdit, PxCheck, PxX } from '@/components/icons/PixelIcon';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
@@ -71,7 +71,7 @@ export const AnimationLibrary = React.memo(() => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/20 hover:text-primary border border-white/5">
-                    <Settings size={14} />
+                    <PxSettings size={14} />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 bg-[#0a0a0f] border-primary/30 p-3 space-y-3 shadow-2xl" side="left">
@@ -131,7 +131,7 @@ export const AnimationLibrary = React.memo(() => {
               disabled={isGenerating || isAnimGenerating}
               className="flex-1 font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all overflow-hidden"
             >
-              <Sparkles size={11} className="mr-1 shrink-0" />
+              <PxSparkles size={11} className="mr-1 shrink-0" />
               <span className="truncate">{isAnimGenerating ? '...' : 'IA GENERATE'}</span>
             </Button>
           </div>
@@ -193,8 +193,8 @@ export const AnimationLibrary = React.memo(() => {
                         }}
                         className="bg-black/40 border-none outline-none text-[10px] font-pixel text-primary w-full p-0 h-4"
                       />
-                      <button onClick={() => saveName(anim.name)} className="text-emerald-500"><Check size={10} /></button>
-                      <button onClick={() => setEditingName(null)} className="text-red-400"><X size={10} /></button>
+                      <button onClick={() => saveName(anim.name)} className="text-emerald-500"><PxCheck size={10} /></button>
+                      <button onClick={() => setEditingName(null)} className="text-red-400"><PxX size={10} /></button>
                     </div>
                   ) : (
                     <span className={`text-[10px] font-pixel truncate ${isViewing ? 'text-primary' : 'text-muted-foreground/80'}`}>
@@ -209,14 +209,14 @@ export const AnimationLibrary = React.memo(() => {
                       onClick={(e) => { e.stopPropagation(); startEditing(anim.name, anim.label); }}
                       className="p-1 hover:text-primary transition-colors text-muted-foreground/50"
                     >
-                      <Edit3 size={10} />
+                      <PxEdit size={10} />
                     </button>
                   )}
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleRemoveAnimation(anim.name); }}
                     className="p-1 hover:text-destructive transition-colors text-muted-foreground/50"
                   >
-                    <Trash2 size={10} />
+                    <PxTrash size={10} />
                   </button>
                 </div>
               </div>

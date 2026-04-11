@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { FolderGit2, LogOut, Plus } from 'lucide-react';
+import { PxFolder, PxLogOut, PxPlus } from '@/components/icons/PixelIcon';
 import { useProjects, useCreateProject } from '@/hooks/useProjectQueries';
 
 export default function Dashboard() {
@@ -52,7 +52,7 @@ export default function Dashboard() {
             {user?.email}
           </span>
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-white transition-colors">
-            <LogOut size={16} className="mr-2" />
+            <PxLogOut size={16} className="mr-2" />
             <span className="font-mono text-xs">Logout</span>
           </Button>
         </div>
@@ -78,7 +78,7 @@ export default function Dashboard() {
                 maxLength={40}
               />
               <Button type="submit" disabled={createProjectMutation.isPending || !newProjectName.trim()} className="bg-primary text-primary-foreground font-pixel text-[10px] whitespace-nowrap border border-primary hover:brightness-110">
-                <Plus size={14} className="mr-1" />
+                <PxPlus size={14} className="mr-1" />
                 NUEVO
               </Button>
             </form>
@@ -93,7 +93,7 @@ export default function Dashboard() {
             </div>
           ) : projects.length === 0 ? (
             <div className="text-center py-20 border border-dashed border-border rounded-lg bg-card/20">
-              <FolderGit2 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+              <PxFolder className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
               <p className="font-pixel text-muted-foreground text-xs mb-2">NINGUN PROYECTO AUN</p>
               <p className="font-mono text-muted-foreground text-[10px]">Escribe un nombre arriba y crea tu primer workspace.</p>
             </div>
@@ -108,7 +108,7 @@ export default function Dashboard() {
                   <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150" />
                   <div className="flex items-start justify-between mb-4">
                     <div className="p-2 bg-secondary border border-border rounded-md text-primary group-hover:text-primary-foreground group-hover:bg-primary transition-colors">
-                      <FolderGit2 size={18} />
+                      <PxFolder size={18} />
                     </div>
                   </div>
                   <h3 className="font-mono font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">

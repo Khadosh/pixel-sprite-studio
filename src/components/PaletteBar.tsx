@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, X } from 'lucide-react';
+import { PxPlus, PxX } from '@/components/icons/PixelIcon';
 
 interface PaletteBarProps {
   palette: Record<number, string>;
@@ -109,7 +109,7 @@ export default React.memo(function PaletteBar({
                   className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded transition-colors"
                   title="Eliminar color"
                 >
-                  <X size={12} />
+                  <PxX size={12} />
                 </button>
               )}
             </div>
@@ -121,7 +121,7 @@ export default React.memo(function PaletteBar({
           className="w-full py-2 rounded-sm border-2 border-dashed border-border hover:border-purple-500 text-muted-foreground hover:text-purple-400 flex items-center justify-center transition-all bg-background/30"
           title="Agregar color"
         >
-          <Plus size={14} className="mr-1" />
+          <PxPlus size={14} className="mr-1" />
           <span className="font-pixel text-[8px]">NUEVO COLOR</span>
         </button>
       )}

@@ -12,7 +12,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Settings2, Tag, Plus, X, Sparkles, Hash } from 'lucide-react';
+import { PxSettings, PxTag, PxPlus, PxX, PxSparkles, PxHash } from '@/components/icons/PixelIcon';
 import { getSuggestedTags, normalizeTag } from '@/lib/tagUtils';
 import { CATEGORIES } from '@/lib/types';
 
@@ -41,7 +41,7 @@ export const MetadataPanel = () => {
     <div className="flex flex-col h-full overflow-hidden">
       <div className="p-3 border-b border-border bg-secondary/10 shrink-0">
         <h3 className="font-pixel text-[10px] text-primary flex items-center gap-2">
-          <Settings2 size={12} /> CONFIGURACIÓN
+          <PxSettings size={12} /> CONFIGURACIÓN
         </h3>
         <p className="text-[7px] text-muted-foreground mt-0.5 font-mono uppercase tracking-wider leading-tight">
           Metadatos y Etiquetas del Asset
@@ -100,7 +100,7 @@ export const MetadataPanel = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="font-pixel text-[8px] text-muted-foreground uppercase tracking-widest pl-1 flex items-center gap-2">
-                <Tag size={10} /> Etiquetas (Tags)
+                <PxTag size={10} /> Etiquetas (Tags)
               </label>
               <span className="font-mono text-[8px] text-muted-foreground/50 italic">
                 {currentTags.length}/10
@@ -109,7 +109,7 @@ export const MetadataPanel = () => {
 
             <form onSubmit={handleAddTag} className="flex gap-2">
               <div className="relative flex-1">
-                <Hash size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                <PxHash size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
                 <Input 
                   value={newTag}
                   onChange={(e) => setNewTag(normalizeTag(e.target.value))}
@@ -125,7 +125,7 @@ export const MetadataPanel = () => {
                 className="h-8 px-3 hover:bg-primary/20 hover:text-primary transition-colors"
                 disabled={!newTag || currentTags.length >= 10}
               >
-                <Plus size={14} />
+                <PxPlus size={14} />
               </Button>
             </form>
 
@@ -142,7 +142,7 @@ export const MetadataPanel = () => {
                     onClick={() => removeTag(tag)}
                     className="hover:text-destructive transition-colors ml-0.5"
                   >
-                    <X size={10} />
+                    <PxX size={10} />
                   </button>
                 </Badge>
               ))}
@@ -157,7 +157,7 @@ export const MetadataPanel = () => {
             {suggestedTags.length > 0 && currentTags.length < 10 && (
               <div className="space-y-2 pt-2">
                 <span className="font-pixel text-[7px] text-muted-foreground/60 uppercase tracking-widest pl-1 flex items-center gap-1.5">
-                  <Sparkles size={8} /> Sugerencias
+                  <PxSparkles size={8} /> Sugerencias
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestedTags.slice(0, 8).map(tag => (

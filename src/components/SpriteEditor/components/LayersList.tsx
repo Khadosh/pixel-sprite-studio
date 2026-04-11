@@ -1,9 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, EyeOff, Layers, Edit2, ChevronUp, ChevronDown, Trash2, Sword, ArrowDownToLine } from 'lucide-react';
+import { PxPlus, PxEye, PxEyeOff, PxEdit, PxChevronUp, PxChevronDown, PxTrash, PxArrowDownToLine } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PROP_LIBRARY } from '@/lib/assets/props';
 
 export const LayersList = React.memo(() => {
   const editedAsset = useSpriteEditorStore(s => s.editedAsset);
@@ -14,7 +12,7 @@ export const LayersList = React.memo(() => {
   const handleRenameLayer = useSpriteEditorStore(s => s.renameLayer);
   const handleMoveLayer = useSpriteEditorStore(s => s.moveLayer);
   const handleRemoveLayer = useSpriteEditorStore(s => s.removeLayer);
-  const handleAddPropLayer = useSpriteEditorStore(s => s.addPropLayer);
+  const handleImportAssetLayer = useSpriteEditorStore(s => s.importAssetLayer);
   const handleMergeLayerDown = useSpriteEditorStore(s => s.mergeLayerDown);
 
   const layers = editedAsset.layers!;
@@ -34,11 +32,6 @@ export const LayersList = React.memo(() => {
     setEditingLayerId(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleFinishEditing();
-    if (e.key === 'Escape') setEditingLayerId(null);
-  };
-
   return (
     <div className="flex flex-col h-full min-h-0 shrink-0">
       <div className="flex items-center justify-between mb-4">
@@ -50,7 +43,7 @@ export const LayersList = React.memo(() => {
             onClick={handleAddLayer}
             title="Nueva Capa Vacía"
           >
-            <Plus size={14} />
+            <PxPlus size={14} />
           </Button>
         </div>
 
@@ -74,48 +67,45 @@ export const LayersList = React.memo(() => {
                 className={`transition-colors ${isActive ? 'text-primary' : (layer.isVisible ? 'hover:text-primary' : 'text-muted-foreground/30')}`}
                 onClick={(e) => { e.stopPropagation(); handleToggleLayerVisibility(layer.id); }}
               >
-                {layer.isVisible ? <Eye size={12} strokeWidth={2.5} /> : <EyeOff size={12} strokeWidth={2} />}
+                {layer.isVisible ? <PxEye size={12} /> : <PxEyeOff size={12} />}
               </button>
               
               <div className="flex-1 min-w-0 flex items-center gap-2">
-                <Layers size={10} className="shrink-0 opacity-40" />
                 {isEditing ? (
                   <input
                     autoFocus
-                    className="w-full bg-background/50 border-none outline-none font-pixel text-[10px] px-1 rounded text-primary"
+                    className="bg-background border border-primary rounded px-1 text-[10px] font-pixel w-full outline-none text-foreground"
                     value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
+                    onChange={e => setTempName(e.target.value)}
                     onBlur={handleFinishEditing}
-                    onKeyDown={handleKeyDown}
-                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={e => e.key === 'Enter' && handleFinishEditing()}
+                    onClick={e => e.stopPropagation()}
                   />
                 ) : (
-                  <span className="truncate font-pixel text-[10px]">
-                    {layer.name}
-                  </span>
+                  <span className="text-[10px] font-pixel truncate">{layer.name}</span>
                 )}
               </div>
-
+              
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   className="text-muted-foreground hover:text-foreground"
                   onClick={(e) => startEditing(e, layer.id, layer.name)}
                 >
-                  <Edit2 size={12} />
+                  <PxEdit size={12} />
                 </button>
                 <button 
                   className="text-muted-foreground hover:text-foreground"
                   onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'up'); }}
                   disabled={idx === layers.length - 1}
                 >
-                  <ChevronUp size={12} />
+                  <PxChevronUp size={12} />
                 </button>
                 <button 
                   className="text-muted-foreground hover:text-foreground"
                   onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 'down'); }}
                   disabled={idx === 0}
                 >
-                  <ChevronDown size={12} />
+                  <PxChevronDown size={12} />
                 </button>
                 <button 
                   className="text-muted-foreground hover:text-primary disabled:opacity-20 transition-colors"
@@ -123,13 +113,13 @@ export const LayersList = React.memo(() => {
                   disabled={idx === 0}
                   title="Combinar con capa inferior"
                 >
-                  <ArrowDownToLine size={12} />
+                  <PxArrowDownToLine size={12} />
                 </button>
                 <button 
-                  className="text-red-500/70 hover:text-red-400"
+                  className="text-destructive/70 hover:text-destructive"
                   onClick={(e) => { e.stopPropagation(); handleRemoveLayer(layer.id); }}
                 >
-                  <Trash2 size={12} />
+                  <PxTrash size={12} />
                 </button>
               </div>
             </div>

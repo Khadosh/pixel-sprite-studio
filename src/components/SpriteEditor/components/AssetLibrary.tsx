@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sword, Search, Package, User, LayoutGrid, ChevronRight } from 'lucide-react';
+import { PxSword, PxSearch, PxPackage, PxUser, PxGrid, PxChevronRight } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { PROP_LIBRARY } from '@/lib/assets/props';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -72,7 +72,7 @@ export const AssetLibrary = () => {
       <div className="p-3 border-b border-border bg-secondary/10 shrink-0 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-pixel text-[10px] text-primary flex items-center gap-2">
-            <Package size={12} /> NAVEGADOR DE ASSETS
+            <PxPackage size={12} /> NAVEGADOR DE ASSETS
           </h3>
         </div>
 
@@ -84,7 +84,7 @@ export const AssetLibrary = () => {
           </div>
         ) : (
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={12} />
+            <PxSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={12} />
             <Input 
               placeholder="Buscar por nombre..." 
               value={search}
@@ -124,7 +124,7 @@ export const AssetLibrary = () => {
                           className="w-full text-left p-2 rounded border border-border/40 bg-background/20 hover:border-primary/40 hover:bg-primary/5 text-[9px] font-pixel text-muted-foreground/80 hover:text-primary transition-all flex items-center justify-between group disabled:opacity-50"
                         >
                           <span className="truncate">{prop.name.toUpperCase()}</span>
-                          <ChevronRight size={10} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-1 group-hover:translate-x-0" />
+                          <PxChevronRight size={10} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-1 group-hover:translate-x-0" />
                         </button>
                       ))}
                     </div>
@@ -133,7 +133,7 @@ export const AssetLibrary = () => {
               })}
               {canImportAnything && filteredProps.length === 0 && (
                 <div className="py-8 text-center opacity-30">
-                  <Package className="mx-auto mb-2" size={20} />
+                  <PxPackage className="mx-auto mb-2" size={20} />
                   <p className="text-[8px] font-pixel">SIN RESULTADOS DE 16X16</p>
                 </div>
               )}
@@ -154,7 +154,7 @@ export const AssetLibrary = () => {
                     className="w-full text-left p-2 rounded border border-border/40 bg-card/40 hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center gap-3 group disabled:opacity-50"
                   >
                     <div className="w-8 h-8 rounded bg-black/40 border border-border/20 overflow-hidden flex items-center justify-center shrink-0">
-                      <LayoutGrid size={14} className="text-muted-foreground/40" />
+                      <PxGrid size={14} className="text-muted-foreground/40" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[9px] font-pixel text-muted-foreground group-hover:text-primary truncate uppercase">
@@ -164,13 +164,13 @@ export const AssetLibrary = () => {
                         {asset.size}x{asset.size} • {asset.category}
                       </p>
                     </div>
-                    <ChevronRight size={10} className="opacity-0 group-hover:opacity-100 transition-all text-primary" />
+                    <PxChevronRight size={10} className="opacity-0 group-hover:opacity-100 transition-all text-primary" />
                   </button>
                 );
               })}
               {canImportAnything && filteredUserSprites.length === 0 && (
                 <div className="py-8 text-center opacity-30">
-                  <User className="mx-auto mb-2" size={20} />
+                  <PxUser className="mx-auto mb-2" size={20} />
                   <p className="text-[8px] font-pixel">NO HAY SPRITES DE 16X16</p>
                 </div>
               )}

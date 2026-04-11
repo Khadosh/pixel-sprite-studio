@@ -1,6 +1,7 @@
 import { SpriteEditorState, StoreSlice } from '../types';
 import { addNewLayer, removeLayer, reorderLayers, renameLayer, toggleLayerVisibility, toggleLayerLock, upscale2x, mergeLayerDown, fitFrame } from '@/lib/layerUtils';
 import { PROP_LIBRARY } from '@/lib/assets/props';
+import type { Frame } from '@/lib/types';
 
 export const createLayerSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
   addLayer: () => {
