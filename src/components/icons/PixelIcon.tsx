@@ -66,15 +66,16 @@ export const PxEraser: React.FC<PixelIconProps> = (p) => (
 
 export const PxFill: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Bucket body */}
-    <path d="M4 2h5v1h1v1h1v5h-1v1H4v-1H3V4h1V2z" />
-    {/* Highlight */}
-    <path d="M4 3h5V4H4V3z" fill="var(--px-light)" opacity="0.5" />
+    {/* Bucket body - tilted */}
+    <path d="M4 3h5v1h1v1h1v5h-1v1H11v1H4v-1H3V5h1V3z" />
+    <path d="M4 4h5v1H4v-1z" fill="var(--px-light)" opacity="0.4" />
     {/* Handle */}
-    <path d="M10 4h2v1h1v1h-1v1h-2V4z" />
+    <path d="M5 1h6v1h1v3h-1v1h-3V5h4V2H5v3h1V2h5v1H6V1z" fill="var(--px-dark)" />
+    {/* Paint Liquid */}
+    <path d="M4 9h6v2H4V9z" fill="var(--px-base)" />
     {/* Drip */}
-    <path d="M6 11h2v2H6v-2z" />
-    <path d="M7 13h1v1H7v-1z" fill="var(--px-dark)" />
+    <path d="M11 11h2v3h-2v-3z" />
+    <path d="M12 11h1v2h-1v-2z" fill="var(--px-light)" opacity="0.5" />
   </Px>
 );
 
@@ -246,15 +247,19 @@ export const PxEyeOff: React.FC<PixelIconProps> = (p) => (
 
 export const PxLayers: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Top layer */}
-    <path d="M7 1h2v1h2v1h2v1h1v2h-1v1h-2v-1H9V5H7v1H5v1H3V6H2V4h1V3h2V2h2V1z" />
-    <path d="M7 2h2v1h2v1H7V2z" fill="var(--px-light)" opacity="0.4" />
-    {/* Middle layer */}
-    <path d="M3 7h2v1h2v1h2V8h2V7h2v1h1v2h-1v1h-2v-1H9V9H7v1H5v1H3v-1H2V8h1V7z" />
-    <path d="M3 8h2v1h2v1H3V8z" fill="var(--px-dark)" />
-    {/* Bottom layer */}
-    <path d="M3 11h2v1h2v1h2v-1h2v-1h2v1h1v2h-1v1h-2v-1H9v-1H7v1H5v1H3v-1H2v-2h1v-1z" />
-    <path d="M3 12h2v1h2v1H3v-2z" fill="var(--px-black)" />
+    {/* Perspective Stack */}
+    {/* Bottom Layer */}
+    <path d="M1 9h6v6H1V9z" fill="var(--px-black)" />
+    <path d="M2 10h4v4H2v-4z" />
+    
+    {/* Middle Layer */}
+    <path d="M5 5h6v6H5V5z" fill="var(--px-black)" />
+    <path d="M6 6h4v4H6V6z" />
+    
+    {/* Top Layer */}
+    <path d="M9 1h6v6H9V1z" fill="var(--px-black)" />
+    <path d="M10 2h4v4h-4V2z" />
+    <path d="M10 2h4v1h-4V2z" fill="var(--px-light)" opacity="0.4" />
   </Px>
 );
 
@@ -391,10 +396,14 @@ export const PxPalette: React.FC<PixelIconProps> = (p) => (
     <path d="M5 3h6v1H5V3zM4 5h1v1H4V5zM3 7h1v1H3V7zM6 10h4v1H6v-1z" fill="var(--px-light)" opacity="0.4" />
     {/* Wood grain shadows */}
     <path d="M11 5h1v3h-1V5zM5 8h4v1H5V8z" fill="var(--px-dark)" opacity="0.3" />
-    {/* Deep paint wells */}
-    <path d="M5 5h2v2H5V5z" fill="var(--px-black)" opacity="0.6" />
-    <path d="M8 4h2v2H8V4z" fill="var(--px-black)" opacity="0.4" />
-    <path d="M5 9h2v2H5V9z" fill="var(--px-black)" opacity="0.2" />
+    {/* Deep paint wells - RGB */}
+    <path d="M5 5h2v2H5V5z" fill="#ff4444" />
+    <path d="M8 4h2v2H8V4z" fill="#44ff44" />
+    <path d="M5 9h2v2H5V9z" fill="#4444ff" />
+    {/* Well shadows */}
+    <path d="M5 5h1v2H5V5zM5 5h2v1H5V5z" fill="black" opacity="0.3" />
+    <path d="M8 4h1v2H8V4zM8 4h2v1H8V4z" fill="black" opacity="0.3" />
+    <path d="M5 9h1v2H5V9zM5 9h2v1H5V9z" fill="black" opacity="0.3" />
   </Px>
 );
 
@@ -414,10 +423,15 @@ export const PxSword: React.FC<PixelIconProps> = (p) => (
 
 export const PxSettings: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Gear */}
-    <path d="M6 1h4v2h2v1h1v2h2v4h-2v2h-1v1h-2v2H6v-2H4v-1H3v-2H1V6h2V4h1V3h2V1z" />
-    {/* Center hole */}
-    <path d="M6 6h4v4H6V6z" fill="var(--background, #000)" />
+    {/* Configuration Sliders */}
+    {/* Tracks */}
+    <path d="M4 2h1v12H4V2zM8 2h1v12H8V2zM12 2h1v12h-1V2z" fill="var(--px-black)" />
+    {/* Knobs */}
+    <path d="M3 4h3v2H3V4zM7 9h3v2H7V9zM11 5h3v2h-3V5z" />
+    {/* Knob Highlights */}
+    <path d="M3 4h3v1H3V4z" fill="var(--px-light)" opacity="0.4" />
+    <path d="M7 9h3v1H7V9z" fill="var(--px-light)" opacity="0.4" />
+    <path d="M11 5h3v1h-3V5z" fill="var(--px-light)" opacity="0.4" />
   </Px>
 );
 

@@ -5,11 +5,11 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-11 (Hoy)
-**3 commits realizados**
+**4 commits realizados**
 
-- **Mejoras**: Fase 2 de rediseño de iconos con detalles mecánicos, texturas de madera avanzada, glints metálicos y profundidad mejorada en herramientas y formas.
+- **Mejoras**: Rediseño de iconos críticos (**Themes**, **Layers**, **Config**, **Fill**) para mayor claridad semántica y detalle visual.
+- **Mejoras**: Fase 2 de rediseño de iconos con detalles mecánicos, texturas de madera avanzada, glints metálicos y profundidad mejorada.
 - **Agregado**: Laboratorio de Iconos (`/icon-preview`) para previsualización y desarrollo en tiempo real (solo en localhost).
-- **Mejoras**: Rediseño completo del sistema de iconos con "Pixel Shading" (basado en luces y sombras derivadas) para un acabado premium.
 - **Utilitario**: Agregada función "DEBUG: COPIAR JSON" en el menú de exportación (visible solo en localhost).
 
 ---
