@@ -59,82 +59,35 @@ export const DynamicPx: React.FC<PixelIconProps & { iconId: string }> = ({ iconI
 // ─── Drawing Tools ───────────────────────────────────
 
 export const PxPencil: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Body */}
-    <path d="M11 1h2v1h1v2h-1v1h-1v1h-1v1H10v1H9v1H8v1H7v1H6v1H5v1H3v-1H2v-2h1v-1h1V9h1V8h1V7h1V6h1V5h1V4h1V3h1V2h1V1z" />
-    {/* Highligth */}
-    <path d="M12 2h1v1h1v1h-1V3h-1V2zM10 4h1v1h-1V4z" fill="var(--px-light)" />
-    {/* Tip shadow */}
-    <path d="M4 11h1v1H4v-1z" fill="var(--px-black)" />
-    {/* Drawing stroke */}
-    <path d="M2 13h3v1H2v-1z" fill="var(--px-dark)" />
-  </Px>
+  <DynamicPx {...p} iconId="pencil" />
 );
 
 export const PxEraser: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    <path d="M9 2h2v1h1v1h1v1h1v2h-1v1h-1v1h-1v1H10v1H9v1H8v1H4v-1H3v-1H2v-2h1V7h1V6h1V5h1V4h1V3h1V2z" />
-    {/* Highlight */}
-    <path d="M9 3h2v1h1v1h-1V4H9V3z" fill="var(--px-light)" />
-    {/* Shadow */}
-    <path d="M4 11h4v1H4v-1z" fill="var(--px-dark)" />
-    {/* Underline */}
-    <path d="M4 12h10v1H4v-1z" fill="var(--px-black)" />
-  </Px>
+  <DynamicPx {...p} iconId="eraser" />
 );
 
 export const PxFill: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Bucket body */}
-    <path d="M3 4h6v1h1v1h1v5h-2v1H3V4z" />
-    <path d="M4 5h5v1H4v-1z" fill="var(--px-light)" opacity="0.4" />
-    {/* Handle */}
-    <path d="M4 2h7v1H4V2zM11 2h1v3h-1V2zM3 2h1v2H3V2z" fill="var(--px-dark)" />
-    {/* Thick Paint Stream */}
-    <path d="M10 10h4v4h-4v-4z" />
-    <path d="M11 11h2v3h-2v-3z" fill="var(--px-light)" opacity="0.4" />
-    <path d="M10 10h1v4h-1v-4z" fill="var(--px-dark)" opacity="0.4" />
-  </Px>
+  <DynamicPx {...p} iconId="fill" />
 );
 
 export const PxPipette: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    <path d="M11 1h2v1h1v2h-1v1h-1v1h-1v1H10v1H9v1H8v1H7v1H6v1H5v1H3v-1H2v-2h1V9h1V8h1V7h1V6h1V5h1V4h1V3h1V2h1V1z" />
-    <path d="M11 2h2V3h-2V2z" fill="var(--px-light)" opacity="0.6" />
-    <path d="M3 12h1v1h1v1H3v-2z" fill="var(--px-black)" />
-  </Px>
+  <DynamicPx {...p} iconId="pipette" />
 );
 
 export const PxLine: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    <path d="M2 7h12v2H2V7z" />
-    <path d="M2 7h12v1H2V7z" fill="var(--px-light)" opacity="0.3" />
-    <path d="M2 9h12v1H2V9z" fill="var(--px-black)" opacity="0.2" />
-  </Px>
+  <DynamicPx {...p} iconId="line" />
 );
 
 export const PxRect: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    <path d="M2 3h12v1H2V3zM2 4h1v8H2V4zM13 4h1v8h-1V4zM2 12h12v1H2v-1z" />
-    <path d="M3 4h10v1H3V4zM3 5h1v7H3V5z" fill="var(--px-light)" opacity="0.3" />
-  </Px>
+  <DynamicPx {...p} iconId="rect" />
 );
 
 export const PxCircle: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    <path d="M5 2h6v1h1v1h1v1h1v6h-1v1h-1v1h-1v1H5v-1H4v-1H3v-1H2V5h1V4h1V3h1V2zM5 4H4v1H3v6h1v1h1v1h6v-1h1v-1h1V5h-1V4h-1V3H5v1z" />
-    <path d="M5 3h6v1H5V3zM4 5h1v6H4V5z" fill="var(--px-light)" opacity="0.3" />
-  </Px>
+  <DynamicPx {...p} iconId="circle" />
 );
 
 export const PxSelect: React.FC<PixelIconProps> = (p) => (
-  <Px {...p}>
-    {/* Dashed selection rectangle */}
-    <path d="M2 2h3v1H2V2zM7 2h2v1H7V2zM11 2h3v1h-3V2z" />
-    <path d="M13 3h1v2h-1V3zM13 7h1v2h-1V7zM13 11h1v2h-1v-2z" />
-    <path d="M11 13h3v1h-3v-1zM7 13h2v1H7v-1zM2 13h3v1H2v-1z" />
-    <path d="M2 11h1v2H2v-2zM2 7h1v2H2V7zM2 3h1v2H2V3z" />
-  </Px>
+  <DynamicPx {...p} iconId="select" />
 );
 
 // ─── Transform Tools ─────────────────────────────────

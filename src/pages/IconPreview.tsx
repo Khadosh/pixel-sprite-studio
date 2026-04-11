@@ -37,7 +37,7 @@ const IconPreview = () => {
   const getIconAsset = (id: string): SpriteAsset => {
     const matrix = ICON_REGISTRY[id] || Array.from({ length: 16 }, () => Array(16).fill(0));
     return {
-      id: `icon-${id}`,
+      id: `icon-${id}-${Date.now()}`, // Unique ID for every session to avoid persistence collisions
       name: `Icon: ${id}`,
       description: 'System Icon',
       category: 'ui',
