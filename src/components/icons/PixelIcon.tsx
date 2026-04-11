@@ -18,11 +18,20 @@ const Px: React.FC<PixelIconProps & { children: React.ReactNode }> = ({
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
-    style={{ shapeRendering: 'crispEdges' }}
+    style={{ 
+      shapeRendering: 'crispEdges',
+      // @ts-ignore
+      '--px-base': color,
+      '--px-light': 'rgba(255, 255, 255, 0.25)',
+      '--px-dark': 'rgba(0, 0, 0, 0.25)',
+      '--px-black': 'rgba(0, 0, 0, 0.4)',
+    }}
   >
     {React.Children.map(children, child =>
       React.isValidElement(child)
-        ? React.cloneElement(child as React.ReactElement<any>, { fill: (child as React.ReactElement<any>).props.fill || color })
+        ? React.cloneElement(child as React.ReactElement<any>, { 
+            fill: (child as React.ReactElement<any>).props.fill || 'var(--px-base)' 
+          })
         : child
     )}
   </svg>
@@ -32,15 +41,26 @@ const Px: React.FC<PixelIconProps & { children: React.ReactNode }> = ({
 
 export const PxPencil: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    {/* Body */}
     <path d="M11 1h2v1h1v2h-1v1h-1v1h-1v1H10v1H9v1H8v1H7v1H6v1H5v1H3v-1H2v-2h1v-1h1V9h1V8h1V7h1V6h1V5h1V4h1V3h1V2h1V1z" />
-    <path d="M2 13h3v1H2v-1z" />
+    {/* Highligth */}
+    <path d="M12 2h1v1h1v1h-1V3h-1V2zM10 4h1v1h-1V4z" fill="var(--px-light)" />
+    {/* Tip shadow */}
+    <path d="M4 11h1v1H4v-1z" fill="var(--px-black)" />
+    {/* Drawing stroke */}
+    <path d="M2 13h3v1H2v-1z" fill="var(--px-dark)" />
   </Px>
 );
 
 export const PxEraser: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M9 2h2v1h1v1h1v1h1v2h-1v1h-1v1h-1v1H10v1H9v1H8v1H4v-1H3v-1H2v-2h1V7h1V6h1V5h1V4h1V3h1V2z" />
-    <path d="M4 12h10v1H4v-1z" />
+    {/* Highlight */}
+    <path d="M9 3h2v1h1v1h-1V4H9V3z" fill="var(--px-light)" />
+    {/* Shadow */}
+    <path d="M4 11h4v1H4v-1z" fill="var(--px-dark)" />
+    {/* Underline */}
+    <path d="M4 12h10v1H4v-1z" fill="var(--px-black)" />
   </Px>
 );
 
@@ -48,18 +68,21 @@ export const PxFill: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     {/* Bucket body */}
     <path d="M4 2h5v1h1v1h1v5h-1v1H4v-1H3V4h1V2z" />
+    {/* Highlight */}
+    <path d="M4 3h5V4H4V3z" fill="var(--px-light)" opacity="0.5" />
     {/* Handle */}
     <path d="M10 4h2v1h1v1h-1v1h-2V4z" />
     {/* Drip */}
     <path d="M6 11h2v2H6v-2z" />
-    <path d="M7 13h1v1H7v-1z" />
+    <path d="M7 13h1v1H7v-1z" fill="var(--px-dark)" />
   </Px>
 );
 
 export const PxPipette: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M11 1h2v1h1v2h-1v1h-1v1h-1v1H10v1H9v1H8v1H7v1H6v1H5v1H3v-1H2v-2h1V9h1V8h1V7h1V6h1V5h1V4h1V3h1V2h1V1z" />
-    <path d="M3 12h1v1h1v1H3v-2z" />
+    <path d="M11 2h2V3h-2V2z" fill="var(--px-light)" opacity="0.6" />
+    <path d="M3 12h1v1h1v1H3v-2z" fill="var(--px-black)" />
   </Px>
 );
 
@@ -221,10 +244,13 @@ export const PxLayers: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     {/* Top layer */}
     <path d="M7 1h2v1h2v1h2v1h1v2h-1v1h-2v-1H9V5H7v1H5v1H3V6H2V4h1V3h2V2h2V1z" />
+    <path d="M7 2h2v1h2v1H7V2z" fill="var(--px-light)" opacity="0.4" />
     {/* Middle layer */}
     <path d="M3 7h2v1h2v1h2V8h2V7h2v1h1v2h-1v1h-2v-1H9V9H7v1H5v1H3v-1H2V8h1V7z" />
+    <path d="M3 8h2v1h2v1H3V8z" fill="var(--px-dark)" />
     {/* Bottom layer */}
     <path d="M3 11h2v1h2v1h2v-1h2v-1h2v1h1v2h-1v1h-2v-1H9v-1H7v1H5v1H3v-1H2v-2h1v-1z" />
+    <path d="M3 12h2v1h2v1H3v-2z" fill="var(--px-black)" />
   </Px>
 );
 
@@ -246,19 +272,33 @@ export const PxMoon: React.FC<PixelIconProps> = (p) => (
 
 export const PxSave: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    {/* Body */}
     <path d="M2 1h9v1h1v1h1v1h1v10H2V1z" />
+    {/* Highlights */}
+    <path d="M3 2h8v1H3V2zM3 3h1v8H3V3z" fill="var(--px-light)" />
+    {/* Shadows */}
+    <path d="M12 4h1v9h-9v1h10V4h-1z" fill="var(--px-dark)" />
     {/* Floppy top slot */}
-    <path d="M4 2h6v4H4V2z" fill="var(--background, #000)" />
+    <path d="M4 2h6v4H4V2z" fill="rgba(0,0,0,0.5)" />
+    {/* Metal slider */}
+    <path d="M7 2h2v4H7V2z" fill="var(--px-light)" />
     {/* Label area */}
-    <path d="M4 9h8v4H4V9z" fill="var(--background, #000)" />
-    <path d="M5 10h6v1H5v-1z" />
+    <path d="M4 9h8v4H4V9z" fill="rgba(255,255,255,0.7)" />
+    <path d="M5 10h6v1H5v-1z" fill="rgba(0,0,0,0.2)" />
+    <path d="M5 12h4v1H5v-1z" fill="rgba(0,0,0,0.2)" />
   </Px>
 );
 
 export const PxDownload: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    {/* Arrow shaft */}
     <path d="M7 1h2v6h3v1h-1v1h-1v1H9v1H7v-1H6V9H5V8H4V7h3V1z" />
+    {/* Arrow shadow */}
+    <path d="M8 1h1v6h1V6h1V5h1V4h-3V1z" fill="var(--px-light)" opacity="0.4" />
+    <path d="M9 7h3v1h-1v1h-1v1h-1V7z" fill="var(--px-dark)" />
+    {/* Platform */}
     <path d="M2 12h12v2H2v-2z" />
+    <path d="M2 12h12v1H2v-1z" fill="var(--px-light)" />
   </Px>
 );
 
@@ -271,10 +311,13 @@ export const PxSearch: React.FC<PixelIconProps> = (p) => (
 
 export const PxSparkles: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    {/* Glows */}
+    <path d="M3 0h3v1H3V0zM4 1h1v1H4V1zM4 3h1v1H4v1H3v1H2V4h2V0z" fill="var(--px-light)" opacity="0.3" />
     {/* Big star */}
     <path d="M4 0h1v3h1v1h1v1H5v3H4V5H3V4H2V3h2V0z" />
     {/* Medium star */}
     <path d="M11 4h1v2h1v1h1v1h-1v1h-1v2h-1V9h-1V8H9V7h1V6h1V4z" />
+    <path d="M11 5h1v1h-1V5z" fill="var(--px-light)" opacity="0.5" />
     {/* Small star */}
     <path d="M4 10h1v1h1v1H5v1H4v-1H3v-1h1v-1z" />
   </Px>
@@ -335,10 +378,11 @@ export const PxFilm: React.FC<PixelIconProps> = (p) => (
 export const PxPalette: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M5 2h6v1h2v1h1v2h-1v1h-1V6h-1v1h1v1h1v1h-1v1h-1v1h-1v1H5v-1H4v-1H3v-1H2V5h1V4h1V3h1V2z" />
+    <path d="M5 3h6v1H5V3zM4 5h1v1H4V5z" fill="var(--px-light)" opacity="0.4" />
     {/* Color dots */}
-    <path d="M5 5h2v2H5V5z" fill="var(--background, #000)" />
-    <path d="M8 4h2v2H8V4z" fill="var(--background, #000)" />
-    <path d="M5 9h2v2H5V9z" fill="var(--background, #000)" />
+    <path d="M5 5h2v2H5V5z" fill="var(--px-black)" opacity="0.6" />
+    <path d="M8 4h2v2H8V4z" fill="var(--px-black)" opacity="0.4" />
+    <path d="M5 9h2v2H5V9z" fill="var(--px-black)" opacity="0.2" />
   </Px>
 );
 
@@ -346,8 +390,10 @@ export const PxSword: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     {/* Blade */}
     <path d="M12 1h2v1h1v3h-1v1h-1v1h-1v1H11v1h-1v1H6V9H5V8H4V7H3V5h1v1h1v1h1v1h1V7h1V6h1V5h1V4h1V3h1V2h1V1z" />
+    {/* Blade highlight */}
+    <path d="M12 2h1v1h1v1h-1V3h-1V2zM11 3h1v1H11V3zM10 4h1v1h-1V4z" fill="var(--px-light)" />
     {/* Guard */}
-    <path d="M4 9h1v1h1v1H4V9zM8 11h2v1h1v1H8v-2z" />
+    <path d="M4 9h1v1h1v1H4V9zM8 11h2v1h1v1H8v-2z" fill="var(--px-dark)" />
     {/* Handle */}
     <path d="M3 11h1v1h1v1H4v1H3v-1H2v-1h1v-1z" />
   </Px>
@@ -365,28 +411,38 @@ export const PxSettings: React.FC<PixelIconProps> = (p) => (
 export const PxImage: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M1 2h14v12H1V2z" />
-    {/* Mountain */}
-    <path d="M4 10h1V9h1V8h1V7h1v1h1v1h1V7h1V6h1v1h1v5H2v-2h2z" fill="var(--background, #000)" />
+    {/* Sky Highlight */}
+    <path d="M2 3h12v1H2V3z" fill="var(--px-light)" opacity="0.3" />
+    {/* Mountains */}
+    <path d="M4 10h1V9h1V8h1V7h1v1h1v1h1V7h1V6h1v1h1v5H2v-2h2z" fill="var(--px-black)" />
+    {/* Mountain Shading */}
+    <path d="M5 10h1v1H5v-1zM7 8h1v3H7V8zM10 8h1v3h-1V8zM12 7h1v4h-1V7z" fill="var(--px-dark)" opacity="0.5" />
     {/* Sun */}
-    <path d="M4 4h2v2H4V4z" fill="var(--background, #000)" />
+    <path d="M4 4h2v2H4V4z" fill="var(--px-light)" />
   </Px>
 );
 
 export const PxFileVideo: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M2 1h8v1h1v1h1v1h1v10H3v-1H2V1z" />
+    <path d="M3 2h7v1H3V2z" fill="var(--px-light)" opacity="0.3" />
     <path d="M10 1v3h3" />
     {/* Play button */}
-    <path d="M6 7h1v1h1v1h1v1H8v1H7v1H6V7z" fill="var(--background, #000)" />
+    <path d="M6 7h1v1h1v1h1v1H8v1H7v1H6V7z" fill="var(--px-black)" />
+    <path d="M6 7h1v1H6V7z" fill="var(--px-light)" opacity="0.4" />
   </Px>
 );
 
 export const PxHardDrive: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M2 3h12v10H2V3z" />
-    <path d="M2 9h12v4H2V9z" fill="var(--background, #000)" />
-    <path d="M2 9h12v1H2V9z" />
-    <path d="M11 11h2v1h-2v-1z" />
+    {/* Top highlight */}
+    <path d="M3 4h10v1H3V4z" fill="var(--px-light)" opacity="0.4" />
+    {/* Dark area */}
+    <path d="M2 9h12v4H2V9z" fill="var(--px-black)" />
+    <path d="M2 9h12v1H2V9z" fill="var(--px-dark)" />
+    {/* Activity light */}
+    <path d="M11 11h2v1h-2v-1z" fill="var(--px-light)" />
   </Px>
 );
 
@@ -415,10 +471,11 @@ export const PxUser: React.FC<PixelIconProps> = (p) => (
 export const PxPackage: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M2 3h12v11H2V3z" />
+    <path d="M3 4h10v3H3V4z" fill="var(--px-light)" opacity="0.3" />
     <path d="M2 3h12v3H2V3z" />
     <path d="M6 1h4v5H6V1z" />
     {/* Center line */}
-    <path d="M7 6h2v4H7V6z" fill="var(--background, #000)" />
+    <path d="M7 6h2v6H7V6z" fill="var(--px-black)" />
   </Px>
 );
 
@@ -431,8 +488,16 @@ export const PxGrid: React.FC<PixelIconProps> = (p) => (
 
 export const PxEdit: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
+    {/* Pencil body */}
     <path d="M10 1h2v1h1v2h-1v1h-1v1H10v1H9v1H8v1H7v1H6v1H5v1H3v-1H2V9h1V8h1V7h1V6h1V5h1V4h1V3h1V2h1V1z" />
-    <path d="M2 13h12v1H2v-1z" />
+    {/* Pencil highlight */}
+    <path d="M11 2h1v1h1v1h-1V3h-1V2zM10 3h1v1h-1V3zM9 4h1v1H9V4zM8 5h1v1H8V5z" fill="var(--px-light)" />
+    {/* Pencil tip (wood) */}
+    <path d="M3 11h2v1H3v-1z" fill="var(--px-light)" opacity="0.6" />
+    {/* Graphite */}
+    <path d="M2 12h1v1H2v-1z" fill="black" opacity="0.8" />
+    {/* Bottom line */}
+    <path d="M2 13h12v1H2v-1z" fill="var(--px-black)" />
   </Px>
 );
 
@@ -467,7 +532,10 @@ export const PxXCircle: React.FC<PixelIconProps> = (p) => (
 export const PxMonitor: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M1 1h14v10H1V1z" />
-    <path d="M2 2h12v8H2V2z" fill="var(--background, #000)" />
+    <path d="M2 2h12v1H2V2z" fill="var(--px-light)" opacity="0.4" />
+    <path d="M2 3h12v7H2V3z" fill="var(--px-black)" />
+    {/* Screen glow */}
+    <path d="M3 3h2v1H3V3z" fill="var(--px-light)" opacity="0.1" />
     <path d="M6 12h4v1H6v-1zM5 13h6v1H5v-1z" />
   </Px>
 );

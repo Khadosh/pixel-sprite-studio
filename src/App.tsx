@@ -14,6 +14,7 @@ import AssetDetail from "./pages/AssetDetail.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import ProjectWorkspace from "./pages/ProjectWorkspace.tsx";
 
+import IconPreview from "./pages/IconPreview.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             {/* Public Catalog Routes */}
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/asset/:assetId" element={<AssetDetail />} />
+            <Route path="/icon-preview" element={<IconPreview />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
