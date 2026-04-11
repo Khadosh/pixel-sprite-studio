@@ -200,7 +200,7 @@ export default function ProjectWorkspace() {
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
             >
-              <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              <PxArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
             </button>
             <h1 className="font-pixel text-foreground text-xl md:text-2xl tracking-wider">
@@ -212,7 +212,7 @@ export default function ProjectWorkspace() {
               onClick={() => { setShowCreator(!showCreator); clearGenerated(); }}
               className="font-pixel text-xs bg-primary text-primary-foreground hover:brightness-110 transition-all border border-primary shadow-[0_0_15px_rgba(34,197,94,0.2)]"
             >
-              <Sparkles size={16} className="mr-2" />
+              <PxSparkles size={16} className="mr-2" />
               CREAR SPRITE
             </Button>
           </div>
@@ -241,7 +241,7 @@ export default function ProjectWorkspace() {
                 onClick={() => { setShowCreator(false); clearGenerated(); }} 
                 className="text-muted-foreground hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full"
               >
-                <X size={18} />
+                <PxX size={18} />
               </button>
             </div>
 
@@ -255,7 +255,7 @@ export default function ProjectWorkspace() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="bg-purple-500/20 p-2 rounded-lg border border-purple-500/20">
-                        <Sparkles className="text-purple-400" size={18} />
+                        <PxSparkles className="text-purple-400" size={18} />
                       </div>
                       <span className="bg-purple-500/20 text-purple-300 text-[7px] font-pixel px-2 py-0.5 rounded-full border border-purple-500/30 tracking-tighter">PREMIUM</span>
                     </div>
@@ -278,7 +278,7 @@ export default function ProjectWorkspace() {
                       className="w-full font-pixel text-[9px] bg-purple-600 hover:bg-purple-500 text-white border-purple-400/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
                     >
                       {isGenerating ? (
-                        <Loader2 size={12} className="animate-spin mr-2" />
+                        <PxLoader size={12} className="animate-spin mr-2" />
                       ) : (
                         "GENERAR AHORA"
                       )}
@@ -294,14 +294,14 @@ export default function ProjectWorkspace() {
               >
                 <div className="space-y-2">
                   <div className="bg-primary/10 p-2 rounded-lg border border-primary/10 w-fit group-hover:bg-primary/20 transition-colors">
-                    <ImageIcon className="text-primary" size={18} />
+                    <PxImage className="text-primary" size={18} />
                   </div>
                   <h3 className="font-pixel text-xs text-primary/90 tracking-wider pt-2">BIBLIOTECA</h3>
                   <p className="font-mono text-[9px] text-muted-foreground leading-relaxed">Explora cientos de sprites pre-diseñados listos para tu proyecto.</p>
                 </div>
                 <div className="mt-auto pt-4 flex items-center justify-between text-primary font-pixel text-[8px] opacity-60 group-hover:opacity-100 transition-opacity">
                   <span>EXPLORAR CATÁLOGO</span>
-                  <ArrowLeft size={10} className="rotate-180" />
+                  <PxArrowLeft size={10} className="rotate-180" />
                 </div>
               </div>
 
@@ -337,14 +337,14 @@ export default function ProjectWorkspace() {
               >
                 <div className="space-y-2">
                   <div className="bg-blue-500/10 p-2 rounded-lg border border-blue-500/10 w-fit group-hover:bg-blue-500/20 transition-colors">
-                    <Plus className="text-blue-400" size={18} />
+                    <PxPlus className="text-blue-400" size={18} />
                   </div>
                   <h3 className="font-pixel text-xs text-blue-100 tracking-wider pt-2">DESDE CERO</h3>
                   <p className="font-mono text-[9px] text-muted-foreground leading-relaxed">Dibuja cada píxel manualmente con total control artístico sobre el lienzo.</p>
                 </div>
                 <div className="mt-auto pt-4 flex items-center justify-between text-blue-400 font-pixel text-[8px] opacity-60 group-hover:opacity-100 transition-opacity">
                   <span>LIENZO EN BLANCO</span>
-                  <ArrowLeft size={10} className="rotate-180" />
+                  <PxArrowLeft size={10} className="rotate-180" />
                 </div>
               </div>
             </div>
@@ -395,13 +395,13 @@ export default function ProjectWorkspace() {
                     placeholder="BUSCAR POR NOMBRE O TAG..."
                     className="bg-background border-primary/20 font-mono text-[10px] h-10 pl-10 border-2 focus-visible:ring-primary/30 focus-visible:border-primary/50 transition-all"
                   />
-                  <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary/40 group-focus-within:text-primary transition-colors" size={16} />
+                  <PxSparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary/40 group-focus-within:text-primary transition-colors" size={16} />
                   {searchQuery && (
                     <button 
                       onClick={() => setSearchQuery('')}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
                     >
-                      <X size={14} />
+                      <PxX size={14} />
                     </button>
                   )}
                 </div>
@@ -412,7 +412,7 @@ export default function ProjectWorkspace() {
           {sprites.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 border border-dashed border-border rounded text-center">
               <div className="w-16 h-16 bg-secondary/50 rounded-full flex items-center justify-center mb-4">
-                <ImageIcon className="text-muted-foreground/50" />
+                <PxImage className="text-muted-foreground/50" />
               </div>
               <p className="font-pixel text-muted-foreground text-xs mb-2">PROYECTO VACIO</p>
               <p className="font-mono text-muted-foreground text-[10px] max-w-sm mb-6">Genera un sprite con IA o agrega uno desde el catalogo.</p>
@@ -448,14 +448,14 @@ export default function ProjectWorkspace() {
                         className="p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-md text-muted-foreground hover:text-primary hover:border-primary transition-all shadow-sm"
                         title="Clonar sprite"
                       >
-                        <Copy size={12} />
+                        <PxCopy size={12} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteSprite(e, s.id)}
                         className="p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-md text-muted-foreground hover:text-destructive hover:border-destructive transition-all shadow-sm"
                         title="Eliminar del proyecto"
                       >
-                        <Trash2 size={12} />
+                        <PxTrash size={12} />
                       </button>
                     </div>
                     

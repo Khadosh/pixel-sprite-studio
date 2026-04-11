@@ -40,7 +40,7 @@ export default function Catalog() {
             onClick={() => navigate(projectId ? `/project/${projectId}` : '/dashboard')}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
           >
-            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+            <PxArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
             {projectId ? 'Volver al Proyecto' : 'Volver al Dashboard'}
           </button>
 
@@ -52,7 +52,7 @@ export default function Catalog() {
                 className="text-muted-foreground hover:text-primary transition-colors"
                 title="Limpiar filtro de tamaño"
               >
-                <X size={14} />
+                <PxX size={14} />
               </button>
             </div>
           )}
@@ -88,7 +88,7 @@ export default function Catalog() {
         {/* Category filters */}
         <div className="flex justify-center">
           {isCountsLoading ? (
-            <div className="h-10 flex items-center"><Loader2 className="animate-spin text-primary" size={20} /></div>
+            <div className="h-10 flex items-center"><PxLoader className="animate-spin text-primary" size={20} /></div>
           ) : (
             <CategoryFilter
               activeCategory={activeCategory}
@@ -102,7 +102,7 @@ export default function Catalog() {
         {isAssetsLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
              <div className="relative">
-               <Loader2 className="animate-spin text-primary" size={40} />
+               <PxLoader className="animate-spin text-primary" size={40} />
                <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full" />
              </div>
              <p className="font-pixel text-[10px] text-muted-foreground animate-pulse tracking-widest">CARGANDO ASSETS...</p>

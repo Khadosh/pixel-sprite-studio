@@ -121,7 +121,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-all font-mono"
           >
-            <ArrowLeft size={14} className="group-hover/nav:-translate-x-1 transition-transform" />
+            <PxArrowLeft size={14} className="group-hover/nav:-translate-x-1 transition-transform" />
             Volver al Catálogo
           </button>
           
@@ -161,7 +161,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                     disabled={createSpriteMutation.isPending}
                     className="bg-green-600 hover:bg-green-500 text-white font-pixel text-[10px] px-6 h-10 border border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
                   >
-                    {createSpriteMutation.isPending ? <Loader2 size={14} className="animate-spin mr-2" /> : <Save size={14} className="mr-2" />}
+                    {createSpriteMutation.isPending ? <PxLoader size={14} className="animate-spin mr-2" /> : <PxSave size={14} className="mr-2" />}
                     {createSpriteMutation.isPending ? 'GUARDANDO...' : 'IMPORTAR A PROYECTO'}
                   </Button>
                 )}
@@ -170,7 +170,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                   onClick={handleExportPNG}
                   className="bg-card border-border hover:border-primary/50 text-foreground font-pixel text-[10px] px-6 h-10 transition-all"
                 >
-                  <Download size={14} className="mr-2" />
+                  <PxDownload size={14} className="mr-2" />
                   EXPORT PNG
                 </Button>
             </div>
@@ -239,7 +239,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
                   onClick={resetPalette}
                   className="flex items-center gap-1.5 text-[9px] font-pixel text-muted-foreground hover:text-primary transition-colors"
                 >
-                  <RotateCcw size={10} />
+                  <PxResetRotate size={10} />
                   RESET
                 </button>
               </div>
@@ -297,7 +297,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
     if (isLoading) {
       return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-          <Loader2 className="animate-spin text-primary" size={32} />
+          <PxLoader className="animate-spin text-primary" size={32} />
           <p className="font-pixel text-[10px] text-muted-foreground animate-pulse">CARGANDO ASSET...</p>
         </div>
       );
@@ -315,7 +315,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
             onClick={() => navigate('/')}
             className="flex items-center gap-2 px-4 py-2 text-xs font-pixel bg-primary text-primary-foreground rounded border border-primary hover:brightness-110 transition-all mx-auto"
           >
-            <ArrowLeft size={14} />
+            <PxArrowLeft size={14} />
             BACK TO CATALOG
           </button>
         </div>
