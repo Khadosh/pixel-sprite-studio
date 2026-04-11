@@ -3,7 +3,7 @@ import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import SpritePreview from '@/components/SpritePreview';
 import { ANIMATIONS, FRAME_SIZE, PALETTE } from '@/lib/pixelCharacter';
 import { usePalette } from '@/hooks/usePalette';
-import { Download, RotateCcw } from 'lucide-react';
+import { PxDownload, PxResetRotate } from '@/components/icons/PixelIcon';
 import type { SpriteAsset } from '@/lib/types';
 
 const PIXEL_SCALE = 4;

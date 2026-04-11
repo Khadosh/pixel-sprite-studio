@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft } from 'lucide-react';
+import { PxArrowLeft } from '@/components/icons/PixelIcon';
 
 type AuthView = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
