@@ -122,12 +122,12 @@ export const PxSelect: React.FC<PixelIconProps> = (p) => (
 
 export const PxRotateCw: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Thick Sweep Arrow */}
-    <path d="M3 7h1V5h1V4h1V3h2v1H6v1H5v2h1v1h1v1h5V9H7V8h6V5h-1V4h-1V3h-1V2h2v1h1v1h1v4h-1v3h-1v1h-1v1H5v-1H4v-1H3V7z" />
-    <path d="M5 4h1v1H5V4zM6 3h2v1H6V3zM10 9h2v1h-2V9z" fill="var(--px-light)" opacity="0.4" />
+    {/* Clean Circular Logic */}
+    <path d="M6 1h5v1H6V1zM11 2h2v1h1v1h1v2h-1V4h-1V3h-2V2zM14 6h1v4h-1V6zM11 13h1v-1h1v-1h1v-1H14zM6 13h5v1H6v-1zM3 11h2v1H4v1H3v-2zM2 10h1v1H2v-1z" />
+    <path d="M1 5h2v6H1V5zM2 4h1v1H2V4zM3 3h1v1H3V3zM4 2h2v1H4V2z" />
     {/* Arrow Head */}
-    <path d="M11 2h4v4h-4V2z" />
-    <path d="M12 3h2v1h-2V3z" fill="var(--px-light)" opacity="0.5" />
+    <path d="M5 0h6v4H5V0z" />
+    <path d="M6 1h4v1H6V1z" fill="var(--px-light)" opacity="0.4" />
   </Px>
 );
 
@@ -188,23 +188,35 @@ export const PxPaste: React.FC<PixelIconProps> = (p) => (
 
 export const PxUndo: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Thick Sweeping Undo Arrow */}
-    <path d="M2 5h2v1H2V5zM4 4h1v1H4V4zM5 3h2v1H5V3zM7 2h5v1H7V2z" />
-    <path d="M12 3h1v1h1v1h1v4h-1v1h-1v1h-5v-1h4v-1h1V7h-1V6H5v1H4v1H3v1H2V5h1v-1h1v-1z" />
-    <path d="M7 3h5v1H7V3zM12 4h1v1h-7V4h6z" fill="var(--px-light)" opacity="0.3" />
-    {/* Arrow Head */}
-    <path d="M1 5h4v4H1V5z" />
-    <path d="M2 6h2v1H2V6z" fill="var(--px-light)" opacity="0.5" />
+    {/* Exact JSON Grid Reconstruction */}
+    <path d="M6 1h5v1H6V1z" />
+    <path d="M2 2h1v1H2V2zM5 2h1v1H5V2zM11 2h2v1h-2V2z" />
+    <path d="M2 3h1v1H2V3zM4 3h1v1H4V3zM12 3h2v1h-2V3z" />
+    <path d="M2 4h2v1H2V4zM13 4h1v2h-1v-2z" />
+    <path d="M2 5h4v1H2V5zM14 5h1v5h-1V5z" />
+    <path d="M3 10h1v1H3v-1zM13 10h1v1h-1v-1z" />
+    <path d="M3 11h2v1H3v-1zM12 11h2v1h-2v-1z" />
+    <path d="M4 12h2v1H4v-1zM11 12h2v1h-2v-1z" />
+    <path d="M6 13h5v1H6v-1z" />
+    {/* Highlight for volume */}
+    <path d="M6 1h5v1H6V1zM11 2h2v1h-2V2z" fill="var(--px-light)" opacity="0.3" />
   </Px>
 );
 
 export const PxRedo: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    {/* Thick Sweeping Redo Arrow */}
-    <path d="M12 2h2v1h-2V2zM10 3h2v1h-2V3zM9 4h1v1H9V4zM7 5h2V4H7V2h5v1h1v1h1v5h-1v1h-1v1H9v-1h4v-1h1V7h-1V6H4v1H3v1H2v1h-1V5h1V4h1V3h1V2h3v1h1v1h1v1z" />
-    <path d="M4 3h5v1H4V3zM9 4h1v1H3v-1h6z" fill="var(--px-light)" opacity="0.3" />
-    <path d="M11 5h4v4h-4V5z" />
-    <path d="M12 6h2v1h-2V6z" fill="var(--px-light)" opacity="0.5" />
+    {/* Flipped JSON Grid Reconstruction */}
+    <path d="M5 1h5v1H5V1z" />
+    <path d="M13 2h1v1h-1V2zM10 2h1v1h-1V2zM3 2h2v1H3V2z" />
+    <path d="M13 3h1v1h-1V3zM11 3h1v1h-1V3zM2 3h2v1H2V3z" />
+    <path d="M12 4h2v1h-2V4zM2 4h1v2h-1V4z" />
+    <path d="M10 5h4v1h-4V5zM1 5h1v5H1V5z" />
+    <path d="M12 10h1v1h-1v-1zM2 10h1v1H2v-1z" />
+    <path d="M11 11h2v1h-2v-1zM2 11h2v1H2v-1z" />
+    <path d="M10 12h2v1h-2v-1zM3 12h2v1H3v-1z" />
+    <path d="M5 13h5v1H5v-1z" />
+    {/* Highlight for volume */}
+    <path d="M5 1h5v1H5V1zM3 2h2v1H3V2z" fill="var(--px-light)" opacity="0.3" />
   </Px>
 );
 
@@ -293,10 +305,12 @@ export const PxSun: React.FC<PixelIconProps> = (p) => (
 
 export const PxMoon: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
-    <path d="M6 1h4v1h1v1h1v2h-1V4h-1V3H9v1H8v1H7v1H6V4h-1V3H6V1z" fill="var(--px-light)" opacity="0.2" />
-    <path d="M6 1h3v1h1v1h1v2h-1V4h-1V3H8v1H7v1H6v1H5v4h1v1h1v1h1v1h2v-1h1v-1h1v-1h1v2h-1v1h-1v1H6v-1H5v-1H4v-1H3V5h1V4h1V3h1V1z" />
-    {/* Craters */}
-    <path d="M5 6h2v2H5V6zM8 10h1v1H8v-1z" fill="var(--px-dark)" opacity="0.3" />
+    {/* Clean Crescent Logic */}
+    <path d="M6 1h4v1h1v1h1v2h-1V4h-1V3H9v1H8v1H7v1H6v4h1v1h1v1h1v1h2v-1h1v-1h1v-1h1v2h-1v1h-1v1H6v-1H5v-1H4v-1H3V5h1V4h1V3h1V1z" />
+    {/* Clean shading */}
+    <path d="M6 2h3v1H6V2zM5 5h1v4H5V5z" fill="var(--px-light)" opacity="0.4" />
+    {/* Small Crater */}
+    <path d="M8 10h2v1H8v-1z" fill="var(--px-dark)" opacity="0.3" />
   </Px>
 );
 
