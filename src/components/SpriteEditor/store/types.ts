@@ -23,6 +23,7 @@ export interface SpriteEditorState {
   leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | null;
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
+  projectId?: string;
 
   // Animation generation state
   selectedAnims: string[];
@@ -102,7 +103,12 @@ export interface SpriteEditorState {
   renameLayer: (id: string, name: string) => void;
   mergeLayerDown: (id: string) => void;
   moveLayer: (idx: number, dir: 'up' | 'down') => void;
-  addPropLayer: (propId: string) => void;
+  importAssetLayer: (params: { 
+    name: string; 
+    frame: Frame; 
+    palette: Record<number, string>; 
+    colorNames?: Record<number, string>;
+  }) => void;
 
   changeColor: (key: number, color: string) => void;
   addColor: () => void;
@@ -147,6 +153,7 @@ export interface CreateSpriteEditorStoreOptions {
   generatePrompt?: string;
   onRegenerate?: () => void;
   isGenerating?: boolean;
+  projectId?: string;
 }
 
 export type StoreSlice<T> = (
