@@ -22,6 +22,8 @@ export interface SpriteEditorModalProps {
   onRegenerate?: () => void;
   isGenerating?: boolean;
   projectId?: string;
+  isIconMode?: boolean;
+  iconId?: string;
 }
 
 // Re-export store types for UI components

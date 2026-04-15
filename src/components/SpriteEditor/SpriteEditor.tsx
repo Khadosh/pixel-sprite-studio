@@ -46,6 +46,8 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     onRegenerate,
     isGenerating,
     projectId: props.projectId,
+    isIconMode: props.isIconMode,
+    iconId: props.iconId,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // AI generation bridge
