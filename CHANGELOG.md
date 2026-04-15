@@ -5,8 +5,10 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-15 (Hoy)
-**2 commits realizados**
+**3 commits realizados**
 
+- **Mejoras**: **Rediseño total de Animaciones Predefinidas**. Refactorizamos `Idle`, `Walk`, `Attack`, `Hurt`, `Jump` y `Cast` para usar lógica anatómica.
+- **Mejoras**: Nuevas primitivas de movimiento: `leanBody` (inclinación), `stretchBody` (estiramiento vertical) y `shiftArea` (desplazamientos localizados). Las caminatas ahora cuentan con pies alternados y el combate con inercia real (retroceso/empuje).
 - **Novedad**: Sistema de **Importación de Imágenes**. Permite convertir cualquier archivo (PNG, JPG, WebP) en pixel art editable directamente en el editor.
 - **Novedad**: Implementación de **Segmentación Inteligente (Auto-Detection)**. El motor ahora analiza la silueta de los sprites para detectar automáticamente el cuello y la cintura, mejorando la anatomía de las animaciones generadas.
 - **Mejoras**: Motor de pixelización híbrido con algoritmos de mapeo a paletas fijas (Sprite/Librería) y generación automática via **Median Cut**.

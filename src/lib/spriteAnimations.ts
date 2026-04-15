@@ -4,7 +4,12 @@ import {
   generateIdle,
   generateWalk,
   generateCast,
+  generateAttack,
   generateHurt,
+  generateJump,
+  analyzeBodySegments,
+  leanBody,
+  squash,
   shiftDown,
   shiftRight,
   findBounds,
@@ -136,13 +141,17 @@ export function generateAdvancedCastSequence(
       let nextFrame: Frame;
       
       if (isBase) {
-        // Character recoil logic
-        if (i < 2) { // Buildup: slight squash
-           nextFrame = generateIdle(baseFrame)[1]; 
-        } else if (i < 4) { // Impact: stretch
-           nextFrame = shiftDown(baseFrame, -1); 
-        } else { // Recovery: normal
-           nextFrame = baseFrame.map(r => [...r]);
+        // Character recoil logic using anatomical segments
+        const { neckRow, waistRow } = analyzeBodySegments(baseFrame);
+        
+        if (i < 2) { // Buildup: anticipation lean
+           nextFrame = leanBody(baseFrame, waistRow, neckRow, -1);
+        } else if (i < 4) { // Impact: lunge & thrust
+           let f = leanBody(baseFrame, waistRow, neckRow, 2);
+           f = shiftDown(f, -1); // slight lift
+           nextFrame = f;
+        } else { // Recovery: return/settle
+           nextFrame = squash(baseFrame, [waistRow], undefined, neckRow);
         }
       } else if (isEffect) {
         // Spell effect logic
@@ -266,13 +275,13 @@ function generateFramePair(
     case 'walk':
       return generateWalk(base);
     case 'attack':
-      return [base.map(r => [...r]), shiftRight(base, 1)];
+      return generateAttack(base);
     case 'cast':
       return generateCast(base, glowColor);
     case 'hurt':
       return generateHurt(base);
     case 'jump':
-      return [base.map(r => [...r]), shiftDown(base, -1)];
+      return generateJump(base);
     default:
       return generateIdle(base);
   }

@@ -105,6 +105,95 @@ function squash(frame: Frame, rowsToDrop: number[], colRange?: { start: number, 
 }
 
 /**
+ * Shifts only a specific rectangular area of the frame by dr, dc.
+ */
+export function shiftArea(
+  frame: Frame, 
+  area: { startR: number; endR: number; startC: number; endC: number }, 
+  dr: number, 
+  dc: number
+): Frame {
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  const temp = Array.from({ length: size }, () => Array(size).fill(0));
+
+  // Copy area to temp
+  for (let r = area.startR; r <= area.endR; r++) {
+    for (let c = area.startC; c <= area.endC; c++) {
+      if (r >= 0 && r < size && c >= 0 && c < size) {
+        temp[r][c] = frame[r][c];
+        out[r][c] = 0; // Clear in output
+      }
+    }
+  }
+
+  // Paste shifted area
+  for (let r = area.startR; r <= area.endR; r++) {
+    for (let c = area.startC; c <= area.endC; c++) {
+      const targetR = r + dr;
+      const targetC = c + dc;
+      if (targetR >= 0 && targetR < size && targetC >= 0 && targetC < size) {
+        if (temp[r][c] !== 0) {
+          out[targetR][targetC] = temp[r][c];
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Simulates a vertical "stretch" by duplicating a row.
+ */
+export function stretchBody(frame: Frame, rowToDuplicate: number, topBoundary: number = -1): Frame {
+  const size = frame.length;
+  const out = Array.from({ length: size }, () => Array(size).fill(0));
+  
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      let srcR = r;
+      if (r < rowToDuplicate && r > topBoundary) {
+        srcR = r + 1;
+      }
+      if (srcR >= 0 && srcR < size) {
+        out[r][c] = frame[srcR][c];
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Leans the body by shifting rows horizontally in a tapered way.
+ * Rows at the top (near neck) shift most, rows at the waist stay fixed.
+ */
+export function leanBody(frame: Frame, pivotRow: number, topRow: number, deltaX: number): Frame {
+  const size = frame.length;
+  const out = cloneFrame(frame);
+  
+  const height = Math.abs(pivotRow - topRow) || 1;
+  const start = Math.min(pivotRow, topRow);
+  const end = Math.max(pivotRow, topRow);
+  
+  for (let r = start; r <= end; r++) {
+    const t = (pivotRow - r) / height;
+    const shift = Math.round(t * deltaX);
+    
+    if (shift !== 0) {
+      const newRow = new Array(size).fill(0);
+      for (let c = 0; c < size; c++) {
+        const srcC = c - shift;
+        if (srcC >= 0 && srcC < size) {
+          newRow[c] = frame[r][srcC];
+        }
+      }
+      out[r] = newRow;
+    }
+  }
+  return out;
+}
+
+/**
  * Find the bounding box of all non-zero pixels.
  * Returns { top, bottom, left, right } or null if frame is empty.
  */
@@ -247,7 +336,7 @@ export function analyzeBodySegments(frame: Frame): BodySegments {
 
 // ─── Public animation generators ───
 
-/** Idle: frame0 = base, frame1 = squashed bottom and middle (squash & stretch breathing) */
+/** Idle: frame0 = base, frame1 = squashed body (breathing) */
 export function generateIdle(base: Frame): [Frame, Frame] {
   const bounds = findBounds(base);
   const com = getCenterOfMass(base);
@@ -255,20 +344,19 @@ export function generateIdle(base: Frame): [Frame, Frame] {
 
   const { neckRow, waistRow } = analyzeBodySegments(base);
 
-  // Bottom 3 rows: bounds.bottom, bounds.bottom-1, bounds.bottom-2. Drop middle one.
-  const bottomDrop = bounds.bottom - 1;
-  // Middle row: use the detected waist or center of mass
-  const midDrop = waistRow || Math.floor(com.r);
-
-  // Apply squash (order doesn't strictly matter as long as indices are unique)
-  const rowsToDrop = [bottomDrop, midDrop].filter(r => r > neckRow && r < bounds.bottom);
+  // We squash a row in the torso to simulate breathing
+  const midDrop = Math.floor((neckRow + waistRow) / 2);
+  const rowsToDrop = [midDrop].filter(r => r > neckRow && r < waistRow);
   
-  // Return base and a variant that squashes the body but NOT the head (above neckRow)
-  return [cloneFrame(base), squash(base, rowsToDrop, undefined, neckRow)];
+  // squash only the torso area, leave head (above neckRow) and feet (below waistRow) stable
+  const squashed = squash(base, rowsToDrop, undefined, neckRow);
+  
+  return [cloneFrame(base), squashed];
 }
 
-/** Walk: squash torso and legs one side at a time, keeping the head fixed to avoid distortion */
+/** Walk: alternating feet and stabilized upper body */
 export function generateWalk(base: Frame): [Frame, Frame] {
+  const size = base.length;
   const bounds = findBounds(base);
   const com = getCenterOfMass(base);
   if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
@@ -276,33 +364,69 @@ export function generateWalk(base: Frame): [Frame, Frame] {
   const { neckRow, waistRow } = analyzeBodySegments(base);
   const centerCol = Math.floor(com.c);
   
-  // Identify rows to drop: one in torso (between neck and waist), one in legs (below waist)
-  const midDrop = Math.floor((neckRow + waistRow) / 2);
-  const legDrop = Math.floor((waistRow + bounds.bottom) / 2);
-  
-  // Ensure drops are unique and valid
-  const rowsToDrop = [midDrop, legDrop].filter(r => r > neckRow && r < bounds.bottom);
-  
-  // Split columns into vertical halves
-  const leftHalfRange = { start: bounds.left, end: centerCol };
-  const rightHalfRange = { start: centerCol + 1, end: bounds.right };
+  const leftLegArea = { startR: waistRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
+  const rightLegArea = { startR: waistRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
 
-  // Frame 1: Squash left side torso/legs, anchor head
-  // Frame 2: Squash right side torso/legs, anchor head
-  return [
-    squash(base, rowsToDrop, leftHalfRange, neckRow),
-    squash(base, rowsToDrop, rightHalfRange, neckRow),
-  ];
+  // Frame 1: Left foot stays, Right foot lifts 1px. Slight lean left.
+  let f1 = shiftArea(base, rightLegArea, -1, 0);
+  f1 = leanBody(f1, waistRow, neckRow, -1);
+
+  // Frame 2: Right foot stays, Left foot lifts 1px. Slight lean right.
+  let f2 = shiftArea(base, leftLegArea, -1, 0);
+  f2 = leanBody(f2, waistRow, neckRow, 1);
+  
+  return [f1, f2];
 }
 
-/** Attack/Cast: frame0 = base, frame1 = base with glow effect at weapon tip */
+/** Attack: forward lunge with lean */
+export function generateAttack(base: Frame): [Frame, Frame] {
+  const { neckRow, waistRow } = analyzeBodySegments(base);
+  
+  // Frame 1: Anticipation (slight recoil)
+  const f1 = leanBody(base, waistRow, neckRow, -1);
+  
+  // Frame 2: Lunge forward
+  let f2 = leanBody(base, waistRow, neckRow, 2);
+  // Shift whole body slightly forward
+  f2 = shiftRight(f2, 1);
+  
+  return [f1, f2];
+}
+
+/** Attack/Cast: frame0 = base, frame1 = base with lean and glow effect */
 export function generateCast(base: Frame, glowColor: number): [Frame, Frame] {
-  return [cloneFrame(base), addGlow(base, glowColor)];
+  const { neckRow, waistRow } = analyzeBodySegments(base);
+  // Lean back during charging
+  const lean = leanBody(base, waistRow, neckRow, -1);
+  return [cloneFrame(base), addGlow(lean, glowColor)];
 }
 
-/** Hurt: frame0 = shifted 1px right, frame1 = shifted 2px right (knockback) */
+/** Hurt: recoil lean backward + squash */
 export function generateHurt(base: Frame): [Frame, Frame] {
-  return [shiftRight(base, 1), shiftRight(base, 2)];
+  const { neckRow, waistRow } = analyzeBodySegments(base);
+  const bounds = findBounds(base);
+  
+  // Recoil
+  let f1 = leanBody(base, waistRow, neckRow, -2);
+  f1 = shiftRight(f1, 1);
+  
+  // Collapse impact
+  let f2 = leanBody(base, waistRow, neckRow, -3);
+  if (bounds) {
+    f2 = squash(f2, [bounds.bottom - 1], undefined, waistRow);
+  }
+  
+  return [f1, f2];
+}
+
+/** Jump: stretch on jump, normal base */
+export function generateJump(base: Frame): [Frame, Frame] {
+  const { neckRow, waistRow } = analyzeBodySegments(base);
+  
+  // Jump frame: vertical stretch in torso
+  const f2 = stretchBody(base, Math.floor((neckRow + waistRow) / 2), neckRow);
+  
+  return [cloneFrame(base), f2];
 }
 /** Flip horizontal */
 export function flipHorizontal(frame: Frame): Frame {
