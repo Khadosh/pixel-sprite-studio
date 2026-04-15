@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { PxEdit, PxSparkles, PxDownload, PxSave, PxImage, PxFileVideo, PxHardDrive, PxChevronLeft } from '@/components/icons/PixelIcon';
+import { PxEdit, PxSparkles, PxDownload, PxSave, PxImage, PxFileVideo, PxHardDrive, PxChevronLeft, PxUpload } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
+import { ImportImageModal } from './ImportImageModal';
 
 export const EditorHeader = React.memo(() => {
   const assetName = useSpriteEditorStore(s => s.assetName);
@@ -29,6 +30,8 @@ export const EditorHeader = React.memo(() => {
   const isDirty = useSpriteEditorStore(s => s.isDirty);
   const isIconMode = useSpriteEditorStore(s => s.isIconMode);
   const handleExportIcon = useSpriteEditorStore(s => s.handleExportIcon);
+
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const isLocalhost = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -92,6 +95,18 @@ export const EditorHeader = React.memo(() => {
         )}
 
         <div className="flex items-center gap-2">
+          {/* Import button */}
+          {!isIconMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
+              onClick={() => setShowImportModal(true)}
+            >
+              <PxUpload size={15} className="mr-2" />
+              IMPORTAR
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -157,6 +172,9 @@ export const EditorHeader = React.memo(() => {
           )}
         </div>
       </div>
+
+      {/* Import Image Modal */}
+      <ImportImageModal open={showImportModal} onOpenChange={setShowImportModal} />
     </DialogHeader>
   );
 });

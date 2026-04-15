@@ -4,7 +4,17 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-11 (Hoy)
+## 2026-04-15 (Hoy)
+**1 commit realizado**
+
+- **Novedad**: Sistema de **Importación de Imágenes**. Permite convertir cualquier archivo (PNG, JPG, WebP) en pixel art editable directamente en el editor.
+- **Mejoras**: Motor de pixelización híbrido con algoritmos de mapeo a paletas fijas (Sprite/Librería) y generación automática via **Median Cut**.
+- **Interfaz**: Nuevo modal de importación con previsualización interactiva (drag/zoom), detector de frames vacíos y advertencias de seguridad.
+- **Iconografía**: Agregado icono de **Upload** (`PxUpload`) al sistema de iconos pixel-art.
+
+---
+
+## 2026-04-11
 **8 commits realizados**
 
 - **Fix**: Corregido bug que causaba que el Icon Studio se abriera con el canvas vacío debido a colisiones de persistencia en el `localStorage`.

@@ -597,3 +597,13 @@ export const PxLogOut: React.FC<PixelIconProps> = (p) => (
     <path d="M8 7h5V5h1v1h1v1h1v2h-1v1h-1v1h-1V9H8V7z" />
   </Px>
 );
+
+export const PxUpload: React.FC<PixelIconProps> = (p) => (
+  <Px {...p}>
+    {/* Arrow pointing up */}
+    <path d="M7 4h2v6h3v1h-1v-1H9v-1H7v1H5v1H4v-1h3V4zM6 5H5V4H4v1h1v1h1V5zM10 5h1v1h1V5h-1V4h-1v1z" />
+    <path d="M7 1h2v1h1v1h1v1h-1V3H9V2H7v1H6v1H5V3h1V2h1V1z" />
+    {/* Base tray */}
+    <path d="M3 13h10v2H3v-2z" />
+  </Px>
+);
