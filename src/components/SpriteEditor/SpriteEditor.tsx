@@ -12,6 +12,7 @@ import { EditorHeader } from './components/EditorHeader';
 import { LayersList } from './components/LayersList';
 import { PaletteSection } from './components/PaletteSection';
 import { MetadataPanel } from './components/MetadataPanel';
+import { AnatomyPanel } from './components/AnatomyPanel';
 import { AnimationLibrary } from './components/AnimationLibrary';
 import { TimelineStrip } from './components/Timeline/TimelineStrip';
 import { AnimationPreviewPanel, AnimationPreviewPanelHandle } from './components/AnimationPreviewPanel';
@@ -261,6 +262,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                       selectionRect={pixelEditor.selectionRect}
                       movingSelectionPixels={pixelEditor.movingSelectionPixels}
                       canvasBg={canvasBg}
+                      leftSidebarTab={leftSidebarTab}
                     />
                     <ZoomControl />
                   </div>
@@ -278,6 +280,9 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                       )}
                       {leftSidebarTab === 'animations' && (
                         <AnimationLibrary />
+                      )}
+                      {leftSidebarTab === 'anatomy' && (
+                        <AnatomyPanel />
                       )}
                       {leftSidebarTab === 'themes' && (
                         <PaletteLibrary />

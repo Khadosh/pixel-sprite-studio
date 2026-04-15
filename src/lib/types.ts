@@ -52,9 +52,16 @@ export interface SpriteAsset {
   layers?: SpriteLayer[];
 
   /** Animation definitions. Empty array = static asset (single frame). */
-  animations: AnimationDef[];
+  刻animations: AnimationDef[];
   /** Optional tags for search/filtering */
   tags?: string[];
+  /** Manual anatomical markers (Bones) for procedural animation overrides */
+  anatomy?: {
+    neckRow?: number;
+    waistRow?: number;
+    torsoLeft?: number;
+    torsoRight?: number;
+  };
 }
 
 /** Configuration for advanced procedural cast animations */

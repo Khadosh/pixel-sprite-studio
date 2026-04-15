@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
-import { rotateFrameFree } from '@/lib/spriteTransforms';
+import { rotateFrameFree, analyzeBodySegments } from '@/lib/spriteTransforms';
 
 const BASE_PIXEL_SCALE = 16;
 const GRID_COLOR = 'rgba(255, 255, 255, 0.03)';
@@ -26,6 +26,7 @@ interface SpritePixelEditorProps {
   selectionRect?: { r: number; c: number; w: number; h: number } | null;
   movingSelectionPixels?: number[][] | null;
   canvasBg: 'light' | 'dark';
+  leftSidebarTab?: string | null;
 }
 
 export default function SpritePixelEditor({
@@ -46,6 +47,7 @@ export default function SpritePixelEditor({
   selectionRect,
   movingSelectionPixels,
   canvasBg,
+  leftSidebarTab,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
@@ -210,6 +212,46 @@ export default function SpritePixelEditor({
       ctx.moveTo(0, i * PIXEL_SCALE);
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
+    }
+
+    // grid lines... (rest of the code)
+    
+    // ─── ANATOMICAL BONES VISUALIZATION ───
+    // We only show these if the "BONES" tab is active and it's a character
+    if (asset.category === 'character' && leftSidebarTab === 'anatomy') {
+      const compositeFrame = asset.layers?.[0]?.frames[frameIndex];
+      if (compositeFrame) {
+        const { neckRow, waistRow, torsoLeft, torsoRight } = analyzeBodySegments(compositeFrame, asset.anatomy);
+        
+        // Neck line (Sky Blue)
+        ctx.strokeStyle = 'rgba(135, 206, 235, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, neckRow * PIXEL_SCALE + PIXEL_SCALE / 2);
+        ctx.lineTo(canvasSize, neckRow * PIXEL_SCALE + PIXEL_SCALE / 2);
+        ctx.stroke();
+
+        // Waist line (Coral/Red)
+        ctx.strokeStyle = 'rgba(255, 127, 80, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(0, waistRow * PIXEL_SCALE + PIXEL_SCALE / 2);
+        ctx.lineTo(canvasSize, waistRow * PIXEL_SCALE + PIXEL_SCALE / 2);
+        ctx.stroke();
+
+        // Torso Left line (Amethyst/Purple)
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2, 0);
+        ctx.lineTo(torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2, canvasSize);
+        ctx.stroke();
+
+        // Torso Right line (Orange)
+        ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2, 0);
+        ctx.lineTo(torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2, canvasSize);
+        ctx.stroke();
+      }
     }
 
     // Draw selection rectangle

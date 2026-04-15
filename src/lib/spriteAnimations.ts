@@ -49,7 +49,7 @@ export function generateAnimationsClientSide(
 
     const startIndex = newLayers[0].frames.length;
     newLayers.forEach(layer => {
-      const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor);
+      const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor, currentAsset.anatomy);
       layer.frames.push(f0, f1);
     });
 
@@ -268,20 +268,21 @@ function generateFramePair(
   base: number[][],
   anim: string,
   glowColor: number,
+  anatomy?: { neckRow?: number; waistRow?: number }
 ): [number[][], number[][]] {
   switch (anim) {
     case 'idle':
-      return generateIdle(base);
+      return generateIdle(base, anatomy);
     case 'walk':
-      return generateWalk(base);
+      return generateWalk(base, anatomy);
     case 'attack':
-      return generateAttack(base);
+      return generateAttack(base, anatomy);
     case 'cast':
-      return generateCast(base, glowColor);
+      return generateCast(base, glowColor, anatomy);
     case 'hurt':
-      return generateHurt(base);
+      return generateHurt(base, anatomy);
     case 'jump':
-      return generateJump(base);
+      return generateJump(base, anatomy);
     default:
       return generateIdle(base);
   }

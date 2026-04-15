@@ -1,6 +1,12 @@
 import type { Frame } from '@/lib/types';
 
 type Row = number[];
+export type AnatomyConfig = {
+  neckRow?: number;
+  waistRow?: number;
+  torsoLeft?: number;
+  torsoRight?: number;
+};
 
 /** Deep clone a frame */
 function cloneFrame(frame: Frame): Frame {
@@ -66,7 +72,7 @@ function shiftRowsHorizontal(frame: Frame, startRow: number, endRow: number, px:
  * @param colRange Optional range of columns to restrict the effect to
  * @param topBoundary Optional row index above which NO shifting or clearing occurs
  */
-function squash(frame: Frame, rowsToDrop: number[], colRange?: { start: number, end: number }, topBoundary: number = -1): Frame {
+export function squash(frame: Frame, rowsToDrop: number[], colRange?: { start: number, end: number }, topBoundary: number = -1): Frame {
   const size = frame.length;
   const out = cloneFrame(frame);
   
@@ -267,13 +273,20 @@ interface BodySegments {
   headEndRow: number;
   torsoEndRow: number;
   isHumanoid: boolean;
+  torsoLeft: number;
+  torsoRight: number;
+  leftArmArea?: { startR: number; endR: number; startC: number; endC: number };
+  rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
 }
 
 /**
- * Analyzes the horizontal silhuette of the sprite to detect anatomical points.
- * Uses a Horizontal Projection Profile (pixel count per row).
+ * Analyzes a frame to find key anatomical landmarks (neck, waist, limbs).
+ * Values are row indices in the frame grid.
  */
-export function analyzeBodySegments(frame: Frame): BodySegments {
+export function analyzeBodySegments(
+  frame: Frame, 
+  anatomy?: AnatomyConfig
+): BodySegments {
   const size = frame.length;
   const bounds = findBounds(frame);
   const com = getCenterOfMass(frame);
@@ -283,66 +296,127 @@ export function analyzeBodySegments(frame: Frame): BodySegments {
   const defaultNeck = bounds ? Math.floor(bounds.top + bodyHeight * 0.35) : Math.floor(size * 0.35);
   const defaultWaist = bounds ? Math.floor(bounds.top + bodyHeight * 0.7) : Math.floor(size * 0.7);
 
+  // Manual Overrides
+  let neckRow = anatomy?.neckRow ?? defaultNeck;
+  let waistRow = anatomy?.waistRow ?? defaultWaist;
+
   if (!bounds || !com) {
     return { 
-      neckRow: defaultNeck, 
-      waistRow: defaultWaist, 
-      headEndRow: defaultNeck, 
-      torsoEndRow: defaultWaist, 
-      isHumanoid: false 
+      neckRow, 
+      waistRow, 
+      headEndRow: neckRow, 
+      torsoEndRow: waistRow, 
+      isHumanoid: false,
+      torsoLeft: 0,
+      torsoRight: size - 1
     };
   }
 
   // 1. Calculate horizontal profile (pixel count per row)
   const profile = frame.map(row => row.filter(p => p !== 0).length);
-
-  // 2. Find Neck (Local minimum between top and center of mass)
-  // We look for a row thinner than its neighbors, or the thinnest in a range.
-  let neckRow = defaultNeck;
   let minWidth = size;
-  
-  // Scan from top+2 to center of mass
-  for (let r = bounds.top + 1; r <= Math.floor(com.r); r++) {
-    if (profile[r] > 0 && profile[r] < minWidth) {
-      minWidth = profile[r];
-      neckRow = r;
+
+  // 2. Find Neck (only if not manually overridden)
+  if (anatomy?.neckRow === undefined) {
+    const searchStart = bounds.top + Math.floor(bodyHeight * 0.15);
+    const searchEnd = Math.floor(com.r);
+    
+    for (let r = searchStart; r <= searchEnd; r++) {
+      if (profile[r] > 0 && profile[r] <= minWidth) {
+        minWidth = profile[r];
+        neckRow = r;
+      }
     }
   }
 
-  // 3. Find Waist (Local minimum below center of mass)
-  let waistRow = defaultWaist;
-  minWidth = size;
-  for (let r = Math.floor(com.r); r < bounds.bottom; r++) {
-    if (profile[r] > 0 && profile[r] <= minWidth) {
-      minWidth = profile[r];
-      waistRow = r;
+  // 3. Find Waist (only if not manually overridden)
+  if (anatomy?.waistRow === undefined) {
+    minWidth = size;
+    for (let r = Math.floor(com.r); r < bounds.bottom; r++) {
+      if (profile[r] > 0 && profile[r] <= minWidth) {
+        minWidth = profile[r];
+        waistRow = r;
+      }
     }
   }
 
-  // 4. Validate if it looks humanoid
-  // A humanoid usually has a "dip" for the neck. If the neck width is >= 90% of max width,
-  // it might just be a block (non-humanoid).
+  // 4. Find Torso Horizontal Span (to identify arms)
+  let leftLimit = anatomy?.torsoLeft;
+  let rightLimit = anatomy?.torsoRight;
+
+  if (leftLimit === undefined || rightLimit === undefined) {
+    const torsoRows = frame.slice(neckRow, waistRow + 1);
+    const verticalTorsoProfile = new Array(size).fill(0);
+    
+    torsoRows.forEach(row => {
+      row.forEach((p, c) => { if (p !== 0) verticalTorsoProfile[c]++; });
+    });
+
+    const maxTorsoDensity = Math.max(...verticalTorsoProfile);
+    const coreThreshold = Math.max(1, Math.floor(maxTorsoDensity * 0.5));
+
+    // Find the WIDEST contiguous span of columns that meet the threshold
+    let bestStart = 0;
+    let bestEnd = 0;
+    let currentStart = -1;
+
+    for (let c = 0; c < size; c++) {
+      if (verticalTorsoProfile[c] >= coreThreshold) {
+        if (currentStart === -1) currentStart = c;
+        if (c - currentStart > bestEnd - bestStart) {
+          bestStart = currentStart;
+          bestEnd = c;
+        }
+      } else {
+        currentStart = -1;
+      }
+    }
+    
+    if (leftLimit === undefined) leftLimit = bestStart;
+    if (rightLimit === undefined) rightLimit = bestEnd;
+  }
+
+  // 5. Identify Limbs (Arms are any pixels outside this high-density core)
+  const hasLeftArm = bounds.left < leftLimit;
+  const hasRightArm = bounds.right > rightLimit;
+
   const maxWidth = Math.max(...profile);
-  const isHumanoid = profile[neckRow] < maxWidth * 0.9;
 
   return {
     neckRow,
     waistRow,
     headEndRow: neckRow,
     torsoEndRow: waistRow,
-    isHumanoid
+    isHumanoid: profile[neckRow] < maxWidth * 0.9,
+    torsoLeft: leftLimit,
+    torsoRight: rightLimit,
+    leftArmArea: hasLeftArm ? { 
+      startR: neckRow, 
+      endR: bounds.bottom, 
+      startC: bounds.left, 
+      endC: leftLimit - 1 
+    } : undefined,
+    rightArmArea: hasRightArm ? { 
+      startR: neckRow, 
+      endR: bounds.bottom, 
+      startC: rightLimit + 1, 
+      endC: bounds.right 
+    } : undefined
   };
 }
 
 // ─── Public animation generators ───
 
 /** Idle: frame0 = base, frame1 = squashed body (breathing) */
-export function generateIdle(base: Frame): [Frame, Frame] {
+export function generateIdle(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): [Frame, Frame] {
   const bounds = findBounds(base);
   const com = getCenterOfMass(base);
   if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
 
-  const { neckRow, waistRow } = analyzeBodySegments(base);
+  const { neckRow, waistRow } = analyzeBodySegments(base, anatomy);
 
   // We squash a row in the torso to simulate breathing
   const midDrop = Math.floor((neckRow + waistRow) / 2);
@@ -354,56 +428,88 @@ export function generateIdle(base: Frame): [Frame, Frame] {
   return [cloneFrame(base), squashed];
 }
 
-/** Walk: alternating feet and stabilized upper body */
-export function generateWalk(base: Frame): [Frame, Frame] {
+/** Walk: alternating feet and stabilized upper body with arm swing */
+export function generateWalk(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): [Frame, Frame] {
   const size = base.length;
   const bounds = findBounds(base);
   const com = getCenterOfMass(base);
   if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
 
-  const { neckRow, waistRow } = analyzeBodySegments(base);
+  const segments = analyzeBodySegments(base, anatomy);
+  const { neckRow, waistRow, leftArmArea, rightArmArea } = segments;
   const centerCol = Math.floor(com.c);
   
   const leftLegArea = { startR: waistRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
   const rightLegArea = { startR: waistRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
 
-  // Frame 1: Left foot stays, Right foot lifts 1px. Slight lean left.
+  // Frame 1: Left foot stays, Right foot lifts 1px. 
+  // Arm swing: Left arm lifts, Right arm drops (opposition)
   let f1 = shiftArea(base, rightLegArea, -1, 0);
+  if (leftArmArea) f1 = shiftArea(f1, leftArmArea, -1, 0);
+  if (rightArmArea) f1 = shiftArea(f1, rightArmArea, 1, 0);
   f1 = leanBody(f1, waistRow, neckRow, -1);
 
-  // Frame 2: Right foot stays, Left foot lifts 1px. Slight lean right.
+  // Frame 2: Right foot stays, Left foot lifts 1px.
+  // Arm swing: Right arm lifts, Left arm drops
   let f2 = shiftArea(base, leftLegArea, -1, 0);
+  if (rightArmArea) f2 = shiftArea(f2, rightArmArea, -1, 0);
+  if (leftArmArea) f2 = shiftArea(f2, leftArmArea, 1, 0);
   f2 = leanBody(f2, waistRow, neckRow, 1);
   
   return [f1, f2];
 }
 
-/** Attack: forward lunge with lean */
-export function generateAttack(base: Frame): [Frame, Frame] {
-  const { neckRow, waistRow } = analyzeBodySegments(base);
+/** Attack: forward lunge with arm extension */
+export function generateAttack(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): [Frame, Frame] {
+  const segments = analyzeBodySegments(base, anatomy);
+  const { neckRow, waistRow, rightArmArea } = segments;
   
   // Frame 1: Anticipation (slight recoil)
   const f1 = leanBody(base, waistRow, neckRow, -1);
   
-  // Frame 2: Lunge forward
+  // Frame 2: Lunge forward + Arm extension
   let f2 = leanBody(base, waistRow, neckRow, 2);
+  // If we find a right arm, extend it specifically
+  if (rightArmArea) {
+    f2 = shiftArea(f2, rightArmArea, 0, 1);
+  }
   // Shift whole body slightly forward
   f2 = shiftRight(f2, 1);
   
   return [f1, f2];
 }
 
-/** Attack/Cast: frame0 = base, frame1 = base with lean and glow effect */
-export function generateCast(base: Frame, glowColor: number): [Frame, Frame] {
-  const { neckRow, waistRow } = analyzeBodySegments(base);
+/** Attack/Cast: frame0 = base, frame1 = base with lean, arm elevation, and glow */
+export function generateCast(
+  base: Frame, 
+  glowColor: number, 
+  anatomy?: AnatomyConfig
+): [Frame, Frame] {
+  const segments = analyzeBodySegments(base, anatomy);
+  const { neckRow, waistRow, leftArmArea, rightArmArea } = segments;
+  
   // Lean back during charging
-  const lean = leanBody(base, waistRow, neckRow, -1);
+  let lean = leanBody(base, waistRow, neckRow, -1);
+  
+  // Lift arms during prep
+  if (leftArmArea) lean = shiftArea(lean, leftArmArea, -1, 0);
+  if (rightArmArea) lean = shiftArea(lean, rightArmArea, -1, 0);
+  
   return [cloneFrame(base), addGlow(lean, glowColor)];
 }
 
 /** Hurt: recoil lean backward + squash */
-export function generateHurt(base: Frame): [Frame, Frame] {
-  const { neckRow, waistRow } = analyzeBodySegments(base);
+export function generateHurt(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): [Frame, Frame] {
+  const { neckRow, waistRow } = analyzeBodySegments(base, anatomy);
   const bounds = findBounds(base);
   
   // Recoil
@@ -419,14 +525,26 @@ export function generateHurt(base: Frame): [Frame, Frame] {
   return [f1, f2];
 }
 
-/** Jump: stretch on jump, normal base */
-export function generateJump(base: Frame): [Frame, Frame] {
-  const { neckRow, waistRow } = analyzeBodySegments(base);
+/** Jump: Frame 1 = Squash (prep), Frame 2 = Fly (whole body shift) */
+export function generateJump(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): [Frame, Frame] {
+  const bounds = findBounds(base);
+  const segments = analyzeBodySegments(base, anatomy);
+  const { waistRow } = segments;
   
-  // Jump frame: vertical stretch in torso
-  const f2 = stretchBody(base, Math.floor((neckRow + waistRow) / 2), neckRow);
+  if (!bounds) return [cloneFrame(base), cloneFrame(base)];
+
+  // Frame 1: Prep (Squash lower half)
+  const f1 = squash(base, [bounds.bottom - 1], undefined, waistRow);
   
-  return [cloneFrame(base), f2];
+  // Frame 2: In the air! Shift EVERYTHING above bottom 1-2px up.
+  // We shift the whole character (core + limbs + head)
+  const flyArea = { startR: bounds.top, endR: bounds.bottom, startC: 0, endC: base.length - 1 };
+  const f2 = shiftArea(base, flyArea, -2, 0);
+  
+  return [f1, f2];
 }
 /** Flip horizontal */
 export function flipHorizontal(frame: Frame): Frame {
