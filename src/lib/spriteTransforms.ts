@@ -172,6 +172,79 @@ function addGlow(frame: Frame, glowColor: number): Frame {
   return out;
 }
 
+interface BodySegments {
+  neckRow: number;
+  waistRow: number;
+  headEndRow: number;
+  torsoEndRow: number;
+  isHumanoid: boolean;
+}
+
+/**
+ * Analyzes the horizontal silhuette of the sprite to detect anatomical points.
+ * Uses a Horizontal Projection Profile (pixel count per row).
+ */
+export function analyzeBodySegments(frame: Frame): BodySegments {
+  const size = frame.length;
+  const bounds = findBounds(frame);
+  const com = getCenterOfMass(frame);
+  
+  // Default values based on proportions (fallback)
+  const bodyHeight = bounds ? (bounds.bottom - bounds.top + 1) : size;
+  const defaultNeck = bounds ? Math.floor(bounds.top + bodyHeight * 0.35) : Math.floor(size * 0.35);
+  const defaultWaist = bounds ? Math.floor(bounds.top + bodyHeight * 0.7) : Math.floor(size * 0.7);
+
+  if (!bounds || !com) {
+    return { 
+      neckRow: defaultNeck, 
+      waistRow: defaultWaist, 
+      headEndRow: defaultNeck, 
+      torsoEndRow: defaultWaist, 
+      isHumanoid: false 
+    };
+  }
+
+  // 1. Calculate horizontal profile (pixel count per row)
+  const profile = frame.map(row => row.filter(p => p !== 0).length);
+
+  // 2. Find Neck (Local minimum between top and center of mass)
+  // We look for a row thinner than its neighbors, or the thinnest in a range.
+  let neckRow = defaultNeck;
+  let minWidth = size;
+  
+  // Scan from top+2 to center of mass
+  for (let r = bounds.top + 1; r <= Math.floor(com.r); r++) {
+    if (profile[r] > 0 && profile[r] < minWidth) {
+      minWidth = profile[r];
+      neckRow = r;
+    }
+  }
+
+  // 3. Find Waist (Local minimum below center of mass)
+  let waistRow = defaultWaist;
+  minWidth = size;
+  for (let r = Math.floor(com.r); r < bounds.bottom; r++) {
+    if (profile[r] > 0 && profile[r] <= minWidth) {
+      minWidth = profile[r];
+      waistRow = r;
+    }
+  }
+
+  // 4. Validate if it looks humanoid
+  // A humanoid usually has a "dip" for the neck. If the neck width is >= 90% of max width,
+  // it might just be a block (non-humanoid).
+  const maxWidth = Math.max(...profile);
+  const isHumanoid = profile[neckRow] < maxWidth * 0.9;
+
+  return {
+    neckRow,
+    waistRow,
+    headEndRow: neckRow,
+    torsoEndRow: waistRow,
+    isHumanoid
+  };
+}
+
 // ─── Public animation generators ───
 
 /** Idle: frame0 = base, frame1 = squashed bottom and middle (squash & stretch breathing) */
@@ -180,15 +253,18 @@ export function generateIdle(base: Frame): [Frame, Frame] {
   const com = getCenterOfMass(base);
   if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
 
+  const { neckRow, waistRow } = analyzeBodySegments(base);
+
   // Bottom 3 rows: bounds.bottom, bounds.bottom-1, bounds.bottom-2. Drop middle one.
   const bottomDrop = bounds.bottom - 1;
-  // Middle row: around center of mass r
-  const midDrop = Math.floor(com.r);
+  // Middle row: use the detected waist or center of mass
+  const midDrop = waistRow || Math.floor(com.r);
 
   // Apply squash (order doesn't strictly matter as long as indices are unique)
-  const rowsToDrop = [bottomDrop, midDrop].filter(r => r > bounds.top && r < bounds.bottom);
+  const rowsToDrop = [bottomDrop, midDrop].filter(r => r > neckRow && r < bounds.bottom);
   
-  return [cloneFrame(base), squash(base, rowsToDrop)];
+  // Return base and a variant that squashes the body but NOT the head (above neckRow)
+  return [cloneFrame(base), squash(base, rowsToDrop, undefined, neckRow)];
 }
 
 /** Walk: squash torso and legs one side at a time, keeping the head fixed to avoid distortion */
@@ -197,19 +273,15 @@ export function generateWalk(base: Frame): [Frame, Frame] {
   const com = getCenterOfMass(base);
   if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
 
+  const { neckRow, waistRow } = analyzeBodySegments(base);
   const centerCol = Math.floor(com.c);
-  const bodyHeight = bounds.bottom - bounds.top + 1;
   
-  // Divide into 3 vertical bands
-  const headEndRow = Math.floor(bounds.top + bodyHeight * 0.35);
-  const torsoEndRow = Math.floor(bounds.top + bodyHeight * 0.7);
-
-  // Identify rows to drop: one in torso, one in legs
-  const midDrop = Math.floor((headEndRow + torsoEndRow) / 2);
-  const legDrop = Math.floor((torsoEndRow + bounds.bottom) / 2);
+  // Identify rows to drop: one in torso (between neck and waist), one in legs (below waist)
+  const midDrop = Math.floor((neckRow + waistRow) / 2);
+  const legDrop = Math.floor((waistRow + bounds.bottom) / 2);
   
   // Ensure drops are unique and valid
-  const rowsToDrop = [midDrop, legDrop].filter(r => r > headEndRow && r < bounds.bottom);
+  const rowsToDrop = [midDrop, legDrop].filter(r => r > neckRow && r < bounds.bottom);
   
   // Split columns into vertical halves
   const leftHalfRange = { start: bounds.left, end: centerCol };
@@ -218,8 +290,8 @@ export function generateWalk(base: Frame): [Frame, Frame] {
   // Frame 1: Squash left side torso/legs, anchor head
   // Frame 2: Squash right side torso/legs, anchor head
   return [
-    squash(base, rowsToDrop, leftHalfRange, headEndRow),
-    squash(base, rowsToDrop, rightHalfRange, headEndRow),
+    squash(base, rowsToDrop, leftHalfRange, neckRow),
+    squash(base, rowsToDrop, rightHalfRange, neckRow),
   ];
 }
 
