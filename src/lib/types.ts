@@ -52,7 +52,7 @@ export interface SpriteAsset {
   layers?: SpriteLayer[];
 
   /** Animation definitions. Empty array = static asset (single frame). */
-  刻animations: AnimationDef[];
+  animations: AnimationDef[];
   /** Optional tags for search/filtering */
   tags?: string[];
   /** Manual anatomical markers (Bones) for procedural animation overrides */

@@ -27,14 +27,15 @@ import {
  */
 export function generateAnimationsClientSide(
   asset: SpriteAsset,
-  animationNames: string[],
+  animationTypes: string[],
   castSettings?: AdvancedCastSettings,
+  options?: { customName?: string; customLabel?: string }
 ): SpriteAsset {
   let currentAsset = ensureLayerSupport(asset);
 
-  for (const animName of animationNames) {
-    if (animName === 'cast' && castSettings) {
-      currentAsset = generateAdvancedCastSequence(currentAsset, castSettings);
+  for (const type of animationTypes) {
+    if (type === 'cast' && castSettings) {
+      currentAsset = generateAdvancedCastSequence(currentAsset, castSettings, options);
       continue;
     }
 
@@ -49,19 +50,23 @@ export function generateAnimationsClientSide(
 
     const startIndex = newLayers[0].frames.length;
     newLayers.forEach(layer => {
-      const [f0, f1] = generateFramePair(layer.frames[0], animName, glowColor, currentAsset.anatomy);
+      const [f0, f1] = generateFramePair(layer.frames[0], type, glowColor, currentAsset.anatomy);
       layer.frames.push(f0, f1);
     });
 
-    const fps = animName === 'idle' ? 3 : animName === 'cast' ? 4 : 5;
+    // Use custom name/label if provided (primarily for the slice to handle unique names)
+    const finalName = options?.customName || type;
+    const finalLabel = options?.customLabel || type.toUpperCase();
+
+    const fps = type === 'idle' ? 3 : type === 'cast' ? 4 : 5;
     const newAnimDef: AnimationDef = {
-      name: animName,
-      label: animName.toUpperCase(),
+      name: finalName,
+      label: finalLabel,
       frameIndices: [startIndex, startIndex + 1, startIndex, startIndex + 1],
       fps,
     };
 
-    const existingIdx = currentAsset.animations.findIndex(a => a.name === animName);
+    const existingIdx = currentAsset.animations.findIndex((a: AnimationDef) => a.name === finalName);
     const newAnimations = [...currentAsset.animations];
     if (existingIdx >= 0) {
       newAnimations[existingIdx] = newAnimDef;
@@ -80,7 +85,8 @@ export function generateAnimationsClientSide(
  */
 export function generateAdvancedCastSequence(
   asset: SpriteAsset,
-  settings: AdvancedCastSettings
+  settings: AdvancedCastSettings,
+  options?: { customName?: string; customLabel?: string }
 ): SpriteAsset {
   const size = asset.size;
   const layers = [...asset.layers!];
@@ -197,15 +203,18 @@ export function generateAdvancedCastSequence(
     });
   }
 
+  const finalName = options?.customName || 'cast';
+  const finalLabel = options?.customLabel || 'CAST';
+
   const newAnimDef: AnimationDef = {
-    name: 'cast',
-    label: 'CAST',
+    name: finalName,
+    label: finalLabel,
     frameIndices: Array.from({ length: 6 }, (_, i) => startIndex + i),
     fps: 8,
   };
 
   const animations = [...updatedAsset.animations];
-  const existingIdx = animations.findIndex(a => a.name === 'cast');
+  const existingIdx = animations.findIndex((a: AnimationDef) => a.name === finalName);
   if (existingIdx >= 0) animations[existingIdx] = newAnimDef;
   else animations.push(newAnimDef);
 
@@ -365,9 +374,9 @@ export function duplicateFrameInAllLayers(asset: SpriteAsset, targetIdx: number)
     return { ...layer, frames: newFrames };
   });
 
-  const newAnimations = asset.animations.map(anim => ({
+  const newAnimations = asset.animations.map((anim: AnimationDef) => ({
     ...anim,
-    frameIndices: anim.frameIndices.flatMap(oldIdx => {
+    frameIndices: anim.frameIndices.flatMap((oldIdx: number) => {
       if (oldIdx === targetIdx) return [oldIdx, targetIdx + 1];
       return oldIdx > targetIdx ? oldIdx + 1 : oldIdx;
     })
@@ -412,11 +421,11 @@ export function removeFrameFromAllLayers(asset: SpriteAsset, targetIdx: number):
     return { ...layer, frames: newFrames };
   });
 
-  const newAnimations = asset.animations.map(anim => {
-    const validIndices = anim.frameIndices.filter(oldIdx => oldIdx !== targetIdx);
+  const newAnimations = asset.animations.map((anim: AnimationDef) => {
+    const validIndices = anim.frameIndices.filter((oldIdx: number) => oldIdx !== targetIdx);
     return {
       ...anim,
-      frameIndices: validIndices.map(oldIdx => oldIdx > targetIdx ? oldIdx - 1 : oldIdx)
+      frameIndices: validIndices.map((oldIdx: number) => oldIdx > targetIdx ? oldIdx - 1 : oldIdx)
     };
   });
 
@@ -439,9 +448,9 @@ export function moveFrame(asset: SpriteAsset, fromIdx: number, toIdx: number): S
     return { ...layer, frames: newFrames };
   });
 
-  const newAnimations = asset.animations.map(anim => ({
+  const newAnimations = asset.animations.map((anim: AnimationDef) => ({
     ...anim,
-    frameIndices: anim.frameIndices.map(oldIdx => {
+    frameIndices: anim.frameIndices.map((oldIdx: number) => {
       if (oldIdx === fromIdx) return toIdx;
       if (fromIdx > toIdx) { // Moved left
         if (oldIdx >= toIdx && oldIdx < fromIdx) return oldIdx + 1;

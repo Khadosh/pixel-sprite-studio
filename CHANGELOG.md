@@ -4,7 +4,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-15 (Hoy)
+## 2026-04-19 (Hoy)
+**1 commit realizado**
+
+- **Novedad**: Implementación de **Recolección de Basura (Garbage Collection)** para frames orquestada por `cleanupOrphanedFrames`. Los píxeles no utilizados se eliminan automáticamente al borrar animaciones.
+- **Mejora**: Soporte para **Nombres y Labels personalizados** en el motor de generación procedural para evitar colisiones.
+- **Fix**: Corregido typo estructural en la interfaz `SpriteAsset`.
+
+---
+
+## 2026-04-15
 **5 commits realizados**
 
 - **Novedad**: Sistema de **Anatomía de 4 Segmentos**. Implementado control total de Cuello, Cintura y Ancho de Torso con guías visuales inteligentes que solo aparecen en la pestaña **BONES**.

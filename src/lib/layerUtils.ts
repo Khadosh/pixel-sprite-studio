@@ -297,3 +297,48 @@ export function mergeLayerDown(asset: SpriteAsset, layerId: string): SpriteAsset
     layers: newLayers
   };
 }
+/**
+ * Removes pixels (frames) that are not referenced by any animation.
+ * Adjusts all animation frameIndices to point to the new correct indexes.
+ * Frame 0 (the base/rest frame) is ALWAYS preserved.
+ */
+export function cleanupOrphanedFrames(asset: SpriteAsset): SpriteAsset {
+  if (!asset.layers || asset.layers.length === 0) return asset;
+
+  // 1. Gather all unique indices used by animations
+  // ALWAYS include index 0 as it's the base pose
+  const usedIndicesSet = new Set<number>([0]);
+  asset.animations.forEach(anim => {
+    anim.frameIndices.forEach(idx => usedIndicesSet.add(idx));
+  });
+
+  // Sort used indices to maintain relative order
+  const usedIndicesSorted = Array.from(usedIndicesSet).sort((a, b) => a - b);
+  
+  // 2. Map old indices to new indices
+  const indexMap = new Map<number, number>();
+  usedIndicesSorted.forEach((oldIdx, newIdx) => {
+    indexMap.set(oldIdx, newIdx);
+  });
+
+  // 3. Rebuild layers with only used frames
+  const newLayers = asset.layers.map(layer => ({
+    ...layer,
+    frames: usedIndicesSorted.map(oldIdx => {
+      // If the old index is out of bounds (shouldn't happen but safe-guard), return empty
+      return layer.frames[oldIdx] || Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+    })
+  }));
+
+  // 4. Update animation definitions to use new indices
+  const newAnimations = asset.animations.map(anim => ({
+    ...anim,
+    frameIndices: anim.frameIndices.map(oldIdx => indexMap.get(oldIdx) ?? 0)
+  }));
+
+  return {
+    ...asset,
+    layers: newLayers,
+    animations: newAnimations
+  };
+}
