@@ -12,7 +12,7 @@ export function AnatomyPanel() {
   if (!asset) return null;
 
   const anatomy = asset.anatomy || {};
-  const { neckRow, waistRow, torsoLeft, torsoRight } = anatomy;
+  const { neckRow, waistRow, ankleRow, torsoLeft, torsoRight } = anatomy;
 
   const handleUpdate = (updates: Partial<{ neckRow: number; waistRow: number; torsoLeft: number; torsoRight: number } | null>) => {
     const newAnatomy = updates === null ? undefined : { ...anatomy, ...updates };
@@ -40,6 +40,11 @@ export function AnatomyPanel() {
       <p className="text-xs text-muted-foreground italic">
         Fine-tune how procedural animations deform the body.
       </p>
+
+      <div className="bg-sky-500/10 border border-sky-500/30 rounded p-2 text-[10px] text-sky-200 flex gap-2 items-start">
+        <span className="text-sky-400 font-bold shrink-0">TIP:</span>
+        <p>You can now drag the guide lines directly on the canvas for faster adjustment.</p>
+      </div>
 
       {/* Neck Control */}
       <div className="space-y-2">
@@ -72,6 +77,23 @@ export function AnatomyPanel() {
           max={asset.size - 1}
           step={1}
           onValueChange={([val]) => handleUpdate({ waistRow: val })}
+        />
+      </div>
+
+      {/* Ankle Control */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-xs">
+          <Label className="text-[#A3E635] font-medium italic">Ankle Row (Lime)</Label>
+          <span className="font-mono bg-background px-1 rounded text-[10px]">
+            {ankleRow !== undefined ? ankleRow : 'AUTO'}
+          </span>
+        </div>
+        <Slider
+          value={[ankleRow !== undefined ? ankleRow : Math.floor(asset.size * 0.9)]}
+          min={0}
+          max={asset.size - 1}
+          step={1}
+          onValueChange={([val]) => handleUpdate({ ankleRow: val })}
         />
       </div>
 
@@ -115,6 +137,7 @@ export function AnatomyPanel() {
         <p className="text-[9px] leading-tight text-muted-foreground grid grid-cols-2 gap-y-1">
           <span><span className="text-sky-400 font-bold">●</span> Neck Pivot</span>
           <span><span className="text-[#FF7F50] font-bold">●</span> Waist/Legs</span>
+          <span><span className="text-[#A3E635] font-bold">●</span> Feet/Ankles</span>
           <span><span className="text-purple-400 font-bold">●</span> Left Shoulder</span>
           <span><span className="text-orange-400 font-bold">●</span> Right Shoulder</span>
         </p>

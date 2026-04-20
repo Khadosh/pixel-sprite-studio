@@ -4,6 +4,7 @@ type Row = number[];
 export type AnatomyConfig = {
   neckRow?: number;
   waistRow?: number;
+  ankleRow?: number;
   torsoLeft?: number;
   torsoRight?: number;
 };
@@ -275,6 +276,7 @@ interface BodySegments {
   isHumanoid: boolean;
   torsoLeft: number;
   torsoRight: number;
+  ankleRow: number;
   leftArmArea?: { startR: number; endR: number; startC: number; endC: number };
   rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
 }
@@ -295,15 +297,18 @@ export function analyzeBodySegments(
   const bodyHeight = bounds ? (bounds.bottom - bounds.top + 1) : size;
   const defaultNeck = bounds ? Math.floor(bounds.top + bodyHeight * 0.35) : Math.floor(size * 0.35);
   const defaultWaist = bounds ? Math.floor(bounds.top + bodyHeight * 0.7) : Math.floor(size * 0.7);
+  const defaultAnkle = bounds ? Math.floor(bounds.bottom - 1) : Math.floor(size * 0.9);
 
   // Manual Overrides
   let neckRow = anatomy?.neckRow ?? defaultNeck;
   let waistRow = anatomy?.waistRow ?? defaultWaist;
+  let ankleRow = anatomy?.ankleRow ?? defaultAnkle;
 
   if (!bounds || !com) {
     return { 
       neckRow, 
       waistRow, 
+      ankleRow,
       headEndRow: neckRow, 
       torsoEndRow: waistRow, 
       isHumanoid: false,
@@ -338,6 +343,12 @@ export function analyzeBodySegments(
         waistRow = r;
       }
     }
+  }
+
+  // 3.5 Find Ankle (only if not manually overridden)
+  if (anatomy?.ankleRow === undefined) {
+    // Usually the last non-empty row or just above it
+    ankleRow = bounds.bottom > waistRow ? bounds.bottom - 1 : bounds.bottom;
   }
 
   // 4. Find Torso Horizontal Span (to identify arms)
@@ -390,6 +401,7 @@ export function analyzeBodySegments(
     isHumanoid: profile[neckRow] < maxWidth * 0.9,
     torsoLeft: leftLimit,
     torsoRight: rightLimit,
+    ankleRow,
     leftArmArea: hasLeftArm ? { 
       startR: neckRow, 
       endR: bounds.bottom, 
@@ -411,62 +423,81 @@ export function analyzeBodySegments(
 export function generateIdle(
   base: Frame, 
   anatomy?: AnatomyConfig
-): [Frame, Frame] {
+): Frame[] {
+  const size = base.length;
   const bounds = findBounds(base);
   const com = getCenterOfMass(base);
-  if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
+  if (!bounds || !com) return [cloneFrame(base), cloneFrame(base), cloneFrame(base), cloneFrame(base)];
 
-  const { neckRow, waistRow } = analyzeBodySegments(base, anatomy);
+  const { neckRow, waistRow, ankleRow, torsoLeft, torsoRight } = analyzeBodySegments(base, anatomy);
 
-  // We squash a row in the torso to simulate breathing
+  // 1. Base Frame
+  const f0 = cloneFrame(base);
+
+  // 2. Mid Inhale
   const midDrop = Math.floor((neckRow + waistRow) / 2);
-  const rowsToDrop = [midDrop].filter(r => r > neckRow && r < waistRow);
-  
-  // squash only the torso area, leave head (above neckRow) and feet (below waistRow) stable
-  const squashed = squash(base, rowsToDrop, undefined, neckRow);
-  
-  return [cloneFrame(base), squashed];
+  let f1 = squash(base, [midDrop], undefined, neckRow);
+  const upperBodyArea1 = { startR: bounds.top, endR: ankleRow, startC: 0, endC: size - 1 };
+  f1 = shiftArea(f1, upperBodyArea1, 1, 0); // half bounce
+
+  // 3. Max Inhale (Deeper squash)
+  const rowsToDrop = [midDrop, midDrop + 1].filter(r => r > neckRow && r < waistRow);
+  let f2 = squash(base, rowsToDrop, undefined, neckRow);
+  // Full bounce: shift whole upper body (including head) down 1px
+  f2 = shiftArea(f2, upperBodyArea1, 1, 0); 
+
+  // 4. Exhale (back to f1)
+  const f3 = cloneFrame(f1);
+
+  return [f0, f1, f2, f3];
 }
 
 /** Walk: alternating feet and stabilized upper body with arm swing */
 export function generateWalk(
   base: Frame, 
   anatomy?: AnatomyConfig
-): [Frame, Frame] {
+): Frame[] {
   const size = base.length;
   const bounds = findBounds(base);
   const com = getCenterOfMass(base);
-  if (!bounds || !com) return [cloneFrame(base), cloneFrame(base)];
+  if (!bounds || !com) return Array(4).fill(cloneFrame(base));
 
   const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, leftArmArea, rightArmArea } = segments;
+  const { neckRow, waistRow, ankleRow, leftArmArea, rightArmArea } = segments;
   const centerCol = Math.floor(com.c);
   
-  const leftLegArea = { startR: waistRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
-  const rightLegArea = { startR: waistRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
+  const leftLegArea = { startR: ankleRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
+  const rightLegArea = { startR: ankleRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
 
-  // Frame 1: Left foot stays, Right foot lifts 1px. 
-  // Arm swing: Left arm lifts, Right arm drops (opposition)
-  let f1 = shiftArea(base, rightLegArea, -1, 0);
-  if (leftArmArea) f1 = shiftArea(f1, leftArmArea, -1, 0);
-  if (rightArmArea) f1 = shiftArea(f1, rightArmArea, 1, 0);
-  f1 = leanBody(f1, waistRow, neckRow, -1);
+  // Frame 0: Left foot down, Right foot lifts, Right arm forward
+  let f0 = shiftArea(base, rightLegArea, -1, 0);
+  if (leftArmArea) f0 = shiftArea(f0, leftArmArea, 1, 0);
+  if (rightArmArea) f0 = shiftArea(f0, rightArmArea, -1, 0);
+  f0 = leanBody(f0, waistRow, neckRow, -1);
 
-  // Frame 2: Right foot stays, Left foot lifts 1px.
-  // Arm swing: Right arm lifts, Left arm drops
+  // Frame 1: Mid height (Shoulders low)
+  let f1 = cloneFrame(base);
+  const headArea = { startR: bounds.top, endR: neckRow, startC: 0, endC: size - 1 };
+  f1 = shiftArea(f1, headArea, 1, 0); // head bob down
+
+  // Frame 2: Right foot down, Left foot lifts, Left arm forward
   let f2 = shiftArea(base, leftLegArea, -1, 0);
-  if (rightArmArea) f2 = shiftArea(f2, rightArmArea, -1, 0);
-  if (leftArmArea) f2 = shiftArea(f2, leftArmArea, 1, 0);
+  if (rightArmArea) f2 = shiftArea(f2, rightArmArea, 1, 0);
+  if (leftArmArea) f2 = shiftArea(f2, leftArmArea, -1, 0);
   f2 = leanBody(f2, waistRow, neckRow, 1);
-  
-  return [f1, f2];
+
+  // Frame 3: Mid height (Shoulders/Head high)
+  // Instead of shiftArea (which leaves a gap), we use stretchBody to lift the head while keeping the neck connected
+  const f3 = stretchBody(base, neckRow);
+
+  return [f0, f1, f2, f3];
 }
 
 /** Attack: forward lunge with arm extension */
 export function generateAttack(
   base: Frame, 
   anatomy?: AnatomyConfig
-): [Frame, Frame] {
+): Frame[] {
   const segments = analyzeBodySegments(base, anatomy);
   const { neckRow, waistRow, rightArmArea } = segments;
   
@@ -490,7 +521,7 @@ export function generateCast(
   base: Frame, 
   glowColor: number, 
   anatomy?: AnatomyConfig
-): [Frame, Frame] {
+): Frame[] {
   const segments = analyzeBodySegments(base, anatomy);
   const { neckRow, waistRow, leftArmArea, rightArmArea } = segments;
   
@@ -508,7 +539,7 @@ export function generateCast(
 export function generateHurt(
   base: Frame, 
   anatomy?: AnatomyConfig
-): [Frame, Frame] {
+): Frame[] {
   const { neckRow, waistRow } = analyzeBodySegments(base, anatomy);
   const bounds = findBounds(base);
   
@@ -529,22 +560,35 @@ export function generateHurt(
 export function generateJump(
   base: Frame, 
   anatomy?: AnatomyConfig
-): [Frame, Frame] {
+): Frame[] {
+  const size = base.length;
   const bounds = findBounds(base);
   const segments = analyzeBodySegments(base, anatomy);
-  const { waistRow } = segments;
+  const { waistRow, ankleRow } = segments;
   
-  if (!bounds) return [cloneFrame(base), cloneFrame(base)];
+  if (!bounds) return Array(4).fill(cloneFrame(base));
 
-  // Frame 1: Prep (Squash lower half)
-  const f1 = squash(base, [bounds.bottom - 1], undefined, waistRow);
+  // Frame 0: Prep (Squash legs between waist and ankles)
+  const lungeRows = Array.from({ length: ankleRow - waistRow }, (_, i) => waistRow + i);
+  const f0 = squash(base, lungeRows, undefined, waistRow);
   
-  // Frame 2: In the air! Shift EVERYTHING above bottom 1-2px up.
-  // We shift the whole character (core + limbs + head)
-  const flyArea = { startR: bounds.top, endR: bounds.bottom, startC: 0, endC: base.length - 1 };
-  const f2 = shiftArea(base, flyArea, -2, 0);
+  // Frame 1: Launch (Up + Legs stretched)
+  // Use stretchBody to lift the body while keeping legs connected to the waist
+  let f1 = stretchBody(base, waistRow);
+  // Also shift everything slightly for more height
+  f1 = shiftFrame(f1, -2, 0);
   
-  return [f1, f2];
+  // Frame 2: Peak (High + Legs tucked)
+  const flyArea = { startR: bounds.top, endR: bounds.bottom, startC: 0, endC: size - 1 };
+  let f2 = shiftArea(base, flyArea, -4, 0);
+  // Tuck feet: shift just the bottom part up 1px more than the rest
+  const legArea = { startR: ankleRow - 4, endR: bounds.bottom - 4, startC: 0, endC: size - 1 };
+  f2 = shiftArea(f2, legArea, -1, 0);
+
+  // Frame 3: Landing
+  const f3 = squash(base, [bounds.bottom - 1], undefined, waistRow);
+  
+  return [f0, f1, f2, f3];
 }
 /** Flip horizontal */
 export function flipHorizontal(frame: Frame): Frame {

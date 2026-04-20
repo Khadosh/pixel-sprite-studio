@@ -180,6 +180,13 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     }
   }, [isDirty, onOpenChange]);
 
+  const handleAnatomyChange = React.useCallback((updates: any) => {
+    store.getState().setEditedAsset((prev: any) => ({
+      ...prev,
+      anatomy: { ...prev.anatomy, ...updates }
+    }));
+  }, [store]);
+
   // Sync handleClose in store
   useEffect(() => {
     store.setState({ handleClose: handleRequestClose });
@@ -263,6 +270,8 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
                       movingSelectionPixels={pixelEditor.movingSelectionPixels}
                       canvasBg={canvasBg}
                       leftSidebarTab={leftSidebarTab}
+                      onAnatomyChange={handleAnatomyChange}
+                      onPushUndo={pushUndo}
                     />
                     <ZoomControl />
                   </div>

@@ -59,6 +59,7 @@ export interface SpriteAsset {
   anatomy?: {
     neckRow?: number;
     waistRow?: number;
+    ankleRow?: number;
     torsoLeft?: number;
     torsoRight?: number;
   };

@@ -27,6 +27,8 @@ interface SpritePixelEditorProps {
   movingSelectionPixels?: number[][] | null;
   canvasBg: 'light' | 'dark';
   leftSidebarTab?: string | null;
+  onAnatomyChange?: (updates: Partial<{ neckRow: number; waistRow: number; ankleRow: number; torsoLeft: number; torsoRight: number }>) => void;
+  onPushUndo?: () => void;
 }
 
 export default function SpritePixelEditor({
@@ -48,9 +50,15 @@ export default function SpritePixelEditor({
   movingSelectionPixels,
   canvasBg,
   leftSidebarTab,
+  onAnatomyChange,
+  onPushUndo,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
+
+  // Anatomy interaction state
+  const [hoveringBone, setHoveringBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | null>(null);
+  const [draggingBone, setDraggingBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | null>(null);
 
   // Panning state
   const panStart = useRef<{ x: number; y: number } | null>(null);
@@ -59,9 +67,6 @@ export default function SpritePixelEditor({
 
   const PIXEL_SCALE = BASE_PIXEL_SCALE * zoom;
   const canvasSize = asset.size * PIXEL_SCALE;
-
-  // No longer using a single 'frame' variable at the top level
-  // as we index into layers inside the draw loop.
 
   const getCell = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -74,9 +79,10 @@ export default function SpritePixelEditor({
 
     const col = Math.floor(x / PIXEL_SCALE);
     const row = Math.floor(y / PIXEL_SCALE);
-    if (row < 0 || row >= asset.size || col < 0 || col >= asset.size) return null;
-    return { r: row, c: col };
-  }, [asset.size, PIXEL_SCALE]);
+    
+    // Return both cell and sub-pixel coordinates for bone hit testing
+    return { r: row, c: col, x, y };
+  }, [PIXEL_SCALE]);
 
   // Draw frame
   useEffect(() => {
@@ -176,8 +182,6 @@ export default function SpritePixelEditor({
           isScopeFrame || previewTargetId === layer.id
         );
 
-
-
         let frameToDraw = layerFrame;
 
         if (applyRot && rCenter) {
@@ -213,44 +217,50 @@ export default function SpritePixelEditor({
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
     }
-
-    // grid lines... (rest of the code)
     
     // ─── ANATOMICAL BONES VISUALIZATION ───
-    // We only show these if the "BONES" tab is active and it's a character
     if (asset.category === 'character' && leftSidebarTab === 'anatomy') {
       const compositeFrame = asset.layers?.[0]?.frames[frameIndex];
       if (compositeFrame) {
-        const { neckRow, waistRow, torsoLeft, torsoRight } = analyzeBodySegments(compositeFrame, asset.anatomy);
+        const { neckRow, waistRow, torsoLeft, torsoRight, ankleRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
         
+        const drawBone = (type: 'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR', color: string, pos: number, isVertical: boolean) => {
+          const isSelected = hoveringBone === type || draggingBone === type;
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = isSelected ? 1.0 : 0.6;
+          ctx.lineWidth = isSelected ? 2 : 1;
+          
+          if (isSelected) {
+             ctx.shadowBlur = 4;
+             ctx.shadowColor = color;
+          }
+
+          ctx.beginPath();
+          const screenPos = pos * PIXEL_SCALE + PIXEL_SCALE / 2;
+          if (isVertical) {
+            ctx.moveTo(screenPos, 0);
+            ctx.lineTo(screenPos, canvasSize);
+          } else {
+            ctx.moveTo(0, screenPos);
+            ctx.lineTo(canvasSize, screenPos);
+          }
+          ctx.stroke();
+          
+          // Reset effects
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 1.0;
+        };
+
         // Neck line (Sky Blue)
-        ctx.strokeStyle = 'rgba(135, 206, 235, 0.6)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, neckRow * PIXEL_SCALE + PIXEL_SCALE / 2);
-        ctx.lineTo(canvasSize, neckRow * PIXEL_SCALE + PIXEL_SCALE / 2);
-        ctx.stroke();
-
-        // Waist line (Coral/Red)
-        ctx.strokeStyle = 'rgba(255, 127, 80, 0.6)';
-        ctx.beginPath();
-        ctx.moveTo(0, waistRow * PIXEL_SCALE + PIXEL_SCALE / 2);
-        ctx.lineTo(canvasSize, waistRow * PIXEL_SCALE + PIXEL_SCALE / 2);
-        ctx.stroke();
-
+        drawBone('neck', 'rgba(135, 206, 235)', neckRow, false);
+        // Waist line (Coral)
+        drawBone('waist', 'rgba(255, 127, 80)', waistRow, false);
+        // Ankle line (Lime/Yellow-ish)
+        drawBone('ankles', 'rgba(163, 230, 53)', ankleRow, false);
         // Torso Left line (Amethyst/Purple)
-        ctx.strokeStyle = 'rgba(168, 85, 247, 0.6)';
-        ctx.beginPath();
-        ctx.moveTo(torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2, 0);
-        ctx.lineTo(torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2, canvasSize);
-        ctx.stroke();
-
+        drawBone('torsoL', 'rgba(168, 85, 247)', torsoLeft, true);
         // Torso Right line (Orange)
-        ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)';
-        ctx.beginPath();
-        ctx.moveTo(torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2, 0);
-        ctx.lineTo(torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2, canvasSize);
-        ctx.stroke();
+        drawBone('torsoR', 'rgba(249, 115, 22)', torsoRight, true);
       }
     }
 
@@ -320,7 +330,7 @@ export default function SpritePixelEditor({
         drawFrameData(pixelsToDraw, true, 0, 0);
       }
     }
-  }, [asset, activeLayerId, draftFrame, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame, selectionRect, movingSelectionPixels, PIXEL_SCALE, canvasBg]);
+  }, [asset, activeLayerId, draftFrame, rotationAngle, rotationCenter, frameIndex, canvasSize, onionSkinPrevFrame, onionSkinNextFrame, selectionRect, movingSelectionPixels, PIXEL_SCALE, canvasBg, leftSidebarTab, hoveringBone, draggingBone]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     // Attempt pointer capture to track outside canvas
@@ -328,10 +338,16 @@ export default function SpritePixelEditor({
 
     const cell = getCell(e);
 
+    // Anatomy Interaction First
+    if (leftSidebarTab === 'anatomy' && hoveringBone) {
+      if (onPushUndo) onPushUndo();
+      setDraggingBone(hoveringBone);
+      return;
+    }
+
     if (e.button === 1) { // Middle Click (Wheel)
-      // START PANNING
       panStart.current = { x: e.clientX, y: e.clientY };
-      const parent = e.currentTarget.parentElement?.parentElement; // Scrollable container (div.overflow-auto)
+      const parent = e.currentTarget.parentElement?.parentElement;
       if (parent) {
         scrollStart.current = { left: parent.scrollLeft, top: parent.scrollTop };
       }
@@ -340,7 +356,6 @@ export default function SpritePixelEditor({
     }
 
     if (e.button === 2) { // Right Click
-      // QUICK ERASE ONLY
       if (cell) {
         onPointerDown(cell.r, cell.c, 'eraser');
       }
@@ -354,14 +369,53 @@ export default function SpritePixelEditor({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const cell = getCell(e);
-    setHoverCell(cell);
+    const data = getCell(e);
+    if (!data) {
+      setHoverCell(null);
+      setHoveringBone(null);
+      return;
+    }
+    const { r, c, x, y } = data;
+    setHoverCell({ r, c });
 
-    if (e.buttons === 4 && panStart.current && scrollStart.current) { // 4 is middle button mask
-      // Middle Click Pan
+    // 1. Handle Bone Dragging
+    if (draggingBone && onAnatomyChange) {
+      if (draggingBone === 'neck') onAnatomyChange({ neckRow: r });
+      else if (draggingBone === 'waist') onAnatomyChange({ waistRow: r });
+      else if (draggingBone === 'ankles') onAnatomyChange({ ankleRow: r });
+      else if (draggingBone === 'torsoL') onAnatomyChange({ torsoLeft: c });
+      else if (draggingBone === 'torsoR') onAnatomyChange({ torsoRight: c });
+      return;
+    }
+
+    // 2. Handle Bone Hover Detection (only in anatomy tab)
+    if (leftSidebarTab === 'anatomy' && !isPanning.current && e.buttons === 0) {
+      const tolerance = 6;
+      const compositeFrame = asset.layers?.[0]?.frames[frameIndex];
+      if (compositeFrame) {
+        const { neckRow, waistRow, torsoLeft, torsoRight, ankleRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
+        
+        const neckY = neckRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+        const waistY = waistRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+        const ankleY = ankleRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+        const torsoLX = torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2;
+        const torsoRX = torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2;
+
+        if (Math.abs(y - neckY) < tolerance) setHoveringBone('neck');
+        else if (Math.abs(y - waistY) < tolerance) setHoveringBone('waist');
+        else if (Math.abs(y - ankleY) < tolerance) setHoveringBone('ankles');
+        else if (Math.abs(x - torsoLX) < tolerance) setHoveringBone('torsoL');
+        else if (Math.abs(x - torsoRX) < tolerance) setHoveringBone('torsoR');
+        else setHoveringBone(null);
+      }
+    } else if (leftSidebarTab !== 'anatomy') {
+       setHoveringBone(null);
+    }
+
+    // 3. Handle Panning
+    if (e.buttons === 4 && panStart.current && scrollStart.current) {
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
-
       const parent = e.currentTarget.parentElement?.parentElement;
       if (parent) {
         parent.scrollLeft = scrollStart.current.left - dx;
@@ -370,8 +424,19 @@ export default function SpritePixelEditor({
       return;
     }
 
-    if (cell && (e.buttons === 1)) { // 1 is primary button mask
-      onPointerMove(cell.r, cell.c);
+    // 4. Handle Drawing
+    if (e.buttons === 1 && !draggingBone) {
+      onPointerMove(r, c);
+    }
+
+    // 5. Cursor Feedback
+    if (canvasRef.current) {
+      if (draggingBone || hoveringBone) {
+        const type = draggingBone || hoveringBone;
+        canvasRef.current.style.cursor = (type === 'neck' || type === 'waist' || type === 'ankles') ? 'ns-resize' : 'ew-resize';
+      } else {
+        canvasRef.current.style.cursor = 'crosshair';
+      }
     }
   };
 
@@ -380,6 +445,7 @@ export default function SpritePixelEditor({
     panStart.current = null;
     scrollStart.current = null;
     isPanning.current = false;
+    setDraggingBone(null);
     onPointerUp();
   };
 

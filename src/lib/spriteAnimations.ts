@@ -50,9 +50,11 @@ export function generateAnimationsClientSide(
 
     const startIndex = newLayers[0].frames.length;
     newLayers.forEach(layer => {
-      const [f0, f1] = generateFramePair(layer.frames[0], type, glowColor, currentAsset.anatomy);
-      layer.frames.push(f0, f1);
+      const frames = generateFrameSequence(layer.frames[0], type, glowColor, currentAsset.anatomy);
+      layer.frames.push(...frames);
     });
+
+    const generatedCount = newLayers[0].frames.length - startIndex;
 
     // Use custom name/label if provided (primarily for the slice to handle unique names)
     const finalName = options?.customName || type;
@@ -62,7 +64,7 @@ export function generateAnimationsClientSide(
     const newAnimDef: AnimationDef = {
       name: finalName,
       label: finalLabel,
-      frameIndices: [startIndex, startIndex + 1, startIndex, startIndex + 1],
+      frameIndices: Array.from({ length: generatedCount }, (_, i) => startIndex + i),
       fps,
     };
 
@@ -273,12 +275,12 @@ function getElementalColors(asset: SpriteAsset, element: CastElement): { updated
   };
 }
 
-function generateFramePair(
+function generateFrameSequence(
   base: number[][],
   anim: string,
   glowColor: number,
-  anatomy?: { neckRow?: number; waistRow?: number }
-): [number[][], number[][]] {
+  anatomy?: any
+): number[][][] {
   switch (anim) {
     case 'idle':
       return generateIdle(base, anatomy);
@@ -293,7 +295,7 @@ function generateFramePair(
     case 'jump':
       return generateJump(base, anatomy);
     default:
-      return generateIdle(base);
+      return [generateIdle(base, anatomy)[0]]; // Fallback to 1st frame
   }
 }
 
