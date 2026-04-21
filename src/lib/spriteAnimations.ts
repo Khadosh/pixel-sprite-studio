@@ -290,6 +290,10 @@ function generateFrameSequence(
     baseAnim = anim.replace('_left', '');
   } else if (anim.endsWith('_right')) {
     baseAnim = anim.replace('_right', '');
+  } else if (anim.endsWith('_down')) {
+    baseAnim = anim.replace('_down', '');
+  } else if (anim.endsWith('_up')) {
+    baseAnim = anim.replace('_up', '');
   }
 
   let frames: number[][][];

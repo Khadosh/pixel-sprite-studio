@@ -6,10 +6,14 @@ export const THUMB_SIZE = 16 * THUMB_SCALE;
 
 export const AVAILABLE_ANIMS = [
   { value: 'idle', label: 'Idle' },
-  { value: 'walk_right', label: 'Walk (R)' },
-  { value: 'walk_left', label: 'Walk (L)' },
-  { value: 'attack_right', label: 'Attack (R)' },
-  { value: 'attack_left', label: 'Attack (L)' },
+  { value: 'walk_down', label: 'Walk (Down)' },
+  { value: 'walk_up', label: 'Walk (Up)' },
+  { value: 'walk_right', label: 'Walk (Right)' },
+  { value: 'walk_left', label: 'Walk (Left)' },
+  { value: 'attack_down', label: 'Attack (Down)' },
+  { value: 'attack_up', label: 'Attack (Up)' },
+  { value: 'attack_right', label: 'Attack (Right)' },
+  { value: 'attack_left', label: 'Attack (Left)' },
   { value: 'hurt', label: 'Hurt' },
   { value: 'die', label: 'Die' },
 ];
