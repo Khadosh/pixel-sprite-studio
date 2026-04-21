@@ -9,7 +9,7 @@ import type { SpriteAsset } from '@/lib/types';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAsset } from '@/hooks/useAssetQueries';
-import { useCreateSprite } from '@/hooks/useProjectQueries';
+import { useCreateSprite, useProject } from '@/hooks/useProjectQueries';
 import { parseSpec } from '@/lib/slugUtils';
 
 const PIXEL_SCALE = 4;
@@ -27,7 +27,8 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   const { palette, setPaletteColor, resetPalette } = usePalette();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const projectId = searchParams.get('projectId');
+  const projectSlug = searchParams.get('projectSlug');
+  const { data: project } = useProject(projectSlug || '');
   const { toast } = useToast();
   
   const createSpriteMutation = useCreateSprite();
@@ -85,17 +86,17 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   }, [asset, palette, CELL_SIZE]);
 
   const handleSaveToProject = async () => {
-    if (!projectId) return;
+    if (!project?.id) return;
 
     const assetDataToSave = {
       ...asset,
       palette: { ...palette } // Guardar la paleta actual
     };
 
-    createSpriteMutation.mutate({ projectId, asset: assetDataToSave }, {
+    createSpriteMutation.mutate({ projectId: project.id, asset: assetDataToSave }, {
       onSuccess: () => {
         toast({ title: 'Guardado', description: 'El sprite se ha guardado en tu proyecto exitosamente.' });
-        navigate(`/project/${projectId}`);
+        navigate(`/project/${projectSlug || project.id}`);
       },
       onError: (error: any) => {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -156,7 +157,7 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
             </div>
 
             <div className="flex flex-wrap gap-2">
-               {projectId && (
+               {project && (
                   <Button
                     onClick={handleSaveToProject}
                     disabled={createSpriteMutation.isPending}
@@ -290,8 +291,8 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   );
 }
   export default function AssetDetail() {
-    const { assetSpec } = useParams<{ assetSpec: string }>();
-    const assetId = parseSpec(assetSpec || '');
+    const { assetSlug } = useParams<{ assetSlug: string }>();
+    const assetId = parseSpec(assetSlug || '');
     const navigate = useNavigate();
   
     const { data: asset, isLoading, error } = useAsset(assetId);

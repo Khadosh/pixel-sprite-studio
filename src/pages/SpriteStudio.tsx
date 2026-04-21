@@ -22,9 +22,9 @@ import { ImportImageModal } from '@/components/SpriteEditor/components/ImportIma
 import { createSpec, parseSpec } from '@/lib/slugUtils';
 
 export default function SpriteStudio() {
-  const { projectSpec, spriteSpec } = useParams<{ projectSpec: string; spriteSpec: string }>();
-  const projectId = parseSpec(projectSpec || '');
-  const spriteId = parseSpec(spriteSpec || '');
+  const { projectSlug, spriteSlug } = useParams<{ projectSlug: string; spriteSlug: string }>();
+  const projectId = parseSpec(projectSlug || '');
+  const spriteId = parseSpec(spriteSlug || '');
   const navigate = useNavigate();
   const { toast } = useToast();
   const previewPanelRef = useRef<AnimationPreviewPanelHandle>(null);
@@ -40,29 +40,33 @@ export default function SpriteStudio() {
   // Initialize store once sprite is loaded
   useEffect(() => {
     if (sprite && !store) {
+      const realProjectId = (sprite as any).project_id || projectId;
       const newStore = createSpriteEditorStore({
         initialAsset: sprite.asset_data as SpriteAsset,
-        projectId: projectId,
+        projectId: realProjectId,
         onSave: (asset) => {
           handleManualSave(asset);
         },
         onOpenChange: (open) => {
-          if (!open) navigate(`/project/${projectSpec}`);
+          if (!open) navigate(`/project/${projectSlug}`);
         },
         previewPanelRef,
       });
       setStore(newStore);
     }
-  }, [sprite, store, projectId, projectSpec, navigate]);
+  }, [sprite, store, projectId, projectSlug, navigate]);
 
   // Handle Manual Save
   const handleManualSave = async (asset: SpriteAsset) => {
-    if (!spriteId || !projectId) return;
+    const realSpriteId = sprite?.id || spriteId;
+    const realProjectId = (sprite as any)?.project_id || projectId;
+    
+    if (!realSpriteId || !realProjectId) return;
     
     try {
       await updateSpriteMutation.mutateAsync({ 
-        id: spriteId, 
-        projectId, 
+        id: realSpriteId, 
+        projectId: realProjectId, 
         asset 
       });
       toast({ title: 'Checkpoint guardado', description: 'Nueva versión creada en la nube.' });
@@ -81,17 +85,18 @@ export default function SpriteStudio() {
     const unsub = store.subscribe((state: any, prevState: any) => {
       // If asset changed and it's dirty
       if (state.editedAsset !== prevState.editedAsset && state.isDirty) {
+        const realSpriteId = sprite?.id || spriteId;
+        const realProjectId = (sprite as any)?.project_id || projectId;
+
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
           updateSpriteMutation.mutate({ 
-            id: spriteId!, 
-            projectId: projectId!, 
+            id: realSpriteId, 
+            projectId: realProjectId, 
             asset: state.editedAsset 
           }, {
             onSuccess: () => {
               store.getState().setEditedAsset((s: any) => ({ ...s })); // Force update if needed
-              // Optionally mark as not dirty if we consider autosave enough
-              // store.setState({ isDirty: false }); 
             }
           });
         }, 3000); // 3 second debounce for autosave
@@ -119,7 +124,7 @@ export default function SpriteStudio() {
     return (
       <div className="h-screen w-screen bg-background flex flex-col items-center justify-center gap-4">
         <span className="font-pixel text-destructive text-xs uppercase">Error al cargar el sprite</span>
-        <Link to={`/project/${projectSpec}`} className="text-primary hover:underline font-mono text-[10px]">
+        <Link to={`/project/${projectSlug}`} className="text-primary hover:underline font-mono text-[10px]">
           Volver al proyecto
         </Link>
       </div>
@@ -134,7 +139,7 @@ export default function SpriteStudio() {
       <div className="flex-shrink-0 bg-secondary/20 border-b border-border px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link 
-            to={`/project/${projectSpec}`}
+            to={`/project/${projectSlug}`}
             className="p-1 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
             title="Volver al proyecto"
           >

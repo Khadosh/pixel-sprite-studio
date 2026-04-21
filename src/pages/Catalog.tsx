@@ -8,7 +8,7 @@ import { useAssets, useAssetCategoryCounts } from '@/hooks/useAssetQueries';
 export default function Catalog() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get('projectId');
+  const projectSlug = searchParams.get('projectSlug');
   const sizeParam = searchParams.get('size');
   const activeSize = sizeParam ? parseInt(sizeParam) : undefined;
   
@@ -37,11 +37,11 @@ export default function Catalog() {
         {/* Navigation */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate(projectId ? `/project/${projectId}` : '/dashboard')}
+            onClick={() => navigate(projectSlug ? `/project/${projectSlug}` : '/dashboard')}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-mono group"
           >
             <PxArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-            {projectId ? 'Volver al Proyecto' : 'Volver al Dashboard'}
+            {projectSlug ? 'Volver al Proyecto' : 'Volver al Dashboard'}
           </button>
 
           {activeSize && (
@@ -124,7 +124,7 @@ export default function Catalog() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {assetsOfSize.map(asset => (
-                      <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
+                      <AssetCard key={asset.id} asset={asset} projectSlug={projectSlug || undefined} />
                     ))}
                   </div>
                 </section>
@@ -146,7 +146,7 @@ export default function Catalog() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {assetsOfSize.map(asset => (
-                        <AssetCard key={asset.id} asset={asset} projectId={projectId || undefined} />
+                        <AssetCard key={asset.id} asset={asset} projectSlug={projectSlug || undefined} />
                       ))}
                     </div>
                   </section>

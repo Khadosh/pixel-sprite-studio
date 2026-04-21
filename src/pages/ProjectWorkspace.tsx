@@ -9,20 +9,19 @@ import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCop
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSprite } from '@/hooks/useGenerateSprite';
-import { SpriteEditorModal } from '@/components/SpriteEditor';
 import type { SpriteAsset } from '@/lib/types';
 import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
 import { createSpec, parseSpec } from '@/lib/slugUtils';
 
 export default function ProjectWorkspace() {
-  const { projectSpec } = useParams<{ projectSpec: string }>();
-  const id = parseSpec(projectSpec || '');
+  const { projectSlug } = useParams<{ projectSlug: string }>();
+  const id = parseSpec(projectSlug || '');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const { data: project, isLoading: isProjectLoading, error: projectError } = useProject(id);
-  const { data: sprites = [], isLoading: isSpritesLoading } = useProjectSprites(id);
+  const { data: sprites = [], isLoading: isSpritesLoading } = useProjectSprites(project?.id);
   
   const createSpriteMutation = useCreateSprite();
   const updateSpriteMutation = useUpdateSprite();
@@ -35,23 +34,19 @@ export default function ProjectWorkspace() {
   const { isGenerating, error: generateError, result: generatedSprite, generate, clear: clearGenerated } = useGenerateSprite();
 
   // Editor modal state
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editorAsset, setEditorAsset] = useState<SpriteAsset | null>(null);
-  const [editorIsNew, setEditorIsNew] = useState(false); // true = saving new, false = updating existing
-  const [editingSpriteId, setEditingSpriteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // When generation completes, save and navigate to studio
   useEffect(() => {
-    if (generatedSprite && id) {
-      createSpriteMutation.mutate({ projectId: id, asset: generatedSprite }, {
+    if (generatedSprite && project?.id) {
+      createSpriteMutation.mutate({ projectId: project.id, asset: generatedSprite }, {
         onSuccess: (newSprite) => {
           clearGenerated();
           setGeneratePrompt('');
           setShowCreator(false);
-          const projectPart = createSpec(id, project?.name || 'project');
-          const spritePart = createSpec(newSprite.id, generatedSprite.name || 'sprite');
-          navigate(`/project/${projectPart}/editor/${spritePart}`);
+          const pPath = projectSlug || id;
+          const sPath = newSprite.slug;
+          navigate(`/project/${pPath}/editor/${sPath}`);
         }
       });
     }
@@ -67,9 +62,9 @@ export default function ProjectWorkspace() {
 
   const handleDeleteSprite = async (e: React.MouseEvent, spriteId: string) => {
     e.stopPropagation();
-    if (!id) return;
+    if (!project?.id) return;
     
-    deleteSpriteMutation.mutate({ id: spriteId, projectId: id }, {
+    deleteSpriteMutation.mutate({ id: spriteId, projectId: project.id }, {
       onSuccess: () => {
         toast({ title: 'Eliminado' });
       },
@@ -86,41 +81,8 @@ export default function ProjectWorkspace() {
   };
 
   const handleOpenEditorForSprite = (sprite: ProjectSprite) => {
-    if (!id || !project) return;
-    const projectPart = createSpec(id, project.name);
-    const spriteAsset = sprite.asset_data as SpriteAsset;
-    const spritePart = createSpec(sprite.id, spriteAsset.name);
-    navigate(`/project/${projectPart}/editor/${spritePart}`);
-  };
-
-  const handleEditorSave = async (asset: SpriteAsset) => {
-    if (!id) return;
-
-    if (editorIsNew) {
-      createSpriteMutation.mutate({ projectId: id, asset }, {
-        onSuccess: () => {
-          clearGenerated();
-          setGeneratePrompt('');
-          setShowCreator(false);
-          toast({ title: 'Sprite guardado', description: 'El sprite se guardó en tu proyecto.' });
-        },
-        onError: (error: any) => {
-          toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        }
-      });
-    } else if (editingSpriteId) {
-      updateSpriteMutation.mutate({ id: editingSpriteId, projectId: id, asset }, {
-        onSuccess: () => {
-          toast({ title: 'Sprite actualizado' });
-        },
-        onError: (error: any) => {
-          toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        }
-      });
-    }
-    setEditorOpen(false);
-    setEditorAsset(null);
-    setEditingSpriteId(null);
+    if (!projectSlug) return;
+    navigate(`/project/${projectSlug}/editor/${sprite.slug}`);
   };
 
   const toggleTag = (tag: string) => {
@@ -173,7 +135,7 @@ export default function ProjectWorkspace() {
 
   const handleCloneSprite = async (e: React.MouseEvent, sprite: ProjectSprite) => {
     e.stopPropagation();
-    if (!id) return;
+    if (!project?.id) return;
     
     const originalAsset = sprite.asset_data as SpriteAsset;
     const clonedAsset: SpriteAsset = {
@@ -182,7 +144,7 @@ export default function ProjectWorkspace() {
       name: `${originalAsset.name} (Copia)`
     };
 
-    createSpriteMutation.mutate({ projectId: id, asset: clonedAsset }, {
+    createSpriteMutation.mutate({ projectId: project.id, asset: clonedAsset }, {
       onSuccess: () => {
         toast({ title: 'Sprite clonado', description: `Se ha creado una copia de ${originalAsset.name}.` });
       },
@@ -298,7 +260,7 @@ export default function ProjectWorkspace() {
 
               {/* Card 2: Catalog (Standard Green) */}
               <div 
-                onClick={() => navigate(`/catalog?projectId=${project.id}&size=${canvasSize}`)}
+                onClick={() => navigate(`/catalog?projectSlug=${projectSlug}&size=${canvasSize}`)}
                 className="bg-card border border-primary/20 p-5 rounded-2xl flex flex-col h-full space-y-4 hover:border-primary/50 transition-all cursor-pointer group"
               >
                 <div className="space-y-2">
@@ -338,12 +300,12 @@ export default function ProjectWorkspace() {
                     tags: [],
                   };
                   
-                  if (!id) return;
-                  createSpriteMutation.mutate({ projectId: id, asset: blank }, {
+                  if (!project?.id) return;
+                  createSpriteMutation.mutate({ projectId: project.id, asset: blank }, {
                     onSuccess: (newSprite) => {
-                      const projectPart = createSpec(id, project?.name || 'project');
-                      const spritePart = createSpec(newSprite.id, blank.name);
-                      navigate(`/project/${projectPart}/editor/${spritePart}`);
+                      const pPath = projectSlug || id;
+                      const sPath = newSprite.slug;
+                      navigate(`/project/${pPath}/editor/${sPath}`);
                     }
                   });
                 }}

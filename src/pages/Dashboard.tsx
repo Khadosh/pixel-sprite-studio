@@ -103,7 +103,7 @@ export default function Dashboard() {
               {projects.map((project) => (
                 <div 
                   key={project.id}
-                  onClick={() => navigate(`/project/${createSpec(project.id, project.name)}`)}
+                  onClick={() => navigate(`/project/${project.slug}`)}
                   className="group bg-card border border-border p-5 rounded-lg hover:border-primary/50 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-[0_0_15px_rgba(34,197,94,0.1)] relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150" />

@@ -16,11 +16,13 @@ export interface Project {
   created_at: string;
   name: string;
   user_id: string;
+  slug: string;
 }
 
 export interface ProjectSprite {
   id: string;
   created_at: string;
   project_id: string;
+  slug: string;
   asset_data: any; // Aquí guardaremos todo el JSON del SpriteAsset
 }

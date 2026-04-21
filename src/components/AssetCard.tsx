@@ -22,10 +22,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 interface AssetCardProps {
   asset: SpriteAsset;
-  projectId?: string;
+  projectSlug?: string;
 }
 
-export default function AssetCard({ asset, projectId }: AssetCardProps) {
+export default function AssetCard({ asset, projectSlug }: AssetCardProps) {
   const navigate = useNavigate();
   const frameCount = asset.layers?.[0]?.frames.length || asset.frames?.length || 0;
   const categoryColor = CATEGORY_COLORS[asset.category] ?? '#888';
@@ -34,7 +34,7 @@ export default function AssetCard({ asset, projectId }: AssetCardProps) {
     <button
       id={`asset-card-${asset.id}`}
       onClick={() => {
-        const query = projectId ? `?projectId=${projectId}` : '';
+        const query = projectSlug ? `?projectSlug=${projectSlug}` : '';
         const assetSpec = createSpec(asset.id, asset.name);
         navigate(`/asset/${assetSpec}${query}`);
       }}

@@ -14,22 +14,33 @@ export function slugify(text: string): string {
 }
 
 /**
- * Crea un "spec" que combina el ID y el slug para la URL.
- * Formato: uuid-slug
+ * Crea un "spec" que es simplemente el slug del nombre.
+ * Si el nombre está vacío, se marcará como "temp" (el ID real se usará como sufijo si es necesario).
  */
 export function createSpec(id: string, name: string): string {
-  if (!id) return '';
-  const slug = slugify(name);
-  return slug ? `${id}-${slug}` : id;
+  if (!name || name.trim() === '' || name.toLowerCase() === 'new sprite') {
+    return `temp-${id.substring(0, 8)}`;
+  }
+  return slugify(name);
 }
 
 /**
- * Extrae el ID original de un spec de URL.
+ * Extrae el identificador de un spec de URL.
+ * Puede ser un UUID (formato antiguo o directo) o un slug limpio.
  */
 export function parseSpec(spec: string): string {
   if (!spec) return '';
-  // El ID es un UUID (36 chars), pero por seguridad tomamos la parte antes del primer guión largo
-  // o simplemente buscamos un patrón de UUID al inicio.
-  const match = spec.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-  return match ? match[0] : spec;
+  
+  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+  
+  // Intentar encontrar el UUID al final (formato antiguo slug-uuid)
+  const endMatch = spec.match(new RegExp(`${uuidPattern.source}$`, 'i'));
+  if (endMatch) return endMatch[0];
+  
+  // Intentar encontrar el UUID al inicio (formato antiguo uuid-slug)
+  const startMatch = spec.match(new RegExp(`^${uuidPattern.source}`, 'i'));
+  if (startMatch) return startMatch[0];
+  
+  // Si no hay UUID, el spec es el slug directamente
+  return spec;
 }

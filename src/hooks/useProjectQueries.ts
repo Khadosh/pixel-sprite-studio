@@ -39,21 +39,26 @@ export function useProjects() {
   });
 }
 
-export function useProject(id?: string) {
+export function useProject(idOrSlug?: string) {
   return useQuery({
-    queryKey: projectKeys.detail(id || ''),
+    queryKey: projectKeys.detail(idOrSlug || ''),
     queryFn: async () => {
-      if (!id) throw new Error('Project ID is required');
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', id)
-        .single();
-
+      if (!idOrSlug) throw new Error('Project ID or Slug is required');
+      
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
+      const query = supabase.from('projects').select('*');
+      if (isUUID) {
+        query.eq('id', idOrSlug);
+      } else {
+        query.eq('slug', idOrSlug);
+      }
+      
+      const { data, error } = await query.single();
       if (error) throw error;
       return data as Project;
     },
-    enabled: !!id,
+    enabled: !!idOrSlug,
   });
 }
 
@@ -63,9 +68,32 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: async (name: string) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { slugify } = await import('@/lib/slugUtils');
+      let baseSlug = slugify(name) || 'untitled';
+      let slug = baseSlug;
+      let counter = 1;
+      let unique = false;
+
+      // Ensure slug uniqueness
+      while (!unique) {
+        const { data } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle();
+        
+        if (!data) {
+          unique = true;
+        } else {
+          slug = `${baseSlug}-${counter++}`;
+        }
+      }
+
       const { data, error } = await supabase
         .from('projects')
-        .insert([{ name, user_id: user?.id }])
+        .insert([{ name, user_id: user.id, slug }])
         .select()
         .single();
 
@@ -98,21 +126,26 @@ export function useProjectSprites(projectId?: string) {
   });
 }
 
-export function useSprite(id?: string) {
+export function useSprite(idOrSlug?: string) {
   return useQuery({
-    queryKey: spriteKeys.detail(id || ''),
+    queryKey: spriteKeys.detail(idOrSlug || ''),
     queryFn: async () => {
-      if (!id) throw new Error('Sprite ID is required');
-      const { data, error } = await supabase
-        .from('project_sprites')
-        .select('*')
-        .eq('id', id)
-        .single();
-
+      if (!idOrSlug) throw new Error('Sprite ID or Slug is required');
+      
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
+      const query = supabase.from('project_sprites').select('*');
+      if (isUUID) {
+        query.eq('id', idOrSlug);
+      } else {
+        query.eq('slug', idOrSlug);
+      }
+      
+      const { data, error } = await query.single();
       if (error) throw error;
       return data as ProjectSprite;
     },
-    enabled: !!id,
+    enabled: !!idOrSlug,
   });
 }
 
@@ -121,9 +154,32 @@ export function useCreateSprite() {
 
   return useMutation({
     mutationFn: async ({ projectId, asset }: { projectId: string; asset: SpriteAsset }) => {
+      const { createSpec } = await import('@/lib/slugUtils');
+      
+      // Generate initial slug for the sprite (scoped to project)
+      let baseSlug = createSpec('', asset.name || 'new sprite');
+      let slug = baseSlug;
+      let counter = 1;
+      let unique = false;
+
+      while (!unique) {
+        const { data } = await supabase
+          .from('project_sprites')
+          .select('id')
+          .eq('project_id', projectId)
+          .eq('slug', slug)
+          .maybeSingle();
+        
+        if (!data) {
+          unique = true;
+        } else {
+          slug = `${baseSlug}-${counter++}`;
+        }
+      }
+
       const { data, error } = await supabase
         .from('project_sprites')
-        .insert([{ project_id: projectId, asset_data: asset }])
+        .insert([{ project_id: projectId, asset_data: asset, slug }])
         .select()
         .single();
 

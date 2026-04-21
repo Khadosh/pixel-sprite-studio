@@ -47,9 +47,10 @@ export const createFrameSlice: StoreSlice<Partial<SpriteEditorState>> = (set, ge
           return { ...layer, frames: newFrames };
         })
       },
-      // Optionally switch to the mirrored view
+      // Switch to the mirrored view correctly
       editingFrameIndex: 3,
-      activePerspective: 'side-left'
+      activePerspective: 'side',
+      activeSide: 'left'
     }));
   },
 });
