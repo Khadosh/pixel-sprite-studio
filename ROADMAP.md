@@ -98,7 +98,30 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 - [x] Sistema de `Props` inyectables como capas
 - [x] **Smart Importing**: Soporte para encajar 16px en 32px (centering)
 - [ ] Creación masiva de assets por categorías (objetos, consumibles, equipo)
-- [ ] Browser de assets con preview real-time
+- [x] Browser de assets con preview real-time (Integrado en Studio)
+
+---
+
+## Fase 8 — Studio Pro: Personalización y Creación Avanzada 🚀
+*Prioridad: MÁXIMA — Enfoque en generación de assets listos para producción*
+
+### 8.1 — Humanoides Multidireccionales y Perspectivas
+- [ ] **Bases Pro**: Implementación de bases con 5 direcciones (Frente, Espalda, Lateral, Diagonal).
+- [ ] **Auto-Mirror**: Lógica de espejado automática para vistas laterales y diagonales.
+- [ ] **Perspectivas**: Selector de modo Top-down e Isométrico.
+- [ ] **Rejilla Isométrica**: Guías visuales de diamante (30º) opcionales para dibujo en perspectiva.
+
+### 8.2 — Galería de Equipamiento (Clothing/Props)
+- [ ] **Ropa Inyectable**: Capas de equipo (cascos, abrigos, armaduras) pre-alineadas a las bases estándar.
+- [ ] **Categorización**: Filtros específicos para "HEADWEAR", "CHEST", "ACCESSORY".
+
+### 8.3 — Wizard de Creación
+- [ ] **Flujo Guiado**: Asistente por pasos (Categoría -> Perspectiva -> Plantilla -> Configuración).
+- [ ] **Filtros Inteligentes**: Ocultar animaciones/herramientas no válidas según la categoría del asset.
+
+### 8.4 — Motor IA Híbrido (HQ Image-to-Pixel)
+- [ ] **HQ Generation**: Prompt -> Imagen RAW de alta calidad (vía Gemini).
+- [ ] **Auto-Import Pipeline**: Puente automático entre la imagen generada y el motor de pixelización/cuantización del Studio.
 
 ---
 
