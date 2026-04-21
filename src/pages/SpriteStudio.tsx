@@ -6,7 +6,7 @@ import { createSpriteEditorStore } from '@/components/SpriteEditor/store/useSpri
 import { EditorLayout } from '@/components/SpriteEditor/components/EditorLayout';
 import { AnimationPreviewPanelHandle } from '@/components/SpriteEditor/components/AnimationPreviewPanel';
 import { SpriteAsset } from '@/lib/types';
-import { PxArrowLeft, PxLoader, PxCheck, PxSave, PxDownload, PxImage, PxFileVideo, PxHardDrive } from '@/components/icons/PixelIcon';
+import { PxArrowLeft, PxLoader, PxCheck, PxSave, PxDownload, PxImage, PxFileVideo, PxHardDrive, PxUpload } from '@/components/icons/PixelIcon';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from 'zustand';
 import { Button } from '@/components/ui/button';
@@ -18,12 +18,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { ImportImageModal } from '@/components/SpriteEditor/components/ImportImageModal';
 
 export default function SpriteStudio() {
   const { projectId, spriteId } = useParams<{ projectId: string; spriteId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const previewPanelRef = useRef<AnimationPreviewPanelHandle>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // 1. Load Sprite Data
   const { data: sprite, isLoading, error } = useSprite(spriteId);
@@ -158,6 +160,16 @@ export default function SpriteStudio() {
            )}
            
            <div className="h-4 w-[1px] bg-border mx-1" />
+
+           <Button
+             variant="outline"
+             size="sm"
+             className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
+             onClick={() => setShowImportModal(true)}
+           >
+             <PxUpload size={15} className="mr-2" />
+             IMPORTAR
+           </Button>
            
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -212,6 +224,7 @@ export default function SpriteStudio() {
 
       <SpriteEditorStoreProvider store={store}>
         <EditorLayout hideHeader={true} />
+        <ImportImageModal open={showImportModal} onOpenChange={setShowImportModal} />
       </SpriteEditorStoreProvider>
     </div>
   );
