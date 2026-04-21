@@ -20,6 +20,7 @@ import {
   drawSparks,
   drawPulse,
   inferMainColorIndex,
+  flipHorizontal,
 } from '@/lib/spriteTransforms';
 
 /**
@@ -281,22 +282,56 @@ function generateFrameSequence(
   glowColor: number,
   anatomy?: any
 ): number[][][] {
-  switch (anim) {
-    case 'idle':
-      return generateIdle(base, anatomy);
-    case 'walk':
-      return generateWalk(base, anatomy);
-    case 'attack':
-      return generateAttack(base, anatomy);
-    case 'cast':
-      return generateCast(base, glowColor, anatomy);
-    case 'hurt':
-      return generateHurt(base, anatomy);
-    case 'jump':
-      return generateJump(base, anatomy);
-    default:
-      return [generateIdle(base, anatomy)[0]]; // Fallback to 1st frame
+  let isLeft = false;
+  let baseAnim = anim;
+  
+  if (anim.endsWith('_left')) {
+    isLeft = true;
+    baseAnim = anim.replace('_left', '');
+  } else if (anim.endsWith('_right')) {
+    baseAnim = anim.replace('_right', '');
   }
+
+  let frames: number[][][];
+
+  switch (baseAnim) {
+    case 'idle':
+      frames = generateIdle(base, anatomy);
+      break;
+    case 'walk':
+      frames = generateWalk(base, anatomy);
+      break;
+    case 'attack':
+      frames = generateAttack(base, anatomy);
+      break;
+    case 'cast':
+      frames = generateCast(base, glowColor, anatomy);
+      break;
+    case 'hurt':
+      frames = generateHurt(base, anatomy);
+      break;
+    case 'die':
+      // Reusing squash or a modified hurt for 'die' until a specific transform is built
+      frames = [
+        base,
+        generateHurt(base, anatomy)[1],
+        squash(base, [Math.floor(base.length * 0.7)]),
+      ];
+      break;
+    case 'jump':
+      frames = generateJump(base, anatomy);
+      break;
+    default:
+      frames = [generateIdle(base, anatomy)[0]];
+      break;
+  }
+
+  // Auto-flip for left animations assuming base is right facing
+  if (isLeft) {
+    frames = frames.map(f => flipHorizontal(f));
+  }
+
+  return frames;
 }
 
 /**

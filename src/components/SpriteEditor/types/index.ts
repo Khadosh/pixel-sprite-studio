@@ -6,11 +6,12 @@ export const THUMB_SIZE = 16 * THUMB_SCALE;
 
 export const AVAILABLE_ANIMS = [
   { value: 'idle', label: 'Idle' },
-  { value: 'walk', label: 'Walk' },
-  { value: 'attack', label: 'Attack' },
-  { value: 'cast', label: 'Cast' },
+  { value: 'walk_right', label: 'Walk (R)' },
+  { value: 'walk_left', label: 'Walk (L)' },
+  { value: 'attack_right', label: 'Attack (R)' },
+  { value: 'attack_left', label: 'Attack (L)' },
   { value: 'hurt', label: 'Hurt' },
-  { value: 'jump', label: 'Jump' },
+  { value: 'die', label: 'Die' },
 ];
 
 export interface SpriteEditorModalProps {
