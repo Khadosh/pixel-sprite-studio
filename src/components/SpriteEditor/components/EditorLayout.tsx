@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
+import { SpriteAsset } from '@/lib/types';
 import EditorToolbar from '@/components/EditorToolbar';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
 import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
@@ -56,10 +57,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     canRedo: s.canRedo
   })));
 
-  // Pixel editor hook (local drawing state with refs)
-  const pixelEditor = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, (updated) => {
+  const handleAssetChange = React.useCallback((updated: SpriteAsset) => {
     store.getState().setEditedAsset(updated);
-  }, scope, pushUndo, undo, canUndo);
+  }, [store]);
+
+  // Pixel editor hook (local drawing state with refs)
+  const pixelEditor = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, handleAssetChange, scope, pushUndo, undo, canUndo);
 
   // Sync pixel editor bridge to store
   const bridge = useMemo(() => ({
@@ -107,8 +110,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     handleGenerateAnimationsAI
   ]);
 
+  const lastBridgeRef = useRef<any>(null);
   useEffect(() => {
-    store.getState().setPixelEditorBridge(bridge);
+    if (bridge !== lastBridgeRef.current) {
+      lastBridgeRef.current = bridge;
+      // Use setInternalState style update to avoid triggering more re-renders if the bridge is shallow-equal
+      store.getState().setPixelEditorBridge(bridge);
+    }
   }, [store, bridge]);
 
   // Store-derived state for render
@@ -139,10 +147,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     }));
   }, [store]);
 
-  const toggleOnionSkin = React.useCallback(() => setOnionSkin((prev: boolean) => !prev), [setOnionSkin]);
-  const toggleIsometricGrid = React.useCallback(() => setShowIsometricGrid((prev: boolean) => !prev), [setShowIsometricGrid]);
-  const toggleCanvasBg = React.useCallback(() => setCanvasBg((prev: 'light' | 'dark') => (prev === 'light' ? 'dark' : 'light')), [setCanvasBg]);
-  const toggleMirrorX = React.useCallback(() => pixelEditor.setMirrorX((prev: boolean) => !prev), [pixelEditor.setMirrorX]);
+  const toggleOnionSkin = React.useCallback(() => (setOnionSkin as any)((prev: boolean) => !prev), [setOnionSkin]);
+  const toggleIsometricGrid = React.useCallback(() => (setShowIsometricGrid as any)((prev: boolean) => !prev), [setShowIsometricGrid]);
+  const toggleCanvasBg = React.useCallback(() => (setCanvasBg as any)((prev: 'light' | 'dark') => (prev === 'light' ? 'dark' : 'light')), [setCanvasBg]);
+  const toggleMirrorX = React.useCallback(() => (pixelEditor.setMirrorX as any)((prev: boolean) => !prev), [pixelEditor.setMirrorX]);
   const openStudioSheet = React.useCallback(() => setShowStudioSheet(true), []);
 
 

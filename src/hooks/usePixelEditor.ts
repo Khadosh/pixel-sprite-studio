@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Frame, SpriteAsset } from '@/lib/types';
 import type { BrushSize } from '@/components/EditorToolbar';
 
@@ -564,7 +564,7 @@ export function usePixelEditor(
     }
   }, [tool, movingSelectionPixels, stampSelection]);
 
-  return {
+  return useMemo(() => ({
     tool, setTool: handleSetTool,
     activeColorKey, setActiveColorKey,
     brushSize, setBrushSize,
@@ -580,5 +580,20 @@ export function usePixelEditor(
     movingSelectionPixels,
     stampSelection,
     clearFloatingPixels: () => setMovingSelectionPixels(null),
-  };
+  }), [
+    tool, handleSetTool,
+    activeColorKey, setActiveColorKey,
+    brushSize, setBrushSize,
+    mirrorX, setMirrorX,
+    draftFrame,
+    handlePointerDown, handlePointerMove, handlePointerUp,
+    undo, pushUndo, externalCanUndo,
+    overwriteLayerFrame,
+    rotationAngle,
+    rotationCenter,
+    selectionRect,
+    setSelectionRect,
+    movingSelectionPixels,
+    stampSelection
+  ]);
 }

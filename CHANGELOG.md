@@ -15,6 +15,8 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Mejora**: **Interfaz de Importación**. Rediseño estético total del modal con grilla de puntos de fondo, efectos de escaneo dinámico y esquineros pixel-art.
 - **Fix**: **Estabilidad en Toolbar**. Corregido error de profundidad de renderizado ("Maximum update depth") relacionado con tooltips y re-definición de componentes.
 - **Fix**: **TypeScript y Sintaxis**. Resuelto error de JSX en el modal de importación y agregado soporte para operadores funcionales en el store de Zustand.
+- **Fix**: **Bucle Infinito y Estabilidad**. Refactorizado `usePixelEditor` y `EditorLayout` para estabilizar el Bridge y eliminar errores de profundidad de renderizado ("Maximum update depth exceeded").
+- **Mejora**: **Caché de Composición**. Implementado sistema de caché para `compositeFrame` que estabiliza referencias y resuelve advertencias de `getSnapshot`.
 - **Fix**: **Nomenclatura de Colores**. Limpieza de la paleta eliminando el prefijo del nombre de archivo en colores importados para mayor legibilidad.
 - **Novedad**: **Master Spritesheet Preview**. Herramienta de inspección global para visualizar todos los frames y animaciones en simultáneo.
 - **Novedad**: **Checkpoints (Historial Cloud)**. Guardado manual de estados robusto para recuperación de assets.

@@ -13,10 +13,10 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setAssetName: (name) => set({ assetName: name, isDirty: true }),
   setIsEditingName: (editing) => set({ isEditingName: editing }),
   setOnionSkin: (onOrFn) => set(s => ({ 
-    onionSkin: typeof onOrFn === 'function' ? onOrFn(s.onionSkin) : onOrFn 
+    onionSkin: typeof onOrFn === 'function' ? (onOrFn as Function)(s.onionSkin) : onOrFn 
   })),
   setShowAllColors: (onOrFn) => set(s => ({ 
-    showAllColors: typeof onOrFn === 'function' ? onOrFn(s.showAllColors) : onOrFn 
+    showAllColors: typeof onOrFn === 'function' ? (onOrFn as Function)(s.showAllColors) : onOrFn 
   })),
   setScope: (scope) => set({ scope }),
   setCastSettings: (settingsOrFn) => set(state => ({
@@ -35,13 +35,18 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
   setCanvasBg: (bgOrFn) => set(s => ({ 
-    canvasBg: typeof bgOrFn === 'function' ? bgOrFn(s.canvasBg) : bgOrFn 
+    canvasBg: typeof bgOrFn === 'function' ? (bgOrFn as Function)(s.canvasBg) : bgOrFn 
   })),
   setActivePerspective: (p) => set(s => {
     let idx = 0;
     if (p === 'side') idx = s.activeSide === 'right' ? 1 : 3;
     else if (p === 'back') idx = 2;
-    return { activePerspective: p, editingFrameIndex: idx };
+    
+    // Safety check: ensure the target index is within bounds of the actual frames
+    const maxFrames = Math.max(0, (s.editedAsset.layers?.[0]?.frames.length || 0) - 1);
+    const finalIdx = Math.min(idx, maxFrames);
+    
+    return { activePerspective: p, editingFrameIndex: finalIdx };
   }),
   setActiveSide: (side) => set(s => {
     const isSide = s.activePerspective === 'side';
@@ -51,10 +56,10 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     };
   }),
   setShowIsometricGrid: (onOrFn) => set(s => ({ 
-    showIsometricGrid: typeof onOrFn === 'function' ? onOrFn(s.showIsometricGrid) : onOrFn 
+    showIsometricGrid: typeof onOrFn === 'function' ? (onOrFn as Function)(s.showIsometricGrid) : onOrFn 
   })),
   setSketchMode: (onOrFn) => set(s => ({ 
-    sketchMode: typeof onOrFn === 'function' ? onOrFn(s.sketchMode) : onOrFn 
+    sketchMode: typeof onOrFn === 'function' ? (onOrFn as Function)(s.sketchMode) : onOrFn 
   })),
 
   setCategory: (category) => set(state => ({

@@ -47,16 +47,13 @@ export default function SpriteStudio() {
           handleManualSave(asset);
         },
         onOpenChange: (open) => {
-          if (!open) {
-            const projectPart = createSpec(projectId, sprite?.name || 'project');
-            navigate(`/project/${projectPart}`);
-          }
+          if (!open) navigate(`/project/${projectSpec}`);
         },
         previewPanelRef,
       });
       setStore(newStore);
     }
-  }, [sprite, store, projectId, navigate]);
+  }, [sprite, store, projectId, projectSpec, navigate]);
 
   // Handle Manual Save
   const handleManualSave = async (asset: SpriteAsset) => {

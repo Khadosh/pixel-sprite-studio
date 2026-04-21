@@ -16,7 +16,9 @@ export const selectVisibleFramesIndices = (state: SpriteEditorState): number[] =
   }
   const anim = state.editedAsset.animations!.find(a => a.name === state.viewingAnimation);
   if (!anim) return [0];
-  return [...new Set(anim.frameIndices)];
+  
+  // Note: For absolute stability, we could memoize this by anim.frameIndices but useShallow usually suffices at the component level
+  return anim.frameIndices; 
 };
 
 /** Get palette filtered to active layer (or all if showAllColors) */

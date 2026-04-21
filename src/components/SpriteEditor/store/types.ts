@@ -79,8 +79,8 @@ export interface SpriteEditorState {
   setViewingAnimation: (name: string) => void;
   setAssetName: (name: string) => void;
   setIsEditingName: (editing: boolean) => void;
-  setOnionSkin: (on: boolean) => void;
-  setShowAllColors: (on: boolean) => void;
+  setOnionSkin: (on: boolean | ((prev: boolean) => boolean)) => void;
+  setShowAllColors: (on: boolean | ((prev: boolean) => boolean)) => void;
   setScope: (scope: EditorScope) => void;
   setCastSettings: (settings: AdvancedCastSettings | ((prev: AdvancedCastSettings) => AdvancedCastSettings)) => void;
   setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null) => void;
@@ -91,11 +91,11 @@ export interface SpriteEditorState {
   setIsAnimGenerating: (g: boolean) => void;
   setAnimError: (e: string | null) => void;
   setPixelEditorBridge: (bridge: SpriteEditorState['_pixelEditorBridge']) => void;
-  setCanvasBg: (bg: 'light' | 'dark') => void;
+  setCanvasBg: (bg: 'light' | 'dark' | ((prev: 'light' | 'dark') => 'light' | 'dark')) => void;
   setActivePerspective: (perspective: 'front' | 'side' | 'back') => void;
   setActiveSide: (side: 'left' | 'right') => void;
-  setShowIsometricGrid: (show: boolean) => void;
-  setSketchMode: (on: boolean) => void;
+  setShowIsometricGrid: (show: boolean | ((prev: boolean) => boolean)) => void;
+  setSketchMode: (on: boolean | ((prev: boolean) => boolean)) => void;
   setCategory: (cat: SpriteAsset['category']) => void;
   setDescription: (desc: string) => void;
   setTags: (tags: string[]) => void;

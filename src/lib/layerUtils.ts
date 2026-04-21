@@ -1,10 +1,23 @@
 import type { Frame, SpriteAsset, SpriteLayer } from './types';
 
+// Simple cache for composited frames to stabilize references
+const compositeCache = new WeakMap<SpriteAsset, Map<number, Frame>>();
+
 /**
  * Composites all visible layers for a specific frame index into a single Frame.
  * Top-most layers (higher index in the array) override lower layers.
  */
 export function compositeFrame(asset: SpriteAsset, frameIndex: number): Frame {
+  // Check cache first
+  let assetCache = compositeCache.get(asset);
+  if (!assetCache) {
+    assetCache = new Map();
+    compositeCache.set(asset, assetCache);
+  }
+  
+  const cached = assetCache.get(frameIndex);
+  if (cached) return cached;
+
   const size = asset.size;
   const result: Frame = Array.from({ length: size }, () => Array(size).fill(0));
   
@@ -24,14 +37,14 @@ export function compositeFrame(asset: SpriteAsset, frameIndex: number): Frame {
       for (let c = 0; c < size; c++) {
         const val = row[c];
         if (val !== undefined && val !== 0) {
-          // In a simple palette system, we just take the top-most non-zero value.
-          // In the future, if we want real alpha blending, we'd need to convert to RGBA.
           result[r][c] = val;
         }
       }
     }
   }
 
+  // Save to cache before returning
+  assetCache.set(frameIndex, result);
   return result;
 }
 
@@ -109,7 +122,7 @@ export function ensureLayerSupport(asset: SpriteAsset): SpriteAsset {
   }
 
   // Ensure ALL layers have at least 4 frames (Front, Side-R, Back, Side-L canonical bases)
-  const paddedLayers = modifiedAsset.layers!.map(layer => {
+  const paddedLayers = modifiedAsset.layers!.map((layer: SpriteLayer) => {
     if (layer.frames.length < 4) {
       const newFrames = [...layer.frames];
       while (newFrames.length < 4) {
@@ -128,7 +141,7 @@ export function ensureLayerSupport(asset: SpriteAsset): SpriteAsset {
  */
 export function addEmptyFrameToAllLayers(asset: SpriteAsset, frameIndex: number): SpriteAsset {
   const size = asset.size;
-  const newLayers = asset.layers!.map(layer => {
+  const newLayers = asset.layers!.map((layer: SpriteLayer) => {
     const newFrames = [...layer.frames];
     const emptyFrame = Array.from({ length: size }, () => Array(size).fill(0));
     newFrames.splice(frameIndex + 1, 0, emptyFrame);
@@ -145,7 +158,7 @@ export function addEmptyFrameToAllLayers(asset: SpriteAsset, frameIndex: number)
  * Removes a frame index from all layers.
  */
 export function removeFrameFromAllLayers(asset: SpriteAsset, frameIndex: number): SpriteAsset {
-  const newLayers = asset.layers!.map(layer => {
+  const newLayers = asset.layers!.map((layer: SpriteLayer) => {
     const newFrames = [...layer.frames];
     newFrames.splice(frameIndex, 1);
     return { ...layer, frames: newFrames };
@@ -161,7 +174,7 @@ export function removeFrameFromAllLayers(asset: SpriteAsset, frameIndex: number)
  * Duplicates a frame index in all layers.
  */
 export function duplicateFrameInAllLayers(asset: SpriteAsset, frameIndex: number): SpriteAsset {
-  const newLayers = asset.layers!.map(layer => {
+  const newLayers = asset.layers!.map((layer: SpriteLayer) => {
     const newFrames = [...layer.frames];
     // Deep clone the frame matrix
     const frameToCopy = layer.frames[frameIndex];
@@ -334,18 +347,18 @@ export function cleanupOrphanedFrames(asset: SpriteAsset): SpriteAsset {
   });
 
   // 3. Rebuild layers with only used frames
-  const newLayers = asset.layers.map(layer => ({
+  const newLayers = asset.layers.map((layer: SpriteLayer) => ({
     ...layer,
-    frames: usedIndicesSorted.map(oldIdx => {
+    frames: usedIndicesSorted.map((oldIdx: number) => {
       // If the old index is out of bounds (shouldn't happen but safe-guard), return empty
       return layer.frames[oldIdx] || Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
     })
   }));
 
   // 4. Update animation definitions to use new indices
-  const newAnimations = asset.animations.map(anim => ({
+  const newAnimations = asset.animations.map((anim: any) => ({
     ...anim,
-    frameIndices: anim.frameIndices.map(oldIdx => indexMap.get(oldIdx) ?? 0)
+    frameIndices: anim.frameIndices.map((oldIdx: number) => indexMap.get(oldIdx) ?? 0)
   }));
 
   return {
