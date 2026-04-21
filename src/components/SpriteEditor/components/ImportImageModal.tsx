@@ -55,6 +55,7 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
 
   // Position & scale
   const [position, setPosition] = useState<ImagePosition>({ x: 0, y: 0, scale: 1 });
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Mode & Options
   const [paletteMode, setPaletteMode] = useState<PaletteMode>('auto');
@@ -112,6 +113,23 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
     if (file) handleFileSelect(file);
   };
 
@@ -279,13 +297,29 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
             {!sourceImage ? (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square border-2 border-dashed border-primary/20 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-primary/5 transition-all text-muted-foreground"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+                  isDragOver 
+                    ? 'border-primary bg-primary/20 scale-105 shadow-[0_0_20px_rgba(34,197,94,0.3)]' 
+                    : 'border-primary/20 hover:bg-primary/5 text-muted-foreground'
+                }`}
               >
-                <div className="text-3xl">🖼️</div>
-                <div className="text-[10px]">Click para subir imagen</div>
+                <div className="text-3xl pointer-events-none">🖼️</div>
+                <div className="text-[10px] pointer-events-none">
+                  {isDragOver ? 'SUELTA LA IMAGEN AQUÍ' : 'Click o arrastra para subir imagen'}
+                </div>
               </div>
             ) : (
-              <div className="relative aspect-square border border-border rounded overflow-hidden shadow-inner">
+              <div 
+                className={`relative aspect-square border-2 rounded overflow-hidden shadow-inner transition-colors ${
+                  isDragOver ? 'border-primary border-dashed shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-border'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <canvas 
                   ref={previewCanvasRef} 
                   width={CANVAS_DISPLAY_SIZE} 
