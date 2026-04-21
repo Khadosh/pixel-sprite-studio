@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PixelWarningIcon } from './PixelWarningIcon';
+import { PxUpload, PxImage } from '@/components/icons/PixelIcon';
 import { imageToPixelData, PixelizeResult } from '@/lib/imageToPixelData';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { PALETTE_LIBRARY } from '@/lib/assets/palettes';
@@ -287,9 +288,14 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] bg-card border-border font-pixel">
-        <DialogHeader>
-          <DialogTitle className="text-primary tracking-widest text-sm uppercase">Importar Imagen</DialogTitle>
+        <DialogHeader className="border-b border-white/5 pb-4 mb-4">
+          <DialogTitle className="text-primary tracking-[0.2em] text-lg font-pixel uppercase drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]">
+            Importar Imagen
+          </DialogTitle>
         </DialogHeader>
+
+        <div className="absolute inset-0 bg-pixel-grid opacity-10 pointer-events-none" />
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Side: Preview & Controls */}
@@ -300,16 +306,38 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+                className={`relative aspect-square border border-dashed rounded-lg flex flex-col items-center justify-center overflow-hidden cursor-pointer transition-all duration-300 ${
                   isDragOver 
-                    ? 'border-primary bg-primary/20 scale-105 shadow-[0_0_20px_rgba(34,197,94,0.3)]' 
-                    : 'border-primary/20 hover:bg-primary/5 text-muted-foreground'
+                    ? 'border-primary bg-primary/20 scale-[1.02] shadow-[0_0_30px_rgba(34,197,94,0.2)]' 
+                    : 'border-primary/20 bg-primary/5 hover:bg-primary/[0.08] text-muted-foreground'
                 }`}
               >
-                <div className="text-3xl pointer-events-none">🖼️</div>
-                <div className="text-[10px] pointer-events-none">
-                  {isDragOver ? 'SUELTA LA IMAGEN AQUÍ' : 'Click o arrastra para subir imagen'}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '4px 4px' }} />
+                
+                <div className="relative z-10 flex flex-col items-center gap-4">
+                  <div className={`p-4 rounded-full transition-all duration-500 ${isDragOver ? 'bg-primary/30 scale-110 rotate-12 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-primary/10'}`}>
+                    <PxUpload size={48} className={isDragOver ? 'text-primary' : 'text-primary/60'} />
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 text-center px-6">
+                    <span className={`text-[11px] font-pixel tracking-wider uppercase transition-colors ${isDragOver ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
+                      {isDragOver ? '¡SUELTA PARA PIXELAR!' : 'Subir Imagen Fuente'}
+                    </span>
+                    <span className="text-[8px] font-pixel text-muted-foreground/60 uppercase opacity-70">
+                      Arrastrá tu archivo o hacé click
+                    </span>
+                  </div>
                 </div>
+
+                {/* Decorative corners */}
+                <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-primary/30" />
+                <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-primary/30" />
+                <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-primary/30" />
+                <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-primary/30" />
+
+                {/* Scanline effect when dragging */}
+                {isDragOver && (
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-primary/50 shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-scanline pointer-events-none" />
+                )}
               </div>
             ) : (
               <div 
@@ -403,30 +431,35 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
 
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleInputChange} />
 
-        <DialogFooter className="gap-2 sm:gap-0 sm:justify-between items-center border-t border-border pt-4">
-          <Button variant="ghost" size="sm" className="text-[9px] uppercase" onClick={() => onOpenChange(false)}>Cancelar</Button>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 pt-4 border-t border-white/5 relative z-10">
+          <div className="flex items-center gap-2 text-[8px] font-pixel text-muted-foreground/40 uppercase">
+            <PxImage size={12} className="opacity-50" />
+            Formatos: PNG, JPG, GIF
+          </div>
           <div className="flex gap-2">
-            {!isCurrentFrameEmpty && (
+            <Button variant="ghost" className="h-8 px-4 text-[9px] font-pixel uppercase hover:bg-white/5" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            
+            {!isCurrentFrameEmpty && sourceImage && (
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="text-[9px] uppercase border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                className="h-8 px-4 text-[9px] font-pixel uppercase border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
                 onClick={() => handleImport('overwrite')}
-                disabled={!sourceImage}
               >
-                Sobreestimar
+                Sobrescribir
               </Button>
             )}
+
             <Button 
-              size="sm" 
-              className="text-[9px] uppercase bg-green-600 hover:bg-green-500 text-white"
-              onClick={() => handleImport('new_layer')}
+              className="h-8 px-6 text-[9px] font-pixel uppercase bg-primary hover:bg-primary/90 text-primary-foreground shadow-[2px_2px_0px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:shadow-none"
+              onClick={() => handleImport(isCurrentFrameEmpty ? 'overwrite' : 'new_layer')}
               disabled={!sourceImage}
             >
-              {isCurrentFrameEmpty ? 'Importar' : 'Como Nuevo Layer'}
+              {isCurrentFrameEmpty || !sourceImage ? 'Importar' : 'Nuevo Layer'}
             </Button>
           </div>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

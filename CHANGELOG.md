@@ -9,16 +9,20 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 - **Novedad**: **Sprite Studio (Full Display)**. Migración completa del editor de un modal a una página dedicada (`/project/:id/editor/:spriteId`) para máxima inmersión.
 - **Novedad**: **Autosave Cloud**. Implementado sistema de sincronización automática y silenciosa con 3s de debounce e indicadores de estado en tiempo real.
-- **Novedad**: **Master Spritesheet Preview**. Herramienta de inspección global que muestra todos los frames de todas las animaciones en una sola cuadrícula interactiva.
-- **Novedad**: **Checkpoints (Historial Cloud)**. Sistema de versiones manuales que permite guardar hasta 10 estados del asset y restaurarlos instantáneamente.
-- **Mejora**: Refactorización de `EditorLayout.tsx` para soportar navegación independiente y modularidad de componentes.
-- **Mejora**: Header unificado con Breadcrumbs dinámicos y acceso rápido a utilidades de exportación.
-- **Fix**: Resuelta regresión crítica de acceso al estado de Zustand (`api.getState`) y limpieza de errores de tipos en el store.
+- **Novedad**: **Borrador Masivo (Magic Eraser)**. Nueva herramienta para eliminar todas las instancias de un color en el frame activo con un solo click.
+- **Mejora**: **Importación de Alta Fidelidad**. Nuevo motor de pixelización con promediado de bloque (Box Sampling) que elimina el ruido en imágenes fuente de alta resolución.
+- **Mejora**: **Interfaz de Importación**. Rediseño estético total del modal con grilla de puntos de fondo, efectos de escaneo dinámico y esquineros pixel-art.
+- **Fix**: **Estabilidad en Toolbar**. Corregido error de profundidad de renderizado ("Maximum update depth") relacionado con tooltips y re-definición de componentes.
+- **Fix**: **Nomenclatura de Colores**. Limpieza de la paleta eliminando el prefijo del nombre de archivo en colores importados para mayor legibilidad.
+- **Novedad**: **Master Spritesheet Preview**. Herramienta de inspección global para visualizar todos los frames y animaciones en simultáneo.
+- **Novedad**: **Checkpoints (Historial Cloud)**. Guardado manual de estados robusto para recuperación de assets.
 
 ---
 
 ## 2026-04-19
 **1 commit realizado**
+
+- **Novedad**: **Garbage Collector de Frames**. Implementado sistema automático de limpieza de frames huérfanos que ya no están asociados a ninguna animación o capa para optimizar el almacenamiento.
 
 ---
 

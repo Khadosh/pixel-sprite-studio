@@ -8,6 +8,7 @@
   :root {
     --background: 240 10% 8%;
     --foreground: 120 5% 85%;
+    --font-pixel: 'Press Start 2P', cursive;
     --card: 240 8% 12%;
     --card-foreground: 120 5% 85%;
     --popover: 240 8% 12%;
@@ -70,5 +71,20 @@
       linear-gradient(-45deg, transparent 75%, #09090f 75%);
     background-size: 8px 8px;
     background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  }
+
+  .font-pixel {
+    font-family: var(--font-pixel);
+  }
+
+  @keyframes scanline {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(320px); opacity: 0; }
+  }
+
+  .animate-scanline {
+    animation: scanline 3s linear infinite;
   }
 }

@@ -1,8 +1,8 @@
 import {
   PxPencil, PxEraser, PxFill, PxPipette,
-  PxLine, PxRect, PxCircle, PxSelect,
+  PxLine, PxRect, PxCircle, PxSelect, PxGrid,
   PxRotateCw, PxCopy, PxPaste, PxFlipH, PxFlipV,
-  PxMirror, PxUndo, PxRedo, PxLayers, PxSun, PxMoon,
+  PxMirror, PxUndo, PxRedo, PxLayers, PxSun, PxMoon, PxTrash,
   type PixelIconProps
 } from '@/components/icons/PixelIcon';
 import type { EditorTool } from '@/hooks/usePixelEditor';
@@ -34,6 +34,8 @@ interface EditorToolbarProps {
   onRotate: () => void;
   canvasBg: 'light' | 'dark';
   onToggleCanvasBg: () => void;
+  showIsometricGrid?: boolean;
+  onToggleIsometricGrid?: () => void;
   onOpenStudioSheet?: () => void;
 }
 
@@ -48,6 +50,7 @@ type PxIcon = React.FC<PixelIconProps>;
 const PAINT_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
   { id: 'pencil', icon: PxPencil, tooltip: 'Lápiz (B)' },
   { id: 'eraser', icon: PxEraser, tooltip: 'Borrador (E)' },
+  { id: 'erase-color', icon: PxTrash, tooltip: 'Borrado Masivo (M)' },
   { id: 'fill', icon: PxFill, tooltip: 'Relleno (G)' },
   { id: 'picker', icon: PxPipette, tooltip: 'Cuentagotas (I)' },
 ];
@@ -63,6 +66,29 @@ const TRANSFORM_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
   { id: 'rotate', icon: PxRotateCw, tooltip: 'Rotación Libre (R)' },
 ];
 
+const ToolButton = ({ t, currentTool, onToolChange: onTC, btnBase, btnActive, btnInactive }: { 
+  t: { id: EditorTool; icon: PxIcon; tooltip: string }, 
+  currentTool: EditorTool, 
+  onToolChange: (t: EditorTool) => void,
+  btnBase: string,
+  btnActive: string,
+  btnInactive: string
+}) => (
+  <Tooltip key={t.id}>
+    <TooltipTrigger asChild>
+      <button 
+        onClick={() => onTC(t.id)} 
+        className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
+      >
+        <t.icon size={16} />
+      </button>
+    </TooltipTrigger>
+    <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+      {t.tooltip}
+    </TooltipContent>
+  </Tooltip>
+);
+
 export default React.memo(function EditorToolbar({ 
   tool, onToolChange, 
   brushSize, onBrushSizeChange, 
@@ -73,6 +99,8 @@ export default React.memo(function EditorToolbar({
   scope, onScopeChange,
   onCopy, onPaste, onFlipH, onFlipV, onRotate,
   canvasBg, onToggleCanvasBg,
+  showIsometricGrid = false,
+  onToggleIsometricGrid,
   onOpenStudioSheet
 }: EditorToolbarProps) {
   const btnBase = 'p-2 rounded border transition-all';
@@ -80,35 +108,58 @@ export default React.memo(function EditorToolbar({
   const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
   const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
 
-  const ToolButton = ({ t, currentTool, onToolChange: onTC }: { 
-    t: { id: EditorTool; icon: PxIcon; tooltip: string }, 
-    currentTool: EditorTool, 
-    onToolChange: (t: EditorTool) => void 
-  }) => (
-    <Tooltip key={t.id}>
-      <TooltipTrigger asChild>
-        <button 
-          onClick={() => onTC(t.id)} 
-          className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
-        >
-          <t.icon size={16} />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-        {t.tooltip}
-      </TooltipContent>
-    </Tooltip>
-  );
-
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1">
         
         <div className="flex items-center gap-1">
-          <ToolButton t={{ id: 'select', icon: PxSelect, tooltip: 'Selección (S)' }} currentTool={tool} onToolChange={onToolChange} />
+          <ToolButton 
+            t={{ id: 'select', icon: PxSelect, tooltip: 'Selección (S)' }} 
+            currentTool={tool} 
+            onToolChange={onToolChange}
+            btnBase={btnBase}
+            btnActive={btnActive}
+            btnInactive={btnInactive}
+          />
           <div className="w-px h-6 bg-border mx-1 shrink-0" />
           {TRANSFORM_TOOLS.map(t => (
-            <ToolButton key={t.id} t={t} currentTool={tool} onToolChange={onToolChange} />
+            <ToolButton 
+              key={t.id} 
+              t={t} 
+              currentTool={tool} 
+              onToolChange={onToolChange}
+              btnBase={btnBase}
+              btnActive={btnActive}
+              btnInactive={btnInactive}
+            />
+          ))}
+        </div>
+
+        <div className="w-px h-6 bg-border mx-1 shrink-0" />
+
+        <div className="flex items-center gap-1">
+          {PAINT_TOOLS.map(t => (
+            <ToolButton 
+              key={t.id} 
+              t={t} 
+              currentTool={tool} 
+              onToolChange={onToolChange}
+              btnBase={btnBase}
+              btnActive={btnActive}
+              btnInactive={btnInactive}
+            />
+          ))}
+          <div className="w-px h-6 bg-border mx-1 shrink-0" />
+          {SHAPE_TOOLS.map(t => (
+            <ToolButton 
+              key={t.id} 
+              t={t} 
+              currentTool={tool} 
+              onToolChange={onToolChange}
+              btnBase={btnBase}
+              btnActive={btnActive}
+              btnInactive={btnInactive}
+            />
           ))}
         </div>
 
@@ -263,6 +314,22 @@ export default React.memo(function EditorToolbar({
               Onion Skin
             </TooltipContent>
           </Tooltip>
+
+          {onToggleIsometricGrid && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={onToggleIsometricGrid} 
+                  className={`${btnBase} ${showIsometricGrid ? 'border-indigo-400 bg-indigo-400/10 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.2)]' : btnInactive}`}
+                >
+                  <PxGrid size={16} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+                Guía Isométrica (2:1)
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           <Tooltip>
             <TooltipTrigger asChild>
