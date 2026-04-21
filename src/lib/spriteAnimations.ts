@@ -21,6 +21,8 @@ import {
   drawPulse,
   inferMainColorIndex,
   flipHorizontal,
+  generateWalkTopDown,
+  generateAttackTopDown,
 } from '@/lib/spriteTransforms';
 
 /**
@@ -283,6 +285,8 @@ function generateFrameSequence(
   anatomy?: any
 ): number[][][] {
   let isLeft = false;
+  let isUpDir = false;
+  let isDownDir = false;
   let baseAnim = anim;
   
   if (anim.endsWith('_left')) {
@@ -291,8 +295,10 @@ function generateFrameSequence(
   } else if (anim.endsWith('_right')) {
     baseAnim = anim.replace('_right', '');
   } else if (anim.endsWith('_down')) {
+    isDownDir = true;
     baseAnim = anim.replace('_down', '');
   } else if (anim.endsWith('_up')) {
+    isUpDir = true;
     baseAnim = anim.replace('_up', '');
   }
 
@@ -303,10 +309,18 @@ function generateFrameSequence(
       frames = generateIdle(base, anatomy);
       break;
     case 'walk':
-      frames = generateWalk(base, anatomy);
+      if (isUpDir || isDownDir) {
+        frames = generateWalkTopDown(base, anatomy);
+      } else {
+        frames = generateWalk(base, anatomy);
+      }
       break;
     case 'attack':
-      frames = generateAttack(base, anatomy);
+      if (isUpDir || isDownDir) {
+        frames = generateAttackTopDown(base, anatomy, isUpDir);
+      } else {
+        frames = generateAttack(base, anatomy);
+      }
       break;
     case 'cast':
       frames = generateCast(base, glowColor, anatomy);

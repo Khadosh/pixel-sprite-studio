@@ -493,7 +493,7 @@ export function generateWalk(
   return [f0, f1, f2, f3];
 }
 
-/** Attack: forward lunge with arm extension */
+/** Attack: forward lunge with arm extension (Side View) */
 export function generateAttack(
   base: Frame, 
   anatomy?: AnatomyConfig
@@ -512,6 +512,70 @@ export function generateAttack(
   }
   // Shift whole body slightly forward
   f2 = shiftRight(f2, 1);
+  
+  return [f1, f2];
+}
+
+/** Top-Down Walk: Vertical bobbing and vertical limb shifting, NO horizontal lean. */
+export function generateWalkTopDown(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): Frame[] {
+  const size = base.length;
+  const bounds = findBounds(base);
+  const com = getCenterOfMass(base);
+  if (!bounds || !com) return Array(4).fill(cloneFrame(base));
+
+  const segments = analyzeBodySegments(base, anatomy);
+  const { neckRow, waistRow, ankleRow, leftArmArea, rightArmArea } = segments;
+  const centerCol = Math.floor(com.c);
+  
+  const leftLegArea = { startR: ankleRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
+  const rightLegArea = { startR: ankleRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
+
+  // Frame 0: Left foot lifts (shifts UP), Right arm forward (shifts DOWN)
+  let f0 = shiftArea(base, leftLegArea, -1, 0); // lift left leg
+  if (rightArmArea) f0 = shiftArea(f0, rightArmArea, 1, 0); // right arm forward (towards camera)
+  if (leftArmArea) f0 = shiftArea(f0, leftArmArea, -1, 0); // left arm back
+
+  // Frame 1: Mid height bob down
+  const headArea = { startR: bounds.top, endR: neckRow, startC: 0, endC: size - 1 };
+  let f1 = shiftArea(base, headArea, 1, 0);
+
+  // Frame 2: Right foot lifts (shifts UP), Left arm forward (shifts DOWN)
+  let f2 = shiftArea(base, rightLegArea, -1, 0); // lift right leg
+  if (leftArmArea) f2 = shiftArea(f2, leftArmArea, 1, 0);
+  if (rightArmArea) f2 = shiftArea(f2, rightArmArea, -1, 0);
+
+  // Frame 3: Mid height stretch up
+  const f3 = stretchBody(base, neckRow);
+
+  return [f0, f1, f2, f3];
+}
+
+/** Top-Down Attack: Vertical lunge instead of horizontal */
+export function generateAttackTopDown(
+  base: Frame, 
+  anatomy?: AnatomyConfig,
+  isUpDir: boolean = false
+): Frame[] {
+  const segments = analyzeBodySegments(base, anatomy);
+  const { rightArmArea, leftArmArea } = segments;
+  
+  const dir = isUpDir ? -1 : 1; // if attacking UP, we lunge UP (-1 y-axis)
+
+  // Frame 1: Anticipation (recoil opposite to attack dir)
+  let f1 = shiftFrame(base, -dir, 0);
+  
+  // Frame 2: Lunge forward (in attack dir)
+  let f2 = shiftFrame(base, dir, 0);
+  
+  // Extend right arm prominently if found, else left arm.
+  // We extend it 1 px deeper into the direction.
+  const mainArm = rightArmArea || leftArmArea;
+  if (mainArm) {
+    f2 = shiftArea(f2, mainArm, dir, 0);
+  }
   
   return [f1, f2];
 }
