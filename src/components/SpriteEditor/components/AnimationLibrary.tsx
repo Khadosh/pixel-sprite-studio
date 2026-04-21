@@ -21,6 +21,8 @@ export const AnimationLibrary = React.memo(() => {
   const castSettings = useSpriteEditorStore(s => s.castSettings);
   const setCastSettings = useSpriteEditorStore(s => s.setCastSettings);
   const animError = useSpriteEditorStore(s => s.animError);
+  const activePerspective = useSpriteEditorStore(s => s.activePerspective);
+  const setActivePerspective = useSpriteEditorStore(s => s.setActivePerspective);
   const storeApi = useSpriteEditorStoreApi();
 
   const [genType, setGenType] = useState<string>('idle');
@@ -45,9 +47,43 @@ export const AnimationLibrary = React.memo(() => {
     if (fn) await fn(type);
   };
 
+  // Filter animations based on perspective
+  const filteredAnims = AVAILABLE_ANIMS.filter(a => {
+    if (a.value === 'idle' || a.value === 'hurt' || a.value === 'die') return true;
+    if (activePerspective === 'front') return a.value.endsWith('_down');
+    if (activePerspective === 'side') return a.value.endsWith('_left') || a.value.endsWith('_right');
+    if (activePerspective === 'back') return a.value.endsWith('_up');
+    return true;
+  });
+
   return (
     <ScrollArea className="h-full pr-3">
       <div className="space-y-6">
+      
+      {/* SECTION: PERSPECTIVE TOGGLE */}
+      <div className="space-y-3">
+        <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Perspectiva</span>
+        <div className="grid grid-cols-3 gap-1 bg-black/20 p-1 rounded-md border border-white/5">
+          {(['front', 'side', 'back'] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => {
+                setActivePerspective(p);
+                setViewingAnimation('base');
+                setEditingFrameIndex(p === 'front' ? 0 : p === 'side' ? 1 : 2);
+                setGenType('idle');
+              }}
+              className={`font-pixel text-[8px] py-1.5 rounded transition-all uppercase ${
+                activePerspective === p 
+                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-[inset_0_0_10px_rgba(34,197,94,0.1)]' 
+                  : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-white/5'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
       {/* SECTION: GENERATION PANEL - MOVED TO TOP */}
       <div className="space-y-3">
         <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Generar Nueva</span>
@@ -60,7 +96,7 @@ export const AnimationLibrary = React.memo(() => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0a0a0f] border-primary/40">
-                  {AVAILABLE_ANIMS.map(a => (
+                  {filteredAnims.map(a => (
                     <SelectItem key={a.value} value={a.value} className="text-[9px] font-pixel">{a.label.toUpperCase()}</SelectItem>
                   ))}
                 </SelectContent>

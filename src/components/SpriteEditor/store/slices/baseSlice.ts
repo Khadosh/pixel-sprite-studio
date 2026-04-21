@@ -31,6 +31,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
   setCanvasBg: (bg) => set({ canvasBg: bg }),
+  setActivePerspective: (perspective) => set({ activePerspective: perspective }),
 
   setCategory: (category) => set(state => ({
     editedAsset: { ...state.editedAsset, category },
@@ -85,6 +86,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     set({
       assetName: asset.name,
       editingFrameIndex: 0,
+      activePerspective: 'front',
       viewingAnimation: 'base',
       isDirty: false,
       past: [],

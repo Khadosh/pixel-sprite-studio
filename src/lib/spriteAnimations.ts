@@ -32,7 +32,7 @@ export function generateAnimationsClientSide(
   asset: SpriteAsset,
   animationTypes: string[],
   castSettings?: AdvancedCastSettings,
-  options?: { customName?: string; customLabel?: string }
+  options?: { customName?: string; customLabel?: string; baseIndex?: number }
 ): SpriteAsset {
   let currentAsset = ensureLayerSupport(asset);
 
@@ -53,7 +53,8 @@ export function generateAnimationsClientSide(
 
     const startIndex = newLayers[0].frames.length;
     newLayers.forEach(layer => {
-      const frames = generateFrameSequence(layer.frames[0], type, glowColor, currentAsset.anatomy);
+      const baseFrame = layer.frames[options?.baseIndex ?? 0] || layer.frames[0];
+      const frames = generateFrameSequence(baseFrame, type, glowColor, currentAsset.anatomy);
       layer.frames.push(...frames);
     });
 
@@ -91,7 +92,7 @@ export function generateAnimationsClientSide(
 export function generateAdvancedCastSequence(
   asset: SpriteAsset,
   settings: AdvancedCastSettings,
-  options?: { customName?: string; customLabel?: string }
+  options?: { customName?: string; customLabel?: string; baseIndex?: number }
 ): SpriteAsset {
   const size = asset.size;
   const layers = [...asset.layers!];
@@ -114,7 +115,7 @@ export function generateAdvancedCastSequence(
   }
 
   const baseLayerIdx = layers.findIndex(l => l.name.toLowerCase().includes('base')) || 0;
-  const baseFrame = layers[baseLayerIdx].frames[0];
+  const baseFrame = layers[baseLayerIdx].frames[options?.baseIndex ?? 0] || layers[baseLayerIdx].frames[0];
   const startIndex = layers[0].frames.length;
   
   // 2. Identify colors (Triplet: { main, light, dark })

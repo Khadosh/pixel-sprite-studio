@@ -88,27 +88,39 @@ export function fitFrame(source: Frame, targetSize: number): Frame {
  * Ensures a SpriteAsset has at least one layer and migrates legacy 'frames' if needed.
  */
 export function ensureLayerSupport(asset: SpriteAsset): SpriteAsset {
-  if (asset.layers && asset.layers.length > 0) {
-    return asset;
+  let modifiedAsset = asset;
+  if (!modifiedAsset.layers || modifiedAsset.layers.length === 0) {
+    // Migrate legacy frames
+    const legacyFrames = modifiedAsset.frames || [];
+    const baseLayer: SpriteLayer = {
+      id: 'layer-base',
+      name: 'Base',
+      isVisible: true,
+      isLocked: false,
+      opacity: 1,
+      frames: legacyFrames,
+    };
+
+    modifiedAsset = {
+      ...modifiedAsset,
+      layers: [baseLayer],
+      frames: undefined, 
+    };
   }
 
-  // Migrate legacy frames
-  const legacyFrames = asset.frames || [];
-  const baseLayer: SpriteLayer = {
-    id: 'layer-base',
-    name: 'Base',
-    isVisible: true,
-    isLocked: false,
-    opacity: 1,
-    frames: legacyFrames,
-  };
+  // Ensure ALL layers have at least 3 frames (Front, Side, Back canonical bases)
+  const paddedLayers = modifiedAsset.layers!.map(layer => {
+    if (layer.frames.length < 3) {
+      const newFrames = [...layer.frames];
+      while (newFrames.length < 3) {
+        newFrames.push(Array.from({ length: asset.size }, () => Array(asset.size).fill(0)));
+      }
+      return { ...layer, frames: newFrames };
+    }
+    return layer;
+  });
 
-  return {
-    ...asset,
-    layers: [baseLayer],
-    // Clean up legacy frames on the object but it might still be in the DB
-    frames: undefined, 
-  };
+  return { ...modifiedAsset, layers: paddedLayers };
 }
 
 /**
@@ -306,8 +318,8 @@ export function cleanupOrphanedFrames(asset: SpriteAsset): SpriteAsset {
   if (!asset.layers || asset.layers.length === 0) return asset;
 
   // 1. Gather all unique indices used by animations
-  // ALWAYS include index 0 as it's the base pose
-  const usedIndicesSet = new Set<number>([0]);
+  // ALWAYS include indices 0, 1, 2 as they are canonical bases
+  const usedIndicesSet = new Set<number>([0, 1, 2]);
   asset.animations.forEach(anim => {
     anim.frameIndices.forEach(idx => usedIndicesSet.add(idx));
   });

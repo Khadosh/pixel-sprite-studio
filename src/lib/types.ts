@@ -11,7 +11,8 @@ export interface SpriteLayer {
   isVisible: boolean;
   isLocked: boolean;
   opacity: number; // 0.0 to 1.0
-  frames: Frame[]; // Frame content for this layer
+  // Frames [0], [1], and [2] are strictly reserved for Front, Side, and Back canonical bases.
+  frames: Frame[];
   paletteIds?: number[]; // Added for layer-specific palette filtering
 }
 

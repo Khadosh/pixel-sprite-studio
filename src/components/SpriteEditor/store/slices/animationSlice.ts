@@ -27,11 +27,12 @@ export const createAnimationSlice: StoreSlice<Partial<SpriteEditorState>> = (set
     const { name: uniqueName, label: uniqueLabel } = getNextAnimationName(state.editedAsset.animations, typeToGen);
     
     // 2. Generate with the base type but unique name metadata
+    const baseIndex = state.activePerspective === 'front' ? 0 : state.activePerspective === 'side' ? 1 : 2;
     const withAnims = generateAnimationsClientSide(
       state.editedAsset, 
       [typeToGen], 
       state.castSettings,
-      { customName: uniqueName, customLabel: uniqueLabel }
+      { customName: uniqueName, customLabel: uniqueLabel, baseIndex }
     );
     
     // 3. Since generateAnimationsClientSide already merges and adds to layers, 

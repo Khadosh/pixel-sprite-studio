@@ -23,6 +23,7 @@ export interface SpriteEditorState {
   leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null;
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
+  activePerspective: 'front' | 'side' | 'back';
   projectId?: string;
   isIconMode?: boolean;
   iconId?: string;
@@ -88,6 +89,7 @@ export interface SpriteEditorState {
   setAnimError: (e: string | null) => void;
   setPixelEditorBridge: (bridge: SpriteEditorState['_pixelEditorBridge']) => void;
   setCanvasBg: (bg: 'light' | 'dark') => void;
+  setActivePerspective: (perspective: 'front' | 'side' | 'back') => void;
   setCategory: (cat: SpriteAsset['category']) => void;
   setDescription: (desc: string) => void;
   setTags: (tags: string[]) => void;
