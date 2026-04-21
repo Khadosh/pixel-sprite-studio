@@ -12,6 +12,7 @@ import { coin16 } from './coin16';
 import { xianxiaWizard } from './xianxiaWizard';
 import { xianxiaWizard16 } from './xianxiaWizard16';
 import { xianxiaWizardAuto } from './xianxiaWizardAuto';
+import { humanoidBase } from './humanoidBase';
 
 /** All available assets in the catalog */
 export const ASSET_CATALOG: SpriteAsset[] = [
@@ -28,6 +29,7 @@ export const ASSET_CATALOG: SpriteAsset[] = [
   xianxiaWizard,
   xianxiaWizard16,
   xianxiaWizardAuto,
+  humanoidBase,
 ];
 
 /** Look up an asset by its unique ID */
@@ -52,5 +54,6 @@ export {
   waterTile, waterTile16, 
   coin, coin16, 
   xianxiaWizard, xianxiaWizard16, 
-  xianxiaWizardAuto 
+  xianxiaWizardAuto,
+  humanoidBase
 };
