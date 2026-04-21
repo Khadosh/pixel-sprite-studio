@@ -13,6 +13,7 @@ import Catalog from "./pages/Catalog.tsx";
 import AssetDetail from "./pages/AssetDetail.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import ProjectWorkspace from "./pages/ProjectWorkspace.tsx";
+import SpriteStudio from "./pages/SpriteStudio.tsx";
 
 import IconPreview from "./pages/IconPreview.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -33,6 +34,7 @@ const App = () => (
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/project/:id" element={<ProtectedRoute><ProjectWorkspace /></ProtectedRoute>} />
+            <Route path="/project/:projectId/editor/:spriteId" element={<ProtectedRoute><SpriteStudio /></ProtectedRoute>} />
             
             {/* Public Catalog Routes */}
             <Route path="/catalog" element={<Catalog />} />

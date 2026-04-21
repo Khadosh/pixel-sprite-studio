@@ -4,16 +4,21 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-19 (Hoy)
+## 2026-04-21 (Hoy)
 **1 commit realizado**
 
-- **Novedad**: Overhaul del motor de animación procedural a **4 Frames**. Ahora las animaciones pueden tener longitud variable, rompiendo la limitación de ciclos de 2 frames.
-- **Mejora**: **Idle v2**: Ciclo de respiración profundo con expansión de torso y rebote sincronizado.
-- **Mejora**: **Walk v2**: Implementado "Head Bob" y balanceo de brazos en oposición para una caminata fluida.
-- **Mejora**: **Jump v2**: Secuencia cinemática de 4 pasos (Anticipación, Lanzamiento, Pico con encogimiento de piernas y Aterrizaje). Corregido error de referencia que rompía la ejecución.
-- **Mejora**: Refactorización de `generateAnimationsClientSide` para inyección de secuencias dinámicas.
-- **Mejora**: Soporte para **Nombres y Labels personalizados** en el motor de generación procedural para evitar colisiones.
-- **Fix**: Corregido typo estructural en la interfaz `SpriteAsset`.
+- **Novedad**: **Sprite Studio (Full Display)**. Migración completa del editor de un modal a una página dedicada (`/project/:id/editor/:spriteId`) para máxima inmersión.
+- **Novedad**: **Autosave Cloud**. Implementado sistema de sincronización automática y silenciosa con 3s de debounce e indicadores de estado en tiempo real.
+- **Novedad**: **Master Spritesheet Preview**. Herramienta de inspección global que muestra todos los frames de todas las animaciones en una sola cuadrícula interactiva.
+- **Novedad**: **Checkpoints (Historial Cloud)**. Sistema de versiones manuales que permite guardar hasta 10 estados del asset y restaurarlos instantáneamente.
+- **Mejora**: Refactorización de `EditorLayout.tsx` para soportar navegación independiente y modularidad de componentes.
+- **Mejora**: Header unificado con Breadcrumbs dinámicos y acceso rápido a utilidades de exportación.
+- **Fix**: Resuelta regresión crítica de acceso al estado de Zustand (`api.getState`) y limpieza de errores de tipos en el store.
+
+---
+
+## 2026-04-19
+**1 commit realizado**
 
 ---
 

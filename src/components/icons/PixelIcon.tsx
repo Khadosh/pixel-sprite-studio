@@ -140,6 +140,13 @@ export const PxMirror: React.FC<PixelIconProps> = (p) => (
   </Px>
 );
 
+export const PxClock: React.FC<PixelIconProps> = (p) => (
+  <Px {...p}>
+    <path d="M5 1h6v1h2v1h1v2h1v6h-1v2h-1v1h-2v1H5v-1H3v-1H2v-2H1V5h1V3h1V2h2V1z" />
+    <path d="M7 3h2v5H7V3zM7 8h4v2H7V8z" fill="var(--background, #000)" />
+  </Px>
+);
+
 export const PxCopy: React.FC<PixelIconProps> = (p) => (
   <Px {...p}>
     <path d="M5 1h7v1h1v8h-1v1H5v-1H4V2h1V1zM5 2v8h7V2H5z" />
@@ -541,6 +548,7 @@ export const PIXEL_ICONS = {
   mirror: PxMirror,
   copy: PxCopy,
   paste: PxPaste,
+  clock: PxClock,
   undo: PxUndo,
   redo: PxRedo,
   plus: PxPlus,

@@ -63,6 +63,13 @@ export interface SpriteAsset {
     torsoLeft?: number;
     torsoRight?: number;
   };
+  /** Version history / Checkpoints */
+  versions?: {
+    id: string;
+    timestamp: string;
+    name: string;
+    asset: any;
+  }[];
 }
 
 /** Configuration for advanced procedural cast animations */

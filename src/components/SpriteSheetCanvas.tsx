@@ -13,6 +13,7 @@ interface SpriteSheetCanvasProps {
   showLabels?: boolean;
   transparent?: boolean;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
+  frameIndex?: number; // Optional: render only a specific frame
 }
 
 function drawCheckerboard(
@@ -58,7 +59,8 @@ export default function SpriteSheetCanvas({
   scale = 4, 
   showLabels: showLabelsProp = true,
   transparent = false,
-  onCanvasReady 
+  onCanvasReady,
+  frameIndex: singleFrameIndex
 }: SpriteSheetCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { palette } = usePalette();
@@ -124,8 +126,34 @@ export default function SpriteSheetCanvas({
   const effectiveShowLabels = showLabelsProp;
   const labelW = effectiveShowLabels ? (LABEL_WIDTH_BASE * Math.max(0.8, scale / 4)) : 0;
 
-  const totalWidth = labelW + maxCols * (CELL_SIZE + GRID_GAP) + 1;
-  const totalHeight = rows.length * (CELL_SIZE + GRID_GAP) + 1;
+  const totalWidth = singleFrameIndex !== undefined 
+    ? CELL_SIZE 
+    : (labelW + maxCols * (CELL_SIZE + GRID_GAP) + 1);
+  const totalHeight = singleFrameIndex !== undefined
+    ? CELL_SIZE
+    : (rows.length * (CELL_SIZE + GRID_GAP) + 1);
+
+  const drawSingleFrame = useCallback((ctx: CanvasRenderingContext2D, fIdx: number) => {
+    drawCheckerboard(ctx, 0, 0, CELL_SIZE, CELL_SIZE, checkerSize);
+    const frame = asset.layers && asset.layers.length > 0 
+      ? compositeFrame(asset, fIdx) 
+      : (asset.frames?.[fIdx] || null);
+      
+    if (!frame) return;
+
+    for (let fRow = 0; fRow < asset.size; fRow++) {
+      const row = frame[fRow];
+      if (!row) continue;
+      for (let fCol = 0; fCol < asset.size; fCol++) {
+        const val = row[fCol];
+        if (val === undefined || !val || val === 0) continue;
+        const color = palette[val];
+        if (!color || color === 'transparent') continue;
+        ctx.fillStyle = color;
+        ctx.fillRect(fCol * scale, fRow * scale, scale, scale);
+      }
+    }
+  }, [asset, palette, scale, CELL_SIZE, checkerSize]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -153,55 +181,58 @@ export default function SpriteSheetCanvas({
       ctx.stroke();
     }
 
-    rows.forEach((row, rowIdx) => {
-      const y = rowIdx * (CELL_SIZE + GRID_GAP);
+    if (singleFrameIndex !== undefined) {
+      drawSingleFrame(ctx, singleFrameIndex);
+    } else {
+      rows.forEach((row, rowIdx) => {
+        const y = rowIdx * (CELL_SIZE + GRID_GAP);
 
-      // Draw row label
-      if (effectiveShowLabels) {
-        ctx.fillStyle = '#4ade80'; // Emerald-400
-        const fontSize = Math.max(6, Math.floor(7 * (scale / 4)));
-        // Use a standard pixel-friendly font stack if Press Start 2P fails
-        ctx.font = `${fontSize}px "Press Start 2P", "Courier New", monospace`;
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = 'left';
-        ctx.fillText(row.label.toUpperCase(), 6, y + CELL_SIZE / 2);
-      }
-
-      // Draw each frame in this row
-      row.frameIndices.forEach((frameIdx, colIdx) => {
-        const x = labelW + colIdx * (CELL_SIZE + GRID_GAP);
-        drawCheckerboard(ctx, x, y, CELL_SIZE, CELL_SIZE, checkerSize);
-        
-        ctx.strokeStyle = '#1e1e2e';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-
-        const frame = asset.layers && asset.layers.length > 0 
-          ? compositeFrame(asset, frameIdx) 
-          : (asset.frames?.[frameIdx] || null);
-          
-        if (!frame) return;
-
-        for (let fRow = 0; fRow < asset.size; fRow++) {
-          const row = frame[fRow];
-          if (!row) continue;
-
-          for (let fCol = 0; fCol < asset.size; fCol++) {
-            const val = row[fCol];
-            if (val === undefined || !val || val === 0) continue;
-            const color = palette[val];
-            if (!color || color === 'transparent') continue;
-            ctx.fillStyle = color;
-            ctx.fillRect(
-              x + fCol * scale,
-              y + fRow * scale,
-              scale,
-              scale
-            );
-          }
+        // Draw row label
+        if (effectiveShowLabels) {
+          ctx.fillStyle = '#4ade80'; // Emerald-400
+          const fontSize = Math.max(6, Math.floor(7 * (scale / 4)));
+          ctx.font = `${fontSize}px "Press Start 2P", "Courier New", monospace`;
+          ctx.textBaseline = 'middle';
+          ctx.textAlign = 'left';
+          ctx.fillText(row.label.toUpperCase(), 6, y + CELL_SIZE / 2);
         }
+
+        // Draw each frame in this row
+        row.frameIndices.forEach((frameIdx, colIdx) => {
+          const x = labelW + colIdx * (CELL_SIZE + GRID_GAP);
+          drawCheckerboard(ctx, x, y, CELL_SIZE, CELL_SIZE, checkerSize);
+          
+          ctx.strokeStyle = '#1e1e2e';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+
+          const frame = asset.layers && asset.layers.length > 0 
+            ? compositeFrame(asset, frameIdx) 
+            : (asset.frames?.[frameIdx] || null);
+            
+          if (!frame) return;
+
+          for (let fRow = 0; fRow < asset.size; fRow++) {
+            const row = frame[fRow];
+            if (!row) continue;
+
+            for (let fCol = 0; fCol < asset.size; fCol++) {
+              const val = row[fCol];
+              if (val === undefined || !val || val === 0) continue;
+              const color = palette[val];
+              if (!color || color === 'transparent') continue;
+              ctx.fillStyle = color;
+              ctx.fillRect(
+                x + fCol * scale,
+                y + fRow * scale,
+                scale,
+                scale
+              );
+            }
+          }
+        });
       });
-    });
+    }
 
     onCanvasReady?.(canvas);
   }, [asset, palette, onCanvasReady, rows, CELL_SIZE, labelW, effectiveShowLabels, scale, checkerSize, totalHeight]);

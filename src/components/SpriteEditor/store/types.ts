@@ -20,7 +20,7 @@ export interface SpriteEditorState {
   zoom: number;
   layerClipboard: number[][] | null;
   frameClipboard: Record<string, number[][]> | null;
-  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | null;
+  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null;
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
   projectId?: string;
@@ -79,7 +79,7 @@ export interface SpriteEditorState {
   setShowAllColors: (on: boolean) => void;
   setScope: (scope: EditorScope) => void;
   setCastSettings: (settings: AdvancedCastSettings | ((prev: AdvancedCastSettings) => AdvancedCastSettings)) => void;
-  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | null) => void;
+  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null) => void;
   applyPalettePreset: (colors: string[]) => void;
   addColorRamp: (colors: string[]) => void;
   setZoom: (z: number | ((prev: number) => number)) => void;
@@ -139,6 +139,10 @@ export interface SpriteEditorState {
   handleSave: () => void;
   handleClose: () => void;
   initFromAsset: (asset: SpriteAsset) => void;
+
+  createCheckpoint: (name?: string) => void;
+  restoreCheckpoint: (versionId: string) => void;
+  clearHistory: () => void;
 
   pushUndo: () => void;
   undo: () => void;

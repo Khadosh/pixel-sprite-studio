@@ -34,6 +34,7 @@ interface EditorToolbarProps {
   onRotate: () => void;
   canvasBg: 'light' | 'dark';
   onToggleCanvasBg: () => void;
+  onOpenStudioSheet?: () => void;
 }
 
 const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
@@ -71,7 +72,8 @@ export default React.memo(function EditorToolbar({
   mirrorX, onToggleMirrorX,
   scope, onScopeChange,
   onCopy, onPaste, onFlipH, onFlipV, onRotate,
-  canvasBg, onToggleCanvasBg
+  canvasBg, onToggleCanvasBg,
+  onOpenStudioSheet
 }: EditorToolbarProps) {
   const btnBase = 'p-2 rounded border transition-all';
   const btnActive = 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(34,197,94,0.2)]';
@@ -275,6 +277,22 @@ export default React.memo(function EditorToolbar({
               Fondo: {canvasBg === 'light' ? 'OSCURO' : 'CLARO'}
             </TooltipContent>
           </Tooltip>
+
+          {onOpenStudioSheet && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onOpenStudioSheet}
+                  className={`${btnBase} ${btnInactive} bg-primary/20 border-primary/40 text-primary hover:bg-primary/30`}
+                >
+                  <PxLayers size={14} className="rotate-90" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+                MASTER SHEET (V)
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
       </div>

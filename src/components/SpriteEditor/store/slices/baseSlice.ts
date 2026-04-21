@@ -93,4 +93,38 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
       canRedo: false,
     });
   },
+
+  createCheckpoint: (name?: string) => set(state => {
+    const versions = state.editedAsset.versions || [];
+    const newVersion = {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      name: name || `Versión ${versions.length + 1}`,
+      asset: JSON.parse(JSON.stringify(state.editedAsset))
+    };
+    
+    const updatedVersions = [newVersion, ...versions].slice(0, 10);
+    
+    return {
+      editedAsset: { ...state.editedAsset, versions: updatedVersions },
+      isDirty: true
+    };
+  }),
+
+  restoreCheckpoint: (versionId: string) => set(state => {
+    const version = (state.editedAsset.versions || []).find((v: any) => v.id === versionId);
+    if (!version) return state;
+    
+    return {
+      editedAsset: { ...version.asset, versions: state.editedAsset.versions },
+      isDirty: true,
+      past: [],
+      future: [],
+    };
+  }),
+
+  clearHistory: () => set(state => ({
+    editedAsset: { ...state.editedAsset, versions: [] },
+    isDirty: true
+  })),
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PxFilm, PxLayers, PxPalette, PxSword, PxSettings } from '@/components/icons/PixelIcon';
+import { PxFilm, PxLayers, PxPalette, PxSword, PxSettings, PxClock } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,6 +15,7 @@ export const EditorSidebarNavigator = () => {
     { id: 'anatomy', icon: Bone, label: 'BONES' },
     { id: 'themes', icon: PxPalette, label: 'THEMES' },
     { id: 'assets', icon: PxSword, label: 'ASSETS' },
+    { id: 'history', icon: PxClock, label: 'HISTORY' },
     { id: 'config', icon: PxSettings, label: 'CONFIG' },
   ] as const;
 

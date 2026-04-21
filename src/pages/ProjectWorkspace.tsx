@@ -39,15 +39,19 @@ export default function ProjectWorkspace() {
   const [editingSpriteId, setEditingSpriteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // When generation completes, open editor
+  // When generation completes, save and navigate to studio
   useEffect(() => {
-    if (generatedSprite) {
-      setEditorAsset(generatedSprite);
-      setEditorIsNew(true);
-      setEditingSpriteId(null);
-      setEditorOpen(true);
+    if (generatedSprite && id) {
+      createSpriteMutation.mutate({ projectId: id, asset: generatedSprite }, {
+        onSuccess: (newSprite) => {
+          clearGenerated();
+          setGeneratePrompt('');
+          setShowCreator(false);
+          navigate(`/project/${id}/editor/${newSprite.id}`);
+        }
+      });
     }
-  }, [generatedSprite]);
+  }, [generatedSprite, id]);
 
   // Handle project loading error
   useEffect(() => {
@@ -78,10 +82,8 @@ export default function ProjectWorkspace() {
   };
 
   const handleOpenEditorForSprite = (sprite: ProjectSprite) => {
-    setEditorAsset(sprite.asset_data as SpriteAsset);
-    setEditorIsNew(false);
-    setEditingSpriteId(sprite.id);
-    setEditorOpen(true);
+    if (!id) return;
+    navigate(`/project/${id}/editor/${sprite.id}`);
   };
 
   const handleEditorSave = async (asset: SpriteAsset) => {
@@ -328,10 +330,13 @@ export default function ProjectWorkspace() {
                     animations: [],
                     tags: [],
                   };
-                  setEditorAsset(blank);
-                  setEditorIsNew(true);
-                  setEditingSpriteId(null);
-                  setEditorOpen(true);
+                  
+                  if (!id) return;
+                  createSpriteMutation.mutate({ projectId: id, asset: blank }, {
+                    onSuccess: (newSprite) => {
+                      navigate(`/project/${id}/editor/${newSprite.id}`);
+                    }
+                  });
                 }}
                 className="bg-card border border-blue-500/20 p-5 rounded-2xl flex flex-col h-full space-y-4 hover:border-blue-500/50 transition-all cursor-pointer group"
               >
@@ -512,22 +517,7 @@ export default function ProjectWorkspace() {
         </div>
       </div>
 
-      {/* Editor Modal */}
-      {editorAsset && (
-        <SpriteEditorModal
-          open={editorOpen}
-          onOpenChange={(open) => {
-            setEditorOpen(open);
-            if (!open) { setEditorAsset(null); setEditingSpriteId(null); }
-          }}
-          initialAsset={editorAsset}
-          onSave={handleEditorSave}
-          generatePrompt={editorIsNew && generatePrompt ? generatePrompt : undefined}
-          onRegenerate={editorIsNew ? () => generate(generatePrompt, canvasSize) : undefined}
-          isGenerating={isGenerating}
-          projectId={id}
-        />
-      )}
+      {/* Editor Modal is no longer used, we direct to Studio page */}
     </div>
   );
 }

@@ -14,6 +14,8 @@ export const projectKeys = {
 export const spriteKeys = {
   all: ['sprites'] as const,
   lists: (projectId: string) => [...spriteKeys.all, 'list', projectId] as const,
+  details: () => [...spriteKeys.all, 'detail'] as const,
+  detail: (id: string) => [...spriteKeys.details(), id] as const,
 };
 
 // --- Projects Hooks ---
@@ -96,6 +98,24 @@ export function useProjectSprites(projectId?: string) {
   });
 }
 
+export function useSprite(id?: string) {
+  return useQuery({
+    queryKey: spriteKeys.detail(id || ''),
+    queryFn: async () => {
+      if (!id) throw new Error('Sprite ID is required');
+      const { data, error } = await supabase
+        .from('project_sprites')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data as ProjectSprite;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateSprite() {
   const queryClient = useQueryClient();
 
@@ -130,6 +150,7 @@ export function useUpdateSprite() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: spriteKeys.lists(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: spriteKeys.detail(variables.id) });
     },
   });
 }
