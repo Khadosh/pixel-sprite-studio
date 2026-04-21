@@ -61,9 +61,12 @@ export const AnimationLibrary = React.memo(() => {
       <div className="space-y-6">
       
       {/* SECTION: PERSPECTIVE TOGGLE */}
-      <div className="space-y-3">
-        <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Perspectiva</span>
-        <div className="grid grid-cols-3 gap-1 bg-black/20 p-1 rounded-md border border-white/5">
+      <div className="space-y-3 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-[inset_0_0_20px_rgba(34,197,94,0.05)]">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <span className="font-pixel text-[9px] text-primary tracking-widest uppercase">Perspectiva Activa</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
           {(['front', 'side', 'back'] as const).map(p => (
             <button
               key={p}
@@ -73,10 +76,10 @@ export const AnimationLibrary = React.memo(() => {
                 setEditingFrameIndex(p === 'front' ? 0 : p === 'side' ? 1 : 2);
                 setGenType('idle');
               }}
-              className={`font-pixel text-[8px] py-1.5 rounded transition-all uppercase ${
+              className={`font-pixel text-[8px] py-2 rounded transition-all uppercase flex justify-center items-center gap-1 ${
                 activePerspective === p 
-                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-[inset_0_0_10px_rgba(34,197,94,0.1)]' 
-                  : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-white/5'
+                  ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105 z-10 font-bold' 
+                  : 'bg-black/40 text-muted-foreground hover:text-white hover:bg-white/10'
               }`}
             >
               {p}
