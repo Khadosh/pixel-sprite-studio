@@ -24,6 +24,9 @@ export interface SpriteEditorState {
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
   activePerspective: 'front' | 'side' | 'back';
+  activeSide: 'left' | 'right';
+  showIsometricGrid: boolean;
+  sketchMode: boolean;
   projectId?: string;
   isIconMode?: boolean;
   iconId?: string;
@@ -90,6 +93,9 @@ export interface SpriteEditorState {
   setPixelEditorBridge: (bridge: SpriteEditorState['_pixelEditorBridge']) => void;
   setCanvasBg: (bg: 'light' | 'dark') => void;
   setActivePerspective: (perspective: 'front' | 'side' | 'back') => void;
+  setActiveSide: (side: 'left' | 'right') => void;
+  setShowIsometricGrid: (show: boolean) => void;
+  setSketchMode: (on: boolean) => void;
   setCategory: (cat: SpriteAsset['category']) => void;
   setDescription: (desc: string) => void;
   setTags: (tags: string[]) => void;
@@ -131,6 +137,7 @@ export interface SpriteEditorState {
   handleFlipH: () => void;
   handleFlipV: () => void;
   handleRotate: () => void;
+  handleMirrorSide: () => void;
   handleDragEnd: (event: DragEndEvent) => void;
 
   handleExportPNG: (options?: { includeLabels?: boolean }) => void;

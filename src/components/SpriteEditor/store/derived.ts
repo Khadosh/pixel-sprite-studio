@@ -43,6 +43,13 @@ export const selectOnionGhostFrames = (state: SpriteEditorState): { prev?: numbe
   };
 };
 
+/** Get perspective reference frame (Front frame as ghost for side/back) */
+export const selectPerspectiveReferenceFrame = (state: SpriteEditorState): number[][] | undefined => {
+  if (!state.sketchMode || state.activePerspective === 'front') return undefined;
+  // Always show Front (idx 0) as reference for other perspectives
+  return compositeFrame(state.editedAsset, 0);
+};
+
 /** Get frame labels for the timeline */
 export const selectFrameLabels = (state: SpriteEditorState): string[] => {
   const frameCount = selectFrameCount(state);

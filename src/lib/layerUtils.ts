@@ -108,11 +108,11 @@ export function ensureLayerSupport(asset: SpriteAsset): SpriteAsset {
     };
   }
 
-  // Ensure ALL layers have at least 3 frames (Front, Side, Back canonical bases)
+  // Ensure ALL layers have at least 4 frames (Front, Side-R, Back, Side-L canonical bases)
   const paddedLayers = modifiedAsset.layers!.map(layer => {
-    if (layer.frames.length < 3) {
+    if (layer.frames.length < 4) {
       const newFrames = [...layer.frames];
-      while (newFrames.length < 3) {
+      while (newFrames.length < 4) {
         newFrames.push(Array.from({ length: asset.size }, () => Array(asset.size).fill(0)));
       }
       return { ...layer, frames: newFrames };
@@ -318,8 +318,8 @@ export function cleanupOrphanedFrames(asset: SpriteAsset): SpriteAsset {
   if (!asset.layers || asset.layers.length === 0) return asset;
 
   // 1. Gather all unique indices used by animations
-  // ALWAYS include indices 0, 1, 2 as they are canonical bases
-  const usedIndicesSet = new Set<number>([0, 1, 2]);
+  // ALWAYS include indices 0, 1, 2, 3 as they are canonical bases
+  const usedIndicesSet = new Set<number>([0, 1, 2, 3]);
   asset.animations.forEach(anim => {
     anim.frameIndices.forEach(idx => usedIndicesSet.add(idx));
   });

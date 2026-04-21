@@ -87,6 +87,10 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         leftSidebarTab: options.isIconMode ? 'layers' : 'animations',
         isDirty: false,
         canvasBg: 'dark',
+        activePerspective: 'front',
+        activeSide: 'right',
+        showIsometricGrid: false,
+        sketchMode: true,
         isIconMode: options.isIconMode,
         iconId: options.iconId,
 

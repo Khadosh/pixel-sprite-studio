@@ -31,7 +31,21 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
   setCanvasBg: (bg) => set({ canvasBg: bg }),
-  setActivePerspective: (perspective) => set({ activePerspective: perspective }),
+  setActivePerspective: (p) => set(s => {
+    let idx = 0;
+    if (p === 'side') idx = s.activeSide === 'right' ? 1 : 3;
+    else if (p === 'back') idx = 2;
+    return { activePerspective: p, editingFrameIndex: idx };
+  }),
+  setActiveSide: (side) => set(s => {
+    const isSide = s.activePerspective === 'side';
+    return { 
+      activeSide: side, 
+      editingFrameIndex: isSide ? (side === 'right' ? 1 : 3) : s.editingFrameIndex 
+    };
+  }),
+  setShowIsometricGrid: (show) => set({ showIsometricGrid: show }),
+  setSketchMode: (on) => set({ sketchMode: on }),
 
   setCategory: (category) => set(state => ({
     editedAsset: { ...state.editedAsset, category },
@@ -87,6 +101,9 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
       assetName: asset.name,
       editingFrameIndex: 0,
       activePerspective: 'front',
+      activeSide: 'right',
+      showIsometricGrid: false,
+      sketchMode: true,
       viewingAnimation: 'base',
       isDirty: false,
       past: [],

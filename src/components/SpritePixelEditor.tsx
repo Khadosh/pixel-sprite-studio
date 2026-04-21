@@ -29,6 +29,8 @@ interface SpritePixelEditorProps {
   leftSidebarTab?: string | null;
   onAnatomyChange?: (updates: Partial<{ neckRow: number; waistRow: number; ankleRow: number; torsoLeft: number; torsoRight: number }>) => void;
   onPushUndo?: () => void;
+  showIsometricGrid?: boolean;
+  referenceFrame?: number[][] | null;
 }
 
 export default function SpritePixelEditor({
@@ -52,6 +54,8 @@ export default function SpritePixelEditor({
   leftSidebarTab,
   onAnatomyChange,
   onPushUndo,
+  showIsometricGrid = false,
+  referenceFrame,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
@@ -128,6 +132,11 @@ export default function SpritePixelEditor({
 
     if (onionSkinPrevFrame) drawGhost(onionSkinPrevFrame, 0.35, '#ff4a4a');
     if (onionSkinNextFrame) drawGhost(onionSkinNextFrame, 0.35, '#4aff4a');
+    
+    // Draw Perspective Reference (Sketch Mode) - Always showing Front base
+    if (referenceFrame) {
+      drawGhost(referenceFrame, 0.15); // Very faint original colors
+    }
 
     // Helper to draw a specific frame matrix
     const drawFrameData = (data: number[][], treatZeroAsTransparent: boolean, dr = 0, dc = 0) => {
@@ -216,6 +225,32 @@ export default function SpritePixelEditor({
       ctx.moveTo(0, i * PIXEL_SCALE);
       ctx.lineTo(canvasSize, i * PIXEL_SCALE);
       ctx.stroke();
+    }
+
+    // Isometric Grid (2:1)
+    if (showIsometricGrid) {
+      ctx.strokeStyle = 'rgba(79, 70, 229, 0.4)'; // Indigo-ish
+      ctx.lineWidth = 1;
+      
+      const step = 8; // Major diamonds every 8 pixels
+      const diamondWidth = step * PIXEL_SCALE;
+      const diamondHeight = (step / 2) * PIXEL_SCALE;
+      
+      // Draw lines \
+      for (let i = -asset.size; i <= asset.size * 2; i += step) {
+        ctx.beginPath();
+        ctx.moveTo(i * PIXEL_SCALE, 0);
+        ctx.lineTo((i + asset.size * 2) * PIXEL_SCALE, asset.size * PIXEL_SCALE);
+        ctx.stroke();
+      }
+      
+      // Draw lines /
+      for (let i = -asset.size; i <= asset.size * 2; i += step) {
+        ctx.beginPath();
+        ctx.moveTo(i * PIXEL_SCALE, 0);
+        ctx.lineTo((i - asset.size * 2) * PIXEL_SCALE, asset.size * PIXEL_SCALE);
+        ctx.stroke();
+      }
     }
     
     // ─── ANATOMICAL BONES VISUALIZATION ───

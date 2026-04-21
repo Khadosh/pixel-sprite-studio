@@ -1,5 +1,6 @@
 import { SpriteEditorState, StoreSlice } from '../types';
 import { duplicateFrameInAllLayers, removeFrameFromAllLayers, addEmptyFrameToAllLayers } from '@/lib/spriteAnimations';
+import { flipHorizontal } from '@/lib/spriteTransforms';
 
 export const createFrameSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
   duplicateFrame: (idx) => {
@@ -26,6 +27,29 @@ export const createFrameSlice: StoreSlice<Partial<SpriteEditorState>> = (set, ge
     get().pushUndo();
     set(state => ({
       editedAsset: addEmptyFrameToAllLayers(state.editedAsset, idx),
+    }));
+  },
+
+  handleMirrorSide: () => {
+    const state = get();
+    state.pushUndo();
+    
+    set(s => ({
+      editedAsset: {
+        ...s.editedAsset,
+        layers: s.editedAsset.layers?.map(layer => {
+          const newFrames = [...layer.frames];
+          const sideFrame = layer.frames[1]; // Side (Right)
+          if (sideFrame) {
+            // Mirror it for index 3 (Side-Left)
+            newFrames[3] = flipHorizontal(sideFrame);
+          }
+          return { ...layer, frames: newFrames };
+        })
+      },
+      // Optionally switch to the mirrored view
+      editingFrameIndex: 3,
+      activePerspective: 'side-left'
     }));
   },
 });

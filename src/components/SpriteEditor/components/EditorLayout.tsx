@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useMemo } from 'react';
 import EditorToolbar from '@/components/EditorToolbar';
 import SpritePixelEditor from '@/components/SpritePixelEditor';
 import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
-import { selectOnionGhostFrames } from '../store/derived';
+import { selectOnionGhostFrames, selectPerspectiveReferenceFrame } from '../store/derived';
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import { useEditorEffects } from '../hooks/useEditorEffects';
 import { useAnimationGenerationBridge } from '../hooks/useAnimationGeneration';
@@ -116,6 +116,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
   const setZoom = useSpriteEditorStore(s => s.setZoom);
   const onionSkin = useSpriteEditorStore(s => s.onionSkin);
   const setOnionSkin = useSpriteEditorStore(s => s.setOnionSkin);
+  const showIsometricGrid = useSpriteEditorStore(s => s.showIsometricGrid);
+  const setShowIsometricGrid = useSpriteEditorStore(s => s.setShowIsometricGrid);
   const handleCopy = useSpriteEditorStore(s => s.handleCopy);
   const handlePaste = useSpriteEditorStore(s => s.handlePaste);
   const handleFlipH = useSpriteEditorStore(s => s.handleFlipH);
@@ -125,6 +127,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
   const setCanvasBg = useSpriteEditorStore(s => s.setCanvasBg);
   const leftSidebarTab = useSpriteEditorStore(s => s.leftSidebarTab);
   const onionGhostFrames = useSpriteEditorStore(useShallow(selectOnionGhostFrames));
+  const perspectiveReferenceFrame = useSpriteEditorStore(useShallow(selectPerspectiveReferenceFrame));
 
   // Effects (keyboard shortcuts, side-effects)
   useEditorEffects(store);
@@ -162,6 +165,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                 onRedo={redo}
                 onionSkin={onionSkin}
                 onToggleOnionSkin={() => setOnionSkin(!onionSkin)}
+                showIsometricGrid={showIsometricGrid}
+                onToggleIsometricGrid={() => setShowIsometricGrid(!showIsometricGrid)}
                 mirrorX={pixelEditor.mirrorX}
                 onToggleMirrorX={() => pixelEditor.setMirrorX((prev: boolean) => !prev)}
                 scope={scope}
@@ -205,6 +210,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                   leftSidebarTab={leftSidebarTab}
                   onAnatomyChange={handleAnatomyChange}
                   onPushUndo={pushUndo}
+                  showIsometricGrid={showIsometricGrid}
+                  referenceFrame={perspectiveReferenceFrame}
                 />
                 <ZoomControl />
               </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PxSparkles, PxSettings, PxTrash, PxEdit, PxCheck, PxX } from '@/components/icons/PixelIcon';
+import { PxSparkles, PxSettings, PxTrash, PxEdit, PxCheck, PxX, PxCopy, PxImage } from '@/components/icons/PixelIcon';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpriteEditorStore, useSpriteEditorStoreApi } from '../context/SpriteEditorContext';
@@ -23,6 +23,11 @@ export const AnimationLibrary = React.memo(() => {
   const animError = useSpriteEditorStore(s => s.animError);
   const activePerspective = useSpriteEditorStore(s => s.activePerspective);
   const setActivePerspective = useSpriteEditorStore(s => s.setActivePerspective);
+  const handleMirrorSide = useSpriteEditorStore(s => s.handleMirrorSide);
+  const activeSide = useSpriteEditorStore(s => s.activeSide);
+  const setActiveSide = useSpriteEditorStore(s => s.setActiveSide);
+  const sketchMode = useSpriteEditorStore(s => s.sketchMode);
+  const setSketchMode = useSpriteEditorStore(s => s.setSketchMode);
   const storeApi = useSpriteEditorStoreApi();
 
   const [genType, setGenType] = useState<string>('idle');
@@ -51,7 +56,9 @@ export const AnimationLibrary = React.memo(() => {
   const filteredAnims = AVAILABLE_ANIMS.filter(a => {
     if (a.value === 'idle' || a.value === 'hurt' || a.value === 'die') return true;
     if (activePerspective === 'front') return a.value.endsWith('_down');
-    if (activePerspective === 'side') return a.value.endsWith('_left') || a.value.endsWith('_right');
+    if (activePerspective === 'side') {
+      return activeSide === 'right' ? a.value.endsWith('_right') : a.value.endsWith('_left');
+    }
     if (activePerspective === 'back') return a.value.endsWith('_up');
     return true;
   });
@@ -60,33 +67,79 @@ export const AnimationLibrary = React.memo(() => {
     <ScrollArea className="h-full pr-3">
       <div className="space-y-6">
       
-      {/* SECTION: PERSPECTIVE TOGGLE */}
-      <div className="space-y-3 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-[inset_0_0_20px_rgba(34,197,94,0.05)]">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="font-pixel text-[9px] text-primary tracking-widest uppercase">Perspectiva Activa</span>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="font-pixel text-[9px] text-primary tracking-widest uppercase">Perspectiva Activa</span>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`h-6 px-2 text-[7px] font-pixel transition-all flex gap-1 items-center ${sketchMode ? 'bg-primary/20 text-primary border border-primary/40' : 'text-muted-foreground hover:bg-white/5'}`}
+            onClick={() => setSketchMode(!sketchMode)}
+          >
+            <PxImage size={10} />
+            BOCETO {sketchMode ? 'ON' : 'OFF'}
+          </Button>
         </div>
-        <div className="grid grid-cols-3 gap-1.5">
-          {(['front', 'side', 'back'] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => {
-                setActivePerspective(p);
-                setViewingAnimation('base');
-                setEditingFrameIndex(p === 'front' ? 0 : p === 'side' ? 1 : 2);
-                setGenType('idle');
-              }}
-              className={`font-pixel text-[8px] py-2 rounded transition-all uppercase flex justify-center items-center gap-1 ${
-                activePerspective === p 
-                  ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.4)] scale-105 z-10 font-bold' 
-                  : 'bg-black/40 text-muted-foreground hover:text-white hover:bg-white/10'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+        
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { id: 'front', label: 'FRONT' },
+              { id: 'side', label: 'SIDE' },
+              { id: 'back', label: 'BACK' }
+            ].map(p => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setActivePerspective(p.id as any);
+                  setViewingAnimation('base');
+                  setGenType('idle');
+                }}
+                className={`font-pixel text-[8px] py-1.5 rounded transition-all uppercase flex justify-center items-center gap-1 ${
+                  activePerspective === p.id 
+                    ? 'bg-primary text-primary-foreground shadow-[0_0_10px_rgba(34,197,94,0.3)] scale-102 z-10 font-bold' 
+                    : 'bg-black/40 text-muted-foreground hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {activePerspective === 'side' && (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-black/30 border border-primary/20 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex-1 grid grid-cols-2 gap-1">
+                <button
+                  onClick={() => setActiveSide('right')}
+                  className={`py-1 text-[7px] font-pixel rounded transition-all uppercase ${activeSide === 'right' ? 'bg-primary/20 text-primary border border-primary/40' : 'text-muted-foreground hover:text-white'}`}
+                >
+                  RIGHT
+                </button>
+                <button
+                  onClick={() => setActiveSide('left')}
+                  className={`py-1 text-[7px] font-pixel rounded transition-all uppercase ${activeSide === 'left' ? 'bg-primary/20 text-primary border border-primary/40' : 'text-muted-foreground hover:text-white'}`}
+                >
+                  LEFT
+                </button>
+              </div>
+              
+              <div className="w-px h-4 bg-primary/20 mx-1" />
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-[7px] font-pixel bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 flex gap-1 items-center shrink-0"
+                onClick={handleMirrorSide}
+              >
+                <PxCopy size={10} />
+                ESPEJAR R{'->'}L
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
       {/* SECTION: GENERATION PANEL - MOVED TO TOP */}
       <div className="space-y-3">
         <span className="font-pixel text-[9px] text-muted-foreground tracking-widest block opacity-50 uppercase">Generar Nueva</span>
