@@ -106,7 +106,7 @@ export const createLayerSlice: StoreSlice<Partial<SpriteEditorState>> = (set, ge
       } else {
         // New color! Add to global palette
         currentPalette[nextIdx] = hex;
-        currentColorNames[nextIdx] = `${name} - ${colorNames?.[sourceIdx] || `Color ${sourceIdx}`}`;
+        currentColorNames[nextIdx] = colorNames?.[sourceIdx] || `Color ${sourceIdx}`;
         indexMapping[sourceIdx] = nextIdx;
         hexToIndexIndex[lowerHex] = nextIdx;
         nextIdx++;

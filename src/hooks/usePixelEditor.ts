@@ -5,7 +5,7 @@ import type { BrushSize } from '@/components/EditorToolbar';
 import { shiftFrame, getCenterOfMass, rotateFrameFree, resizeFrameNearest, findBounds } from '@/lib/spriteTransforms';
 import { compositeFrame } from '@/lib/layerUtils';
 
-export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'rotate' | 'select';
+export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'rotate' | 'select' | 'erase-color';
 export function usePixelEditor(
   asset: SpriteAsset,
   frameIndex: number,
@@ -169,6 +169,19 @@ export function usePixelEditor(
     updateActiveLayerFrame(newFrame);
   };
 
+  const executeColorReplace = (startR: number, startC: number) => {
+    const frame = getActiveLayerFrame();
+    if (!frame) return;
+    const targetColor = frame[startR][startC];
+    if (targetColor === 0) return; // Already transparent
+
+    const newFrame = frame.map(row => 
+      row.map(p => (p === targetColor ? 0 : p))
+    );
+
+    updateActiveLayerFrame(newFrame);
+  };
+
   const handlePointerDown = useCallback((r: number, c: number, forceTool?: EditorTool) => {
     const frame = getActiveLayerFrame();
     if (!frame) return;
@@ -295,6 +308,11 @@ export function usePixelEditor(
 
     if (activeTool === 'fill') {
       executeFloodFill(r, c);
+      return;
+    }
+
+    if (activeTool === 'erase-color') {
+      executeColorReplace(r, c);
       return;
     }
 

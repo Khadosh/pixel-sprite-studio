@@ -38,22 +38,47 @@ export function imageToPixelData(
   const { targetSize, maxColors = 16, alphaThreshold = 128, fixedPalette } = options;
   const { data, width, height } = imageData;
 
-  // --- Step 1: Sample pixels from ImageData into an NxN grid ---
+  // --- Step 1: Sample pixels from ImageData into an NxN grid (Box Average) ---
   const grid: (RGB | null)[][] = [];
 
-  for (let row = 0; row < targetSize; row++) {
+  const cellWidth = width / targetSize;
+  const cellHeight = height / targetSize;
+
+  for (let gy = 0; gy < targetSize; gy++) {
     const gridRow: (RGB | null)[] = [];
-    for (let col = 0; col < targetSize; col++) {
-      const srcX = Math.floor((col / targetSize) * width);
-      const srcY = Math.floor((row / targetSize) * height);
-      const idx = (srcY * width + srcX) * 4;
+    for (let gx = 0; gx < targetSize; gx++) {
+      let rSum = 0, gSum = 0, bSum = 0, aSum = 0;
+      let count = 0;
 
-      const a = data[idx + 3];
+      const startX = Math.floor(gx * cellWidth);
+      const endX = Math.floor((gx + 1) * cellWidth);
+      const startY = Math.floor(gy * cellHeight);
+      const endY = Math.floor((gy + 1) * cellHeight);
 
-      if (a < alphaThreshold) {
-        gridRow.push(null);
+      for (let sy = startY; sy < endY; sy++) {
+        for (let sx = startX; sx < endX; sx++) {
+          const idx = (sy * width + sx) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const a = data[idx + 3];
+
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          aSum += a;
+          count++;
+        }
+      }
+
+      if (count > 0 && (aSum / count) >= alphaThreshold) {
+        gridRow.push({
+          r: Math.round(rSum / count),
+          g: Math.round(gSum / count),
+          b: Math.round(bSum / count)
+        });
       } else {
-        gridRow.push({ r: data[idx], g: data[idx+1], b: data[idx+2] });
+        gridRow.push(null);
       }
     }
     grid.push(gridRow);
