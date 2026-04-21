@@ -66,18 +66,20 @@ const TRANSFORM_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
   { id: 'rotate', icon: PxRotateCw, tooltip: 'Rotación Libre (R)' },
 ];
 
-const ToolButton = ({ t, currentTool, onToolChange: onTC, btnBase, btnActive, btnInactive }: { 
+const btnBase = 'p-2 rounded border transition-all';
+const btnActive = 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(34,197,94,0.2)]';
+const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
+const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
+
+const ToolButton = React.memo(({ t, currentTool, onToolChange }: { 
   t: { id: EditorTool; icon: PxIcon; tooltip: string }, 
   currentTool: EditorTool, 
-  onToolChange: (t: EditorTool) => void,
-  btnBase: string,
-  btnActive: string,
-  btnInactive: string
+  onToolChange: (t: EditorTool) => void
 }) => (
-  <Tooltip key={t.id}>
+  <Tooltip>
     <TooltipTrigger asChild>
       <button 
-        onClick={() => onTC(t.id)} 
+        onClick={() => onToolChange(t.id)} 
         className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
       >
         <t.icon size={16} />
@@ -87,7 +89,9 @@ const ToolButton = ({ t, currentTool, onToolChange: onTC, btnBase, btnActive, bt
       {t.tooltip}
     </TooltipContent>
   </Tooltip>
-);
+));
+
+ToolButton.displayName = 'ToolButton';
 
 export default React.memo(function EditorToolbar({ 
   tool, onToolChange, 
@@ -103,10 +107,6 @@ export default React.memo(function EditorToolbar({
   onToggleIsometricGrid,
   onOpenStudioSheet
 }: EditorToolbarProps) {
-  const btnBase = 'p-2 rounded border transition-all';
-  const btnActive = 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(34,197,94,0.2)]';
-  const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
-  const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -117,9 +117,6 @@ export default React.memo(function EditorToolbar({
             t={{ id: 'select', icon: PxSelect, tooltip: 'Selección (S)' }} 
             currentTool={tool} 
             onToolChange={onToolChange}
-            btnBase={btnBase}
-            btnActive={btnActive}
-            btnInactive={btnInactive}
           />
           <div className="w-px h-6 bg-border mx-1 shrink-0" />
           {TRANSFORM_TOOLS.map(t => (
@@ -128,9 +125,6 @@ export default React.memo(function EditorToolbar({
               t={t} 
               currentTool={tool} 
               onToolChange={onToolChange}
-              btnBase={btnBase}
-              btnActive={btnActive}
-              btnInactive={btnInactive}
             />
           ))}
         </div>
@@ -144,9 +138,6 @@ export default React.memo(function EditorToolbar({
               t={t} 
               currentTool={tool} 
               onToolChange={onToolChange}
-              btnBase={btnBase}
-              btnActive={btnActive}
-              btnInactive={btnInactive}
             />
           ))}
           <div className="w-px h-6 bg-border mx-1 shrink-0" />
@@ -156,9 +147,6 @@ export default React.memo(function EditorToolbar({
               t={t} 
               currentTool={tool} 
               onToolChange={onToolChange}
-              btnBase={btnBase}
-              btnActive={btnActive}
-              btnInactive={btnInactive}
             />
           ))}
         </div>

@@ -5,14 +5,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-21 (Hoy)
-**3 commits realizados**
+**5 commits realizados**
 
+- **Novedad**: **URLs Amigables (Slugs)**. Migración a formato `/project/id-nombre` y `/editor/id-nombre` para mejorar el SEO y permitir compartir enlaces legibles.
 - **Novedad**: **Sprite Studio (Full Display)**. Migración completa del editor de un modal a una página dedicada (`/project/:id/editor/:spriteId`) para máxima inmersión.
 - **Novedad**: **Autosave Cloud**. Implementado sistema de sincronización automática y silenciosa con 3s de debounce e indicadores de estado en tiempo real.
 - **Novedad**: **Borrador Masivo (Magic Eraser)**. Nueva herramienta para eliminar todas las instancias de un color en el frame activo con un solo click.
 - **Mejora**: **Importación de Alta Fidelidad**. Nuevo motor de pixelización con promediado de bloque (Box Sampling) que elimina el ruido en imágenes fuente de alta resolución.
 - **Mejora**: **Interfaz de Importación**. Rediseño estético total del modal con grilla de puntos de fondo, efectos de escaneo dinámico y esquineros pixel-art.
 - **Fix**: **Estabilidad en Toolbar**. Corregido error de profundidad de renderizado ("Maximum update depth") relacionado con tooltips y re-definición de componentes.
+- **Fix**: **TypeScript y Sintaxis**. Resuelto error de JSX en el modal de importación y agregado soporte para operadores funcionales en el store de Zustand.
 - **Fix**: **Nomenclatura de Colores**. Limpieza de la paleta eliminando el prefijo del nombre de archivo en colores importados para mayor legibilidad.
 - **Novedad**: **Master Spritesheet Preview**. Herramienta de inspección global para visualizar todos los frames y animaciones en simultáneo.
 - **Novedad**: **Checkpoints (Historial Cloud)**. Guardado manual de estados robusto para recuperación de assets.

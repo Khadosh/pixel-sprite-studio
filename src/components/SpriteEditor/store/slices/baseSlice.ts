@@ -12,8 +12,12 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setViewingAnimation: (name) => set({ viewingAnimation: name }),
   setAssetName: (name) => set({ assetName: name, isDirty: true }),
   setIsEditingName: (editing) => set({ isEditingName: editing }),
-  setOnionSkin: (on) => set({ onionSkin: on }),
-  setShowAllColors: (on) => set({ showAllColors: on }),
+  setOnionSkin: (onOrFn) => set(s => ({ 
+    onionSkin: typeof onOrFn === 'function' ? onOrFn(s.onionSkin) : onOrFn 
+  })),
+  setShowAllColors: (onOrFn) => set(s => ({ 
+    showAllColors: typeof onOrFn === 'function' ? onOrFn(s.showAllColors) : onOrFn 
+  })),
   setScope: (scope) => set({ scope }),
   setCastSettings: (settingsOrFn) => set(state => ({
     castSettings: typeof settingsOrFn === 'function' ? settingsOrFn(state.castSettings) : settingsOrFn,
@@ -30,7 +34,9 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setLeftSidebarTab: (tab) => set((s) => ({ 
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
-  setCanvasBg: (bg) => set({ canvasBg: bg }),
+  setCanvasBg: (bgOrFn) => set(s => ({ 
+    canvasBg: typeof bgOrFn === 'function' ? bgOrFn(s.canvasBg) : bgOrFn 
+  })),
   setActivePerspective: (p) => set(s => {
     let idx = 0;
     if (p === 'side') idx = s.activeSide === 'right' ? 1 : 3;
@@ -44,8 +50,12 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
       editingFrameIndex: isSide ? (side === 'right' ? 1 : 3) : s.editingFrameIndex 
     };
   }),
-  setShowIsometricGrid: (show) => set({ showIsometricGrid: show }),
-  setSketchMode: (on) => set({ sketchMode: on }),
+  setShowIsometricGrid: (onOrFn) => set(s => ({ 
+    showIsometricGrid: typeof onOrFn === 'function' ? onOrFn(s.showIsometricGrid) : onOrFn 
+  })),
+  setSketchMode: (onOrFn) => set(s => ({ 
+    sketchMode: typeof onOrFn === 'function' ? onOrFn(s.sketchMode) : onOrFn 
+  })),
 
   setCategory: (category) => set(state => ({
     editedAsset: { ...state.editedAsset, category },

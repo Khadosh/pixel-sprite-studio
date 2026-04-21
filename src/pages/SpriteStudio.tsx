@@ -19,9 +19,12 @@ import {
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { ImportImageModal } from '@/components/SpriteEditor/components/ImportImageModal';
+import { createSpec, parseSpec } from '@/lib/slugUtils';
 
 export default function SpriteStudio() {
-  const { projectId, spriteId } = useParams<{ projectId: string; spriteId: string }>();
+  const { projectSpec, spriteSpec } = useParams<{ projectSpec: string; spriteSpec: string }>();
+  const projectId = parseSpec(projectSpec || '');
+  const spriteId = parseSpec(spriteSpec || '');
   const navigate = useNavigate();
   const { toast } = useToast();
   const previewPanelRef = useRef<AnimationPreviewPanelHandle>(null);
@@ -44,7 +47,10 @@ export default function SpriteStudio() {
           handleManualSave(asset);
         },
         onOpenChange: (open) => {
-          if (!open) navigate(`/project/${projectId}`);
+          if (!open) {
+            const projectPart = createSpec(projectId, sprite?.name || 'project');
+            navigate(`/project/${projectPart}`);
+          }
         },
         previewPanelRef,
       });
@@ -116,7 +122,7 @@ export default function SpriteStudio() {
     return (
       <div className="h-screen w-screen bg-background flex flex-col items-center justify-center gap-4">
         <span className="font-pixel text-destructive text-xs uppercase">Error al cargar el sprite</span>
-        <Link to={`/project/${projectId}`} className="text-primary hover:underline font-mono text-[10px]">
+        <Link to={`/project/${projectSpec}`} className="text-primary hover:underline font-mono text-[10px]">
           Volver al proyecto
         </Link>
       </div>
@@ -131,7 +137,7 @@ export default function SpriteStudio() {
       <div className="flex-shrink-0 bg-secondary/20 border-b border-border px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link 
-            to={`/project/${projectId}`}
+            to={`/project/${projectSpec}`}
             className="p-1 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
             title="Volver al proyecto"
           >

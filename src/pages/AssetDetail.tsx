@@ -10,6 +10,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAsset } from '@/hooks/useAssetQueries';
 import { useCreateSprite } from '@/hooks/useProjectQueries';
+import { parseSpec } from '@/lib/slugUtils';
 
 const PIXEL_SCALE = 4;
 const GRID_GAP = 1;
@@ -289,7 +290,8 @@ function AssetDetailContent({ asset }: { asset: SpriteAsset }) {
   );
 }
   export default function AssetDetail() {
-    const { assetId } = useParams<{ assetId: string }>();
+    const { assetSpec } = useParams<{ assetSpec: string }>();
+    const assetId = parseSpec(assetSpec || '');
     const navigate = useNavigate();
   
     const { data: asset, isLoading, error } = useAsset(assetId);

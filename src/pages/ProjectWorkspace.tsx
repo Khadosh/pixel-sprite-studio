@@ -12,9 +12,11 @@ import { useGenerateSprite } from '@/hooks/useGenerateSprite';
 import { SpriteEditorModal } from '@/components/SpriteEditor';
 import type { SpriteAsset } from '@/lib/types';
 import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
+import { createSpec, parseSpec } from '@/lib/slugUtils';
 
 export default function ProjectWorkspace() {
-  const { id } = useParams<{ id: string }>();
+  const { projectSpec } = useParams<{ projectSpec: string }>();
+  const id = parseSpec(projectSpec || '');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -47,7 +49,9 @@ export default function ProjectWorkspace() {
           clearGenerated();
           setGeneratePrompt('');
           setShowCreator(false);
-          navigate(`/project/${id}/editor/${newSprite.id}`);
+          const projectPart = createSpec(id, project?.name || 'project');
+          const spritePart = createSpec(newSprite.id, generatedSprite.name || 'sprite');
+          navigate(`/project/${projectPart}/editor/${spritePart}`);
         }
       });
     }
@@ -82,8 +86,11 @@ export default function ProjectWorkspace() {
   };
 
   const handleOpenEditorForSprite = (sprite: ProjectSprite) => {
-    if (!id) return;
-    navigate(`/project/${id}/editor/${sprite.id}`);
+    if (!id || !project) return;
+    const projectPart = createSpec(id, project.name);
+    const spriteAsset = sprite.asset_data as SpriteAsset;
+    const spritePart = createSpec(sprite.id, spriteAsset.name);
+    navigate(`/project/${projectPart}/editor/${spritePart}`);
   };
 
   const handleEditorSave = async (asset: SpriteAsset) => {
@@ -334,7 +341,9 @@ export default function ProjectWorkspace() {
                   if (!id) return;
                   createSpriteMutation.mutate({ projectId: id, asset: blank }, {
                     onSuccess: (newSprite) => {
-                      navigate(`/project/${id}/editor/${newSprite.id}`);
+                      const projectPart = createSpec(id, project?.name || 'project');
+                      const spritePart = createSpec(newSprite.id, blank.name);
+                      navigate(`/project/${projectPart}/editor/${spritePart}`);
                     }
                   });
                 }}

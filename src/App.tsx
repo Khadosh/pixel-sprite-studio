@@ -33,12 +33,12 @@ const App = () => (
             
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/project/:id" element={<ProtectedRoute><ProjectWorkspace /></ProtectedRoute>} />
-            <Route path="/project/:projectId/editor/:spriteId" element={<ProtectedRoute><SpriteStudio /></ProtectedRoute>} />
+            <Route path="/project/:projectSpec" element={<ProtectedRoute><ProjectWorkspace /></ProtectedRoute>} />
+            <Route path="/project/:projectSpec/editor/:spriteSpec" element={<ProtectedRoute><SpriteStudio /></ProtectedRoute>} />
             
             {/* Public Catalog Routes */}
             <Route path="/catalog" element={<Catalog />} />
-            <Route path="/asset/:assetId" element={<AssetDetail />} />
+            <Route path="/asset/:assetSpec" element={<AssetDetail />} />
             <Route path="/icon-preview" element={<IconPreview />} />
             
             <Route path="*" element={<NotFound />} />

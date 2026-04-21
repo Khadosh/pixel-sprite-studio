@@ -139,6 +139,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     }));
   }, [store]);
 
+  const toggleOnionSkin = React.useCallback(() => setOnionSkin((prev: boolean) => !prev), [setOnionSkin]);
+  const toggleIsometricGrid = React.useCallback(() => setShowIsometricGrid((prev: boolean) => !prev), [setShowIsometricGrid]);
+  const toggleCanvasBg = React.useCallback(() => setCanvasBg((prev: 'light' | 'dark') => (prev === 'light' ? 'dark' : 'light')), [setCanvasBg]);
+  const toggleMirrorX = React.useCallback(() => pixelEditor.setMirrorX((prev: boolean) => !prev), [pixelEditor.setMirrorX]);
+  const openStudioSheet = React.useCallback(() => setShowStudioSheet(true), []);
+
+
   return (
     <PaletteProvider defaultPalette={editedAsset.palette}>
       <div className="flex-1 flex flex-col min-h-0 bg-background p-4 gap-4 overflow-hidden relative">
@@ -164,11 +171,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                 canRedo={canRedo}
                 onRedo={redo}
                 onionSkin={onionSkin}
-                onToggleOnionSkin={() => setOnionSkin(!onionSkin)}
+                onToggleOnionSkin={toggleOnionSkin}
                 showIsometricGrid={showIsometricGrid}
-                onToggleIsometricGrid={() => setShowIsometricGrid(!showIsometricGrid)}
+                onToggleIsometricGrid={toggleIsometricGrid}
                 mirrorX={pixelEditor.mirrorX}
-                onToggleMirrorX={() => pixelEditor.setMirrorX((prev: boolean) => !prev)}
+                onToggleMirrorX={toggleMirrorX}
                 scope={scope}
                 onScopeChange={store.getState().setScope}
                 onCopy={handleCopy}
@@ -177,8 +184,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                 onFlipV={handleFlipV}
                 onRotate={handleRotate}
                 canvasBg={canvasBg}
-                onToggleCanvasBg={() => setCanvasBg(canvasBg === 'light' ? 'dark' : 'light')}
-                onOpenStudioSheet={() => setShowStudioSheet(true)}
+                onToggleCanvasBg={toggleCanvasBg}
+                onOpenStudioSheet={openStudioSheet}
               />
             </div>
             <div className="flex-1 flex flex-row overflow-hidden relative">

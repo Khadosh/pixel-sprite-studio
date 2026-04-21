@@ -288,10 +288,13 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] bg-card border-border font-pixel">
-        <DialogHeader className="border-b border-white/5 pb-4 mb-4">
+        <DialogHeader className="border-b border-white/5 pb-4 mb-4 relative z-10">
           <DialogTitle className="text-primary tracking-[0.2em] text-lg font-pixel uppercase drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]">
             Importar Imagen
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecciona una imagen para pixelarla e importarla como una nueva capa o reemplazar el frame actual.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="absolute inset-0 bg-pixel-grid opacity-10 pointer-events-none" />
