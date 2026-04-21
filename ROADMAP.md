@@ -220,6 +220,7 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 | Animation easing curves | 🔵 Alta | Medio |
 | CLI / batch export headless | 🔵 Alta | Medio |
 | Tilemap editor completo | 🔵 Alta | Alto |
+| Sombreado Dinámico Procedural (Fuente de Luz) | 🔵 Alta | 🔥 Muy Alto |
 
 ---
 
