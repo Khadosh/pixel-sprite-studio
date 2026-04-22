@@ -5,7 +5,10 @@ export const THUMB_SCALE = 4;
 export const THUMB_SIZE = 16 * THUMB_SCALE;
 
 export const AVAILABLE_ANIMS = [
-  { value: 'idle', label: 'Idle' },
+  { value: 'idle_down', label: 'Idle (Down)' },
+  { value: 'idle_up', label: 'Idle (Up)' },
+  { value: 'idle_right', label: 'Idle (Right)' },
+  { value: 'idle_left', label: 'Idle (Left)' },
   { value: 'walk_down', label: 'Walk (Down)' },
   { value: 'walk_up', label: 'Walk (Up)' },
   { value: 'walk_right', label: 'Walk (Right)' },

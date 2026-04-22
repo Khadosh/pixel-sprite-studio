@@ -10,6 +10,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setActiveLayerId: (id) => set({ activeLayerId: id }),
   setEditingFrameIndex: (idx) => set({ editingFrameIndex: idx }),
   setViewingAnimation: (name) => set({ viewingAnimation: name }),
+  setIsDirty: (dirty) => set({ isDirty: dirty }),
   setAssetName: (name) => set({ assetName: name, isDirty: true }),
   setIsEditingName: (editing) => set({ isEditingName: editing }),
   setOnionSkin: (onOrFn) => set(s => ({ 
@@ -118,7 +119,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
       activePerspective: 'front',
       activeSide: 'right',
       showIsometricGrid: false,
-      sketchMode: true,
+      sketchMode: false,
       viewingAnimation: 'base',
       isDirty: false,
       past: [],

@@ -77,6 +77,7 @@ export interface SpriteEditorState {
   setActiveLayerId: (id: string | null) => void;
   setEditingFrameIndex: (idx: number) => void;
   setViewingAnimation: (name: string) => void;
+  setIsDirty: (dirty: boolean) => void;
   setAssetName: (name: string) => void;
   setIsEditingName: (editing: boolean) => void;
   setOnionSkin: (on: boolean | ((prev: boolean) => boolean)) => void;

@@ -1,8 +1,7 @@
 import {
-  PxPencil, PxEraser, PxFill, PxPipette,
-  PxLine, PxRect, PxCircle, PxSelect, PxGrid,
-  PxRotateCw, PxCopy, PxPaste, PxFlipH, PxFlipV,
-  PxMirror, PxUndo, PxRedo, PxLayers, PxSun, PxMoon, PxTrash,
+  PxMirror, PxUndo, PxRedo, PxLayers, PxSun, PxMoon,
+  PxSelect, PxTransform, PxImage, PxCopy, PxPaste,
+  PxFlipH, PxFlipV, PxRotateCw, PxGrid,
   type PixelIconProps
 } from '@/components/icons/PixelIcon';
 import type { EditorTool } from '@/hooks/usePixelEditor';
@@ -36,6 +35,8 @@ interface EditorToolbarProps {
   onToggleCanvasBg: () => void;
   showIsometricGrid?: boolean;
   onToggleIsometricGrid?: () => void;
+  sketchMode?: boolean;
+  onToggleSketchMode?: () => void;
   onOpenStudioSheet?: () => void;
 }
 
@@ -47,51 +48,10 @@ const BRUSH_SIZES: { value: BrushSize; label: string; tooltip: string }[] = [
 
 type PxIcon = React.FC<PixelIconProps>;
 
-const PAINT_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
-  { id: 'pencil', icon: PxPencil, tooltip: 'Lápiz (B)' },
-  { id: 'eraser', icon: PxEraser, tooltip: 'Borrador (E)' },
-  { id: 'erase-color', icon: PxTrash, tooltip: 'Borrado Masivo (M)' },
-  { id: 'fill', icon: PxFill, tooltip: 'Relleno (G)' },
-  { id: 'picker', icon: PxPipette, tooltip: 'Cuentagotas (I)' },
-];
-
-const SHAPE_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
-  { id: 'line', icon: PxLine, tooltip: 'Línea' },
-  { id: 'rect', icon: PxRect, tooltip: 'Rectángulo' },
-  { id: 'circle', icon: PxCircle, tooltip: 'Círculo' },
-  { id: 'select', icon: PxSelect, tooltip: 'Selección (S)' },
-];
-
-const TRANSFORM_TOOLS: { id: EditorTool; icon: PxIcon; tooltip: string }[] = [
-  { id: 'rotate', icon: PxRotateCw, tooltip: 'Rotación Libre (R)' },
-];
-
 const btnBase = 'p-2 rounded border transition-all';
 const btnActive = 'border-primary bg-primary/10 text-primary shadow-[0_0_10px_rgba(34,197,94,0.2)]';
 const btnInactive = 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground';
 const sizeBtn = 'px-2 py-1 rounded border text-[10px] font-mono transition-all';
-
-const ToolButton = React.memo(({ t, currentTool, onToolChange }: { 
-  t: { id: EditorTool; icon: PxIcon; tooltip: string }, 
-  currentTool: EditorTool, 
-  onToolChange: (t: EditorTool) => void
-}) => (
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <button 
-        onClick={() => onToolChange(t.id)} 
-        className={`${btnBase} ${currentTool === t.id ? btnActive : btnInactive}`}
-      >
-        <t.icon size={16} />
-      </button>
-    </TooltipTrigger>
-    <TooltipContent side="top" className="text-[10px] font-pixel border-border">
-      {t.tooltip}
-    </TooltipContent>
-  </Tooltip>
-));
-
-ToolButton.displayName = 'ToolButton';
 
 export default React.memo(function EditorToolbar({ 
   tool, onToolChange, 
@@ -105,6 +65,8 @@ export default React.memo(function EditorToolbar({
   canvasBg, onToggleCanvasBg,
   showIsometricGrid = false,
   onToggleIsometricGrid,
+  sketchMode = false,
+  onToggleSketchMode,
   onOpenStudioSheet
 }: EditorToolbarProps) {
 
@@ -112,48 +74,36 @@ export default React.memo(function EditorToolbar({
     <TooltipProvider delayDuration={200}>
       <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1">
         
+        {/* Selection & Transformation Tools */}
         <div className="flex items-center gap-1">
-          <ToolButton 
-            t={{ id: 'select', icon: PxSelect, tooltip: 'Selección (S)' }} 
-            currentTool={tool} 
-            onToolChange={onToolChange}
-          />
-          <div className="w-px h-6 bg-border mx-1 shrink-0" />
-          {TRANSFORM_TOOLS.map(t => (
-            <ToolButton 
-              key={t.id} 
-              t={t} 
-              currentTool={tool} 
-              onToolChange={onToolChange}
-            />
-          ))}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onToolChange('select')}
+                className={`${btnBase} ${tool === 'select' ? btnActive : btnInactive}`}
+              >
+                <PxSelect size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">SELECCIÓN (S)</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => onToolChange('rotate')}
+                className={`${btnBase} ${tool === 'rotate' ? btnActive : btnInactive}`}
+              >
+                <PxTransform size={16} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-[10px] font-pixel">TRANSFORMAR (R)</TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-        <div className="flex items-center gap-1">
-          {PAINT_TOOLS.map(t => (
-            <ToolButton 
-              key={t.id} 
-              t={t} 
-              currentTool={tool} 
-              onToolChange={onToolChange}
-            />
-          ))}
-          <div className="w-px h-6 bg-border mx-1 shrink-0" />
-          {SHAPE_TOOLS.map(t => (
-            <ToolButton 
-              key={t.id} 
-              t={t} 
-              currentTool={tool} 
-              onToolChange={onToolChange}
-            />
-          ))}
-        </div>
-
-        <div className="w-px h-6 bg-border mx-1 shrink-0" />
-
-        {/* Global Actions Group */}
+        {/* Operational Actions (Clipboard/Flips) */}
         <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -315,6 +265,22 @@ export default React.memo(function EditorToolbar({
               </TooltipTrigger>
               <TooltipContent side="top" className="text-[10px] font-pixel border-border">
                 Guía Isométrica (2:1)
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {onToggleSketchMode && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onToggleSketchMode}
+                  className={`${btnBase} ${sketchMode ? 'border-cyan-400 bg-cyan-400/10 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : btnInactive}`}
+                >
+                  <PxImage size={15} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] font-pixel border-border">
+                Modo Boceto (Guía)
               </TooltipContent>
             </Tooltip>
           )}

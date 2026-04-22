@@ -5,7 +5,7 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-21 (Hoy)
-**5 commits realizados**
+**9 commits realizados**
 
 - **Novedad**: **URLs Amigables (Slugs)**. Migración a formato `/project/id-nombre` y `/editor/id-nombre` para mejorar el SEO y permitir compartir enlaces legibles.
 - **Novedad**: **Sprite Studio (Full Display)**. Migración completa del editor de un modal a una página dedicada (`/project/:id/editor/:spriteId`) para máxima inmersión.
@@ -14,12 +14,11 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Mejora**: **Importación de Alta Fidelidad**. Nuevo motor de pixelización con promediado de bloque (Box Sampling) que elimina el ruido en imágenes fuente de alta resolución.
 - **Mejora**: **Interfaz de Importación**. Rediseño estético total del modal con grilla de puntos de fondo, efectos de escaneo dinámico y esquineros pixel-art.
 - **Fix**: **Estabilidad en Toolbar**. Corregido error de profundidad de renderizado ("Maximum update depth") relacionado con tooltips y re-definición de componentes.
-- **Fix**: **TypeScript y Sintaxis**. Resuelto error de JSX en el modal de importación y agregado soporte para operadores funcionales en el store de Zustand.
-- **Fix**: **Bucle Infinito y Estabilidad**. Refactorizado `usePixelEditor` y `EditorLayout` para estabilizar el Bridge y eliminar errores de profundidad de renderizado ("Maximum update depth exceeded").
-- **Mejora**: **Caché de Composición**. Implementado sistema de caché para `compositeFrame` que estabiliza referencias y resuelve advertencias de `getSnapshot`.
-- **Fix**: **Nomenclatura de Colores**. Limpieza de la paleta eliminando el prefijo del nombre de archivo en colores importados para mayor legibilidad.
-- **Novedad**: **Master Spritesheet Preview**. Herramienta de inspección global para visualizar todos los frames y animaciones en simultáneo.
-- **Novedad**: **Checkpoints (Historial Cloud)**. Guardado manual de estados robusto para recuperación de assets.
+- **Fix**: **Crash de Inicialización**. Resuelto error crítico de `subscribe is not a function` en el Studio mediante una refactorización estructural de la inyección del Store.
+- **Fix**: **Iconografía Faltante**. Solucionados errores de referencia por iconos no importados tras la reorganización de la barra de herramientas.
+- **Mejora**: **Jerarquía de Navegación**. Reordenadas las pestañas del editor (Anims, Layers, Bones, Themes, Config) para priorizar el flujo creativo sobre la configuración técnica.
+- **Mejora**: **Encabezado Persistente**. Implementado campo de nombre de asset editable directamente en el breadcrumb superior para una gestión de metadatos más fluida.
+- **Mejora**: **Herramientas de Transformación**. Refinado el feedback visual de la herramienta de selección con manejadores de redimensión y cursores contextuales.
 
 ---
 

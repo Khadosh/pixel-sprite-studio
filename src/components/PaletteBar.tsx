@@ -54,7 +54,7 @@ export default React.memo(function PaletteBar({
                 const input = e.currentTarget.querySelector('input[type="color"]') as HTMLInputElement;
                 if (input) input.click();
               }}
-              className={`group flex items-center gap-3 relative p-1.5 rounded border transition-colors cursor-pointer select-none ${
+              className={`group flex items-center gap-3 relative p-1.5 rounded border transition-colors cursor-pointer select-none overflow-hidden w-full ${
                 isActive
                   ? 'bg-purple-600/20 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.2)]'
                   : 'bg-background/50 border-transparent hover:border-border'
@@ -71,7 +71,7 @@ export default React.memo(function PaletteBar({
               {isEditing ? (
                 <input
                   autoFocus
-                  className="flex-1 min-w-0 bg-background/50 border-none outline-none font-pixel text-[10px] px-1 rounded text-purple-300"
+                  className="flex-1 w-full min-w-0 bg-transparent border-none outline-none font-pixel text-[8px] px-0 h-5 leading-none text-purple-300"
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
                   onBlur={handleFinishEditing}
@@ -80,9 +80,9 @@ export default React.memo(function PaletteBar({
                 />
               ) : (
                 <span 
-                  className={`flex-1 text-[10px] font-mono transition-colors truncate ${isActive ? 'text-purple-300 font-bold hover:underline cursor-text' : 'text-muted-foreground'}`}
-                  onClick={(e) => {
-                    if (isActive && onRenameColor) {
+                  className={`flex-1 text-[8px] font-pixel h-5 leading-none flex items-center transition-colors truncate ${isActive ? 'text-purple-300' : 'text-muted-foreground'}`}
+                  onDoubleClick={(e) => {
+                    if (onRenameColor) {
                       e.stopPropagation();
                       setEditingKey(k);
                       setTempName(colorNames[k] || key);

@@ -90,7 +90,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         activePerspective: 'front',
         activeSide: 'right',
         showIsometricGrid: false,
-        sketchMode: true,
+        sketchMode: false,
         isIconMode: options.isIconMode,
         iconId: options.iconId,
 

@@ -54,7 +54,7 @@ export const AnimationLibrary = React.memo(() => {
 
   // Filter animations based on perspective
   const filteredAnims = AVAILABLE_ANIMS.filter(a => {
-    if (a.value === 'idle' || a.value === 'hurt' || a.value === 'die') return true;
+    if (a.value === 'hurt' || a.value === 'die') return true;
     if (activePerspective === 'front') return a.value.endsWith('_down');
     if (activePerspective === 'side') {
       return activeSide === 'right' ? a.value.endsWith('_right') : a.value.endsWith('_left');
@@ -72,16 +72,6 @@ export const AnimationLibrary = React.memo(() => {
             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="font-pixel text-[9px] text-primary tracking-widest uppercase">Perspectiva Activa</span>
           </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`h-6 px-2 text-[7px] font-pixel transition-all flex gap-1 items-center ${sketchMode ? 'bg-primary/20 text-primary border border-primary/40' : 'text-muted-foreground hover:bg-white/5'}`}
-            onClick={() => setSketchMode(!sketchMode)}
-          >
-            <PxImage size={10} />
-            BOCETO {sketchMode ? 'ON' : 'OFF'}
-          </Button>
         </div>
         
         <div className="space-y-3">

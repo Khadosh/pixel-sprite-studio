@@ -136,6 +136,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
   const leftSidebarTab = useSpriteEditorStore(s => s.leftSidebarTab);
   const onionGhostFrames = useSpriteEditorStore(useShallow(selectOnionGhostFrames));
   const perspectiveReferenceFrame = useSpriteEditorStore(useShallow(selectPerspectiveReferenceFrame));
+  const sketchMode = useSpriteEditorStore(s => s.sketchMode);
+  const setSketchMode = useSpriteEditorStore(s => s.setSketchMode);
 
   // Effects (keyboard shortcuts, side-effects)
   useEditorEffects(store);
@@ -151,6 +153,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
   const toggleIsometricGrid = React.useCallback(() => (setShowIsometricGrid as any)((prev: boolean) => !prev), [setShowIsometricGrid]);
   const toggleCanvasBg = React.useCallback(() => (setCanvasBg as any)((prev: 'light' | 'dark') => (prev === 'light' ? 'dark' : 'light')), [setCanvasBg]);
   const toggleMirrorX = React.useCallback(() => (pixelEditor.setMirrorX as any)((prev: boolean) => !prev), [pixelEditor.setMirrorX]);
+  const toggleSketchMode = React.useCallback(() => (setSketchMode as any)((prev: boolean) => !prev), [setSketchMode]);
   const openStudioSheet = React.useCallback(() => setShowStudioSheet(true), []);
 
 
@@ -193,6 +196,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                 onRotate={handleRotate}
                 canvasBg={canvasBg}
                 onToggleCanvasBg={toggleCanvasBg}
+                sketchMode={sketchMode}
+                onToggleSketchMode={toggleSketchMode}
                 onOpenStudioSheet={openStudioSheet}
               />
             </div>

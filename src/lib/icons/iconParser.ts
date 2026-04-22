@@ -9,6 +9,7 @@ export interface IconPaths {
   light: string;
   dark: string;
   black: string;
+  accent: string;
 }
 
 export type IconMatrix = number[][];
@@ -19,6 +20,7 @@ export const matrixToSvgPaths = (matrix: IconMatrix): IconPaths => {
     '2': [], // Light
     '3': [], // Dark
     '4': [], // Black
+    '5': [], // Accent/White
   };
 
   const getPathKey = (val: number): string | null => {
@@ -26,6 +28,7 @@ export const matrixToSvgPaths = (matrix: IconMatrix): IconPaths => {
     if (val === 2) return '2';
     if (val === 3) return '3';
     if (val === 4) return '4';
+    if (val === 5) return '5';
     return null;
   };
 
@@ -56,5 +59,6 @@ export const matrixToSvgPaths = (matrix: IconMatrix): IconPaths => {
     light: paths['2'].join(''),
     dark: paths['3'].join(''),
     black: paths['4'].join(''),
+    accent: paths['5'].join(''),
   };
 };

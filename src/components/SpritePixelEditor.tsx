@@ -37,6 +37,7 @@ export default function SpritePixelEditor({
   asset,
   frameIndex,
   activeLayerId,
+  tool,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -135,7 +136,7 @@ export default function SpritePixelEditor({
     
     // Draw Perspective Reference (Sketch Mode) - Always showing Front base
     if (referenceFrame) {
-      drawGhost(referenceFrame, 0.15); // Very faint original colors
+      drawGhost(referenceFrame, 0.25, '#38bdf8'); // Monochromatic Sketch Blue (Blueprint style)
     }
 
     // Helper to draw a specific frame matrix
@@ -469,6 +470,43 @@ export default function SpritePixelEditor({
       if (draggingBone || hoveringBone) {
         const type = draggingBone || hoveringBone;
         canvasRef.current.style.cursor = (type === 'neck' || type === 'waist' || type === 'ankles') ? 'ns-resize' : 'ew-resize';
+      } else if (tool === 'select') {
+        // Handle hit testing for cursors
+        const threshold = 0.5;
+        if (selectionRect) {
+          const handles = [
+            { r: selectionRect.r, c: selectionRect.c, cursor: 'nwse-resize' }, // 0: TL
+            { r: selectionRect.r, c: selectionRect.c + selectionRect.w, cursor: 'nesw-resize' }, // 1: TR
+            { r: selectionRect.r + selectionRect.h, c: selectionRect.c, cursor: 'nesw-resize' }, // 2: BL
+            { r: selectionRect.r + selectionRect.h, c: selectionRect.c + selectionRect.w, cursor: 'nwse-resize' }, // 3: BR
+            { r: selectionRect.r, c: selectionRect.c + selectionRect.w / 2, cursor: 'ns-resize' }, // 4: TM
+            { r: selectionRect.r + selectionRect.h, c: selectionRect.c + selectionRect.w / 2, cursor: 'ns-resize' }, // 5: BM
+            { r: selectionRect.r + selectionRect.h / 2, c: selectionRect.c, cursor: 'ew-resize' }, // 6: LM
+            { r: selectionRect.r + selectionRect.h / 2, c: selectionRect.c + selectionRect.w, cursor: 'ew-resize' }, // 7: RM
+          ];
+          
+          let foundHandle = false;
+          for (const h of handles) {
+            if (Math.abs(r - h.r) <= threshold && Math.abs(c - h.c) <= threshold) {
+              canvasRef.current.style.cursor = h.cursor;
+              foundHandle = true;
+              break;
+            }
+          }
+
+          if (!foundHandle) {
+            // Check if inside
+            if (r >= selectionRect.r && r < selectionRect.r + selectionRect.h && c >= selectionRect.c && c < selectionRect.c + selectionRect.w) {
+              canvasRef.current.style.cursor = 'move';
+            } else {
+              canvasRef.current.style.cursor = 'crosshair';
+            }
+          }
+        } else {
+          canvasRef.current.style.cursor = 'crosshair';
+        }
+      } else if (tool === 'rotate') {
+        canvasRef.current.style.cursor = 'grab';
       } else {
         canvasRef.current.style.cursor = 'crosshair';
       }

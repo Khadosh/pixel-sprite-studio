@@ -27,6 +27,7 @@ const Px: React.FC<PixelIconProps & { children: React.ReactNode }> = ({
       '--px-light': 'rgba(255, 255, 255, 0.25)',
       '--px-dark': 'rgba(0, 0, 0, 0.25)',
       '--px-black': 'rgba(0, 0, 0, 0.4)',
+      '--px-accent': '#ffffff', // High contrast accent (for index 5)
     }}
   >
     {React.Children.map(children, child =>
@@ -52,6 +53,7 @@ export const DynamicPx: React.FC<PixelIconProps & { iconId: string }> = ({ iconI
       {paths.light && <path d={paths.light} fill="var(--px-light)" />}
       {paths.dark && <path d={paths.dark} fill="var(--px-dark)" />}
       {paths.black && <path d={paths.black} fill="var(--px-black)" />}
+      {paths.accent && <path d={paths.accent} fill="var(--px-accent)" />}
     </Px>
   );
 };
@@ -88,6 +90,10 @@ export const PxCircle: React.FC<PixelIconProps> = (p) => (
 
 export const PxSelect: React.FC<PixelIconProps> = (p) => (
   <DynamicPx {...p} iconId="select" />
+);
+
+export const PxTransform: React.FC<PixelIconProps> = (p) => (
+  <DynamicPx {...p} iconId="transform" />
 );
 
 // ─── Transform Tools ─────────────────────────────────
@@ -585,6 +591,7 @@ export const PIXEL_ICONS = {
   package: PxPackage,
   grid: PxGrid,
   edit: PxEdit,
+  transform: PxTransform,
   arrowDownToLine: PxArrowDownToLine,
   loader: PxLoader,
   xCircle: PxXCircle,

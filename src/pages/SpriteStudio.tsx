@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSprite, useUpdateSprite } from '@/hooks/useProjectQueries';
-import { SpriteEditorStoreProvider } from '@/components/SpriteEditor/context/SpriteEditorContext';
+import { SpriteEditorStoreProvider, useSpriteEditorStore, useSpriteEditorStoreApi } from '@/components/SpriteEditor/context/SpriteEditorContext';
 import { createSpriteEditorStore } from '@/components/SpriteEditor/store/useSpriteEditorStore';
 import { EditorLayout } from '@/components/SpriteEditor/components/EditorLayout';
 import { AnimationPreviewPanelHandle } from '@/components/SpriteEditor/components/AnimationPreviewPanel';
@@ -36,6 +36,11 @@ export default function SpriteStudio() {
 
   // 2. Local State for Store
   const [store, setStore] = useState<any>(null);
+
+  // Reset store if we switch to a different sprite (handles navigation between assets)
+  useEffect(() => {
+    setStore(null);
+  }, [spriteId]);
 
   // Initialize store once sprite is loaded
   useEffect(() => {
@@ -76,14 +81,12 @@ export default function SpriteStudio() {
   };
 
   // 3. Debounced Autosave
-  // We'll use a side effect that monitors the store's "editedAsset"
   useEffect(() => {
     if (!store) return;
 
     let timeoutId: NodeJS.Timeout;
 
     const unsub = store.subscribe((state: any, prevState: any) => {
-      // If asset changed and it's dirty
       if (state.editedAsset !== prevState.editedAsset && state.isDirty) {
         const realSpriteId = sprite?.id || spriteId;
         const realProjectId = (sprite as any)?.project_id || projectId;
@@ -96,10 +99,10 @@ export default function SpriteStudio() {
             asset: state.editedAsset 
           }, {
             onSuccess: () => {
-              store.getState().setEditedAsset((s: any) => ({ ...s })); // Force update if needed
+              store.getState().setIsDirty(false);
             }
           });
-        }, 3000); // 3 second debounce for autosave
+        }, 3000); 
       }
     });
 
@@ -134,106 +137,157 @@ export default function SpriteStudio() {
   if (!store) return null;
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
-      {/* Studio Global Header - Breadcrumbs */}
-      <div className="flex-shrink-0 bg-secondary/20 border-b border-border px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link 
-            to={`/project/${projectSlug}`}
-            className="p-1 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
-            title="Volver al proyecto"
+    <SpriteEditorStoreProvider store={store}>
+      <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
+        <StudioHeader 
+          projectSlug={projectSlug || ''} 
+          updateSpriteMutation={updateSpriteMutation}
+          onShowImport={() => setShowImportModal(true)}
+        />
+        <EditorLayout hideHeader={true} />
+        <ImportImageModal open={showImportModal} onOpenChange={setShowImportModal} />
+      </div>
+    </SpriteEditorStoreProvider>
+  );
+}
+
+function StudioHeader({ 
+  projectSlug, 
+  updateSpriteMutation,
+  onShowImport
+}: { 
+  projectSlug: string, 
+  updateSpriteMutation: any,
+  onShowImport: () => void
+}) {
+  const store = useSpriteEditorStoreApi();
+  const assetName = useSpriteEditorStore(s => s.assetName);
+  const setAssetName = useSpriteEditorStore(s => s.setAssetName);
+  const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
+  
+  const [isEditing, setIsEditing] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      const len = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(len, len);
+    }
+  }, [isEditing]);
+
+  return (
+    <div className="flex-shrink-0 bg-secondary/20 border-b border-border px-4 py-2 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <Link 
+          to={`/project/${projectSlug}`}
+          className="p-1 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
+          title="Volver al proyecto"
+        >
+          <PxArrowLeft size={16} />
+        </Link>
+        <div className="h-4 w-[1px] bg-border" />
+        <div className="flex items-center gap-2 font-pixel text-[9px] tracking-tight">
+          <span className="text-muted-foreground opacity-50 uppercase">STUDIO</span>
+          <span className="text-muted-foreground">/</span>
+          <div 
+            className="relative cursor-text px-2 py-1 rounded transition-colors hover:bg-white/5"
+            onDoubleClick={() => setIsEditing(true)}
           >
-            <PxArrowLeft size={16} />
-          </Link>
-          <div className="h-4 w-[1px] bg-border" />
-          <div className="flex items-center gap-2 font-pixel text-[9px] tracking-tight">
-            <span className="text-muted-foreground opacity-50 uppercase">STUDIO</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-primary uppercase">{(sprite.asset_data as SpriteAsset).name}</span>
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                className="bg-transparent border-none outline-none text-primary uppercase font-pixel text-[9px] w-64 h-4 leading-none"
+                value={assetName || ''}
+                onChange={(e) => setAssetName?.(e.target.value)}
+                onBlur={() => setIsEditing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') setIsEditing(false);
+                  if (e.key === 'Escape') setIsEditing(false);
+                }}
+              />
+            ) : (
+              <span className="text-primary uppercase font-pixel text-[9px] truncate max-w-[250px] block h-4 leading-none flex items-center">
+                {assetName || 'SIN NOMBRE'}
+              </span>
+            )}
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-           {updateSpriteMutation.isPending && (
-             <div className="flex items-center gap-2 text-muted-foreground">
-               <PxLoader size={12} className="animate-spin" />
-               <span className="font-mono text-[8px] uppercase">Autoguardando...</span>
-             </div>
-           )}
-           {updateSpriteMutation.isSuccess && !updateSpriteMutation.isPending && (
-             <div className="flex items-center gap-2 text-primary/60">
-               <PxCheck size={12} />
-               <span className="font-mono text-[8px] uppercase tracking-tighter">Sincronizado</span>
-             </div>
-           )}
-           
-           <div className="h-4 w-[1px] bg-border mx-1" />
-
-           <Button
-             variant="outline"
-             size="sm"
-             className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
-             onClick={() => setShowImportModal(true)}
-           >
-             <PxUpload size={15} className="mr-2" />
-             IMPORTAR
-           </Button>
-           
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
-              >
-                <PxDownload size={15} className="mr-2" />
-                EXPORTAR
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-card border-border font-pixel text-[10px]">
-              <DropdownMenuLabel className="text-muted-foreground text-[8px] uppercase tracking-widest px-2 py-1.5">
-                Opciones de Exportación
-              </DropdownMenuLabel>
-
-              <DropdownMenuItem onClick={() => store.getState().handleExportPNG()} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
-                <PxImage size={14} />
-                PNG SPRITE SHEET
-              </DropdownMenuItem>
-
-              <DropdownMenuItem onClick={() => store.getState().handleExportPNG({ includeLabels: true })} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
-                <PxHardDrive size={14} />
-                PNG CON ETIQUETAS
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="bg-border" />
-
-              <DropdownMenuItem onClick={() => store.getState().handleExportGIF()} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
-                <PxFileVideo size={14} />
-                EXPORTAR GIF ({store.getState().viewingAnimation.toUpperCase()})
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-           <Button
-             size="sm"
-             className="h-8 font-pixel text-[9px] bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all px-4"
-             onClick={() => {
-               if (store) {
-                 store.getState().createCheckpoint('Guardado Manual');
-                 store.getState().handleSave();
-               }
-             }}
-           >
-             <PxSave size={14} className="mr-2" />
-             GUARDAR
-           </Button>
         </div>
       </div>
 
-      <SpriteEditorStoreProvider store={store}>
-        <EditorLayout hideHeader={true} />
-        <ImportImageModal open={showImportModal} onOpenChange={setShowImportModal} />
-      </SpriteEditorStoreProvider>
+      <div className="flex items-center gap-3">
+         {updateSpriteMutation.isPending && (
+           <div className="flex items-center gap-2 text-muted-foreground">
+             <PxLoader size={12} className="animate-spin" />
+             <span className="font-mono text-[8px] uppercase">Autoguardando...</span>
+           </div>
+         )}
+         {updateSpriteMutation.isSuccess && !updateSpriteMutation.isPending && (
+           <div className="flex items-center gap-2 text-primary/60">
+             <PxCheck size={12} />
+             <span className="font-mono text-[8px] uppercase tracking-tighter">Sincronizado</span>
+           </div>
+         )}
+         
+         <div className="h-4 w-[1px] bg-border mx-1" />
+
+         <Button
+           variant="outline"
+           size="sm"
+           className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
+           onClick={onShowImport}
+         >
+           <PxUpload size={15} className="mr-2" />
+           IMPORTAR
+         </Button>
+         
+         <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-pixel text-[9px] h-8 border-primary/30 text-green-300 hover:bg-primary/10 transition-all"
+            >
+              <PxDownload size={15} className="mr-2" />
+              EXPORTAR
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-card border-border font-pixel text-[10px]">
+            <DropdownMenuLabel className="text-muted-foreground text-[8px] uppercase tracking-widest px-2 py-1.5">
+              Opciones de Exportación
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem onClick={() => store.getState().handleExportPNG()} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
+              <PxImage size={14} />
+              PNG SPRITE SHEET
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onClick={() => store.getState().handleExportPNG({ includeLabels: true })} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
+              <PxHardDrive size={14} />
+              PNG CON ETIQUETAS
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="bg-border" />
+
+            <DropdownMenuItem onClick={() => store.getState().handleExportGIF()} className="cursor-pointer gap-2 focus:bg-primary/10 focus:text-primary transition-colors">
+              <PxFileVideo size={14} />
+              EXPORTAR GIF ({viewingAnimation.toUpperCase()})
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+         <Button
+           size="sm"
+           className="h-8 font-pixel text-[9px] bg-green-600 text-white hover:bg-green-500 border border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all px-4"
+           onClick={() => {
+             store.getState().createCheckpoint('Guardado Manual');
+             store.getState().handleSave();
+           }}
+         >
+           <PxSave size={14} className="mr-2" />
+           GUARDAR
+         </Button>
+      </div>
     </div>
   );
 }
