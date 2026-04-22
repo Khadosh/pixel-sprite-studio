@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCopy } from '@/components/icons/PixelIcon';
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
-import { useGenerateSprite } from '@/hooks/useGenerateSprite';
+import { useGenerateSpriteFal } from '@/hooks/useGenerateSpriteFal';
 import type { SpriteAsset } from '@/lib/types';
 import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
 import { createSpec, parseSpec } from '@/lib/slugUtils';
@@ -30,8 +30,8 @@ export default function ProjectWorkspace() {
   // Creation panel state
   const [generatePrompt, setGeneratePrompt] = useState('');
   const [showCreator, setShowCreator] = useState(false);
-  const [canvasSize, setCanvasSize] = useState<16 | 32>(16);
-  const { isGenerating, error: generateError, result: generatedSprite, generate, clear: clearGenerated } = useGenerateSprite();
+  const [canvasSize, setCanvasSize] = useState<16 | 32 | 64>(16);
+  const { isGenerating, error: generateError, result: generatedSprite, generate, clear: clearGenerated } = useGenerateSpriteFal();
 
   // Editor modal state
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,10 +197,10 @@ export default function ProjectWorkspace() {
               <div className="flex items-center gap-3">
                 <span className="font-pixel text-[9px] text-muted-foreground uppercase tracking-widest">Resolución del lienzo:</span>
                 <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1 border border-border">
-                  {[16, 32].map((s) => (
+                  {[16, 32, 64].map((s) => (
                     <button
                       key={s}
-                      onClick={() => setCanvasSize(s as 16 | 32)}
+                      onClick={() => setCanvasSize(s as 16 | 32 | 64)}
                       className={`font-pixel text-[8px] px-4 py-1.5 rounded-md transition-all ${canvasSize === s ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}
                     >
                       {s}×{s}

@@ -367,3 +367,31 @@ export function cleanupOrphanedFrames(asset: SpriteAsset): SpriteAsset {
     animations: newAnimations
   };
 }
+
+/**
+ * Converts a single frame (number[][]) into a base64 PNG data URL.
+ * Useful for sending a reference image to an AI or exporting a single frame.
+ */
+export function frameToDataUrl(frame: number[][], palette: Record<number, string>, size: number): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+
+  // Clear background (transparent)
+  ctx.clearRect(0, 0, size, size);
+
+  // Draw pixels
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const colorIdx = frame[y][x];
+      if (colorIdx === 0) continue; // Skip transparency
+
+      ctx.fillStyle = palette[colorIdx] || '#000000';
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  return canvas.toDataURL('image/png');
+}

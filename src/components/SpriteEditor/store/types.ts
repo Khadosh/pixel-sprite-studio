@@ -70,6 +70,7 @@ export interface SpriteEditorState {
     stampSelection: () => void;
     clearFloatingPixels: () => void;
     _handleGenerateAnimationsAI: (type?: string) => Promise<void>;
+    _handleGeneratePerspectiveAI: () => Promise<void>;
   } | null;
 
   // actions
@@ -130,6 +131,7 @@ export interface SpriteEditorState {
   selectAllAnims: () => void;
   clearSelection: () => void;
   generateAnimations: (type?: string) => void;
+  generatePerspectiveAI: () => void;
   renameAnimation: (name: string, newLabel: string) => void;
   removeAnimation: (name: string) => void;
 

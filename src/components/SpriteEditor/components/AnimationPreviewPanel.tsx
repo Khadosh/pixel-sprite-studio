@@ -21,19 +21,18 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
 
     return (
       <div className="flex-shrink-0 bg-secondary/30 p-2 rounded-lg border border-border flex items-center gap-4 h-[90px]">
-        <div className="flex flex-col gap-1 items-center justify-center pt-1">
-          <div className="flex items-center justify-center bg-black/20 rounded-md p-1.5 border border-border/50 shadow-inner">
+        <div className="flex items-center justify-center w-[80px]">
+          <div className="flex items-center justify-center bg-black/20 rounded-md p-1 border border-border/50 shadow-inner overflow-hidden">
             <PaletteProvider defaultPalette={editedAsset.palette}>
               <SpritePreview
                 asset={editedAsset}
                 animationName={viewingAnimation}
-                scale={4}
+                scale={Math.max(1, Math.floor(64 / (editedAsset.size || 16)))}
                 showLabel={false}
                 currentFrameOverride={currentFrame}
               />
             </PaletteProvider>
           </div>
-          <div className="h-[12px] w-full" />
         </div>
 
         <div className="flex flex-col gap-2 border-l border-border/50 pl-4 py-1">

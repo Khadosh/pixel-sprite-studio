@@ -1,1 +1,10 @@
 project_id = "ejpdzlerrcoisajmotcz"
+
+[functions.generate-sprite-fal]
+verify_jwt = false
+
+[functions.generate-sprite]
+verify_jwt = false
+
+[functions.generate-animation]
+verify_jwt = false

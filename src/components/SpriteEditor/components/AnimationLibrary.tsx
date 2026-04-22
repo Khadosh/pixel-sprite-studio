@@ -129,6 +129,19 @@ export const AnimationLibrary = React.memo(() => {
               </Button>
             </div>
           )}
+
+          {activePerspective !== 'front' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full h-8 font-pixel text-[8px] bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 flex gap-2 items-center animate-in fade-in slide-in-from-top-2 duration-300"
+              onClick={() => storeApi.getState().generatePerspectiveAI()}
+              disabled={isGenerating || isAnimGenerating}
+            >
+              <PxSparkles size={11} className={isAnimGenerating ? 'animate-spin' : ''} />
+              {isAnimGenerating ? 'GENERANDO...' : '✨ GENERAR DESDE FRONT'}
+            </Button>
+          )}
         </div>
       {/* SECTION: GENERATION PANEL - MOVED TO TOP */}
       <div className="space-y-3">

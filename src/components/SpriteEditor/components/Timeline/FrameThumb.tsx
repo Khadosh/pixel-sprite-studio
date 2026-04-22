@@ -25,6 +25,7 @@ export const FrameThumb: React.FC<FrameThumbProps> = ({
           ctx.fillRect(x, y, 8, 8);
         }
       }
+      const scale = THUMB_SIZE / size;
       for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
           const val = frame[r][c];
@@ -32,7 +33,7 @@ export const FrameThumb: React.FC<FrameThumbProps> = ({
           const color = palette[val];
           if (!color || color === 'transparent') continue;
           ctx.fillStyle = color;
-          ctx.fillRect(c * THUMB_SCALE, r * THUMB_SCALE, THUMB_SCALE, THUMB_SCALE);
+          ctx.fillRect(c * scale, r * scale, scale, scale);
         }
       }
     },

@@ -49,6 +49,12 @@ export const createAnimationSlice: StoreSlice<Partial<SpriteEditorState>> = (set
 
     state._previewPanelRef.current?.setIsPlaying(true);
   },
+  
+  generatePerspectiveAI: async () => {
+    const state = get();
+    const fn = state._pixelEditorBridge?._handleGeneratePerspectiveAI;
+    if (fn) await fn();
+  },
 
   renameAnimation: (name: string, newLabel: string) => set(state => ({
     editedAsset: {

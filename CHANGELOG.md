@@ -4,7 +4,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-21 (Hoy)
+## 2026-04-22 (Hoy)
+**3 commits realizados**
+
+- **Novedad**: **Consistencia de Perspectivas (IA)**. Implementado sistema Img2Img que permite generar vistas laterales y traseras basadas en la vista frontal, manteniendo coherencia de diseño.
+- **Mejora**: **Remapeo Inteligente de Color**. Nuevo motor de sincronización de paletas que protege los índices originales del sprite al integrar resultados de la IA, evitando cambios de color no deseados.
+- **Fix**: **Tooltips Portaled**. Corregido error de clipping y scrollbars horizontales en los tooltips (especialmente Reset Zoom) mediante el uso de Portals de Radix UI.
+
+---
+
+## 2026-04-21
 **9 commits realizados**
 
 - **Novedad**: **URLs Amigables (Slugs)**. Migración a formato `/project/id-nombre` y `/editor/id-nombre` para mejorar el SEO y permitir compartir enlaces legibles.

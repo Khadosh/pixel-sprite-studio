@@ -7,6 +7,7 @@ import { selectOnionGhostFrames, selectPerspectiveReferenceFrame } from '../stor
 import { usePixelEditor } from '@/hooks/usePixelEditor';
 import { useEditorEffects } from '../hooks/useEditorEffects';
 import { useAnimationGenerationBridge } from '../hooks/useAnimationGeneration';
+import { usePerspectiveGenerationBridge } from '../hooks/usePerspectiveGeneration';
 import { EditorHeader } from './EditorHeader';
 import { LayersList } from './LayersList';
 import { PaletteSection } from './PaletteSection';
@@ -43,6 +44,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
 
   // AI generation bridge
   const { handleGenerateAnimationsAI } = useAnimationGenerationBridge(store);
+  const { handleGeneratePerspectiveAI } = usePerspectiveGenerationBridge(store);
 
   // Subscribe to store values needed by usePixelEditor
   const editedAsset = useSpriteEditorStore(s => s.editedAsset);
@@ -91,6 +93,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     stampSelection: pixelEditor.stampSelection,
     clearFloatingPixels: pixelEditor.clearFloatingPixels,
     _handleGenerateAnimationsAI: handleGenerateAnimationsAI,
+    _handleGeneratePerspectiveAI: handleGeneratePerspectiveAI,
   }), [
     pixelEditor.tool, pixelEditor.setTool,
     pixelEditor.activeColorKey, pixelEditor.setActiveColorKey,
@@ -107,7 +110,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     pixelEditor.movingSelectionPixels,
     pixelEditor.stampSelection,
     pixelEditor.clearFloatingPixels,
-    handleGenerateAnimationsAI
+    handleGenerateAnimationsAI,
+    handleGeneratePerspectiveAI
   ]);
 
   const lastBridgeRef = useRef<any>(null);
@@ -233,8 +237,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                   showIsometricGrid={showIsometricGrid}
                   referenceFrame={perspectiveReferenceFrame}
                 />
-                <ZoomControl />
               </div>
+              <ZoomControl />
             </div>
           </div>
 
