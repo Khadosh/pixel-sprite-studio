@@ -81,23 +81,13 @@ export default function SpriteSheetCanvas({
 
   const rows: { label: string; frameIndices: number[] }[] = [];
 
-  // BASE row with deduplication and empty check
-  const baseIndices: number[] = [];
-  for (let i = 0; i < previewCountBase; i++) {
-    const current = getCompiledFrame(i);
-    if (isFrameEmpty(current)) continue;
-    
-    if (baseIndices.length > 0) {
-      const prev = getCompiledFrame(baseIndices[baseIndices.length - 1]);
-      if (framesAreIdentical(current, prev)) continue;
-    }
-    baseIndices.push(i);
-  }
+  // ORIENTATIONS row (canonical 0, 1, 2, 3)
+  const orientationIndices = [0, 1, 2, 3].filter(idx => idx < frameCount);
   
-  if (baseIndices.length > 0) {
+  if (orientationIndices.length > 0) {
     rows.push({
-      label: 'BASE',
-      frameIndices: baseIndices,
+      label: 'VIEWS',
+      frameIndices: orientationIndices,
     });
   }
 

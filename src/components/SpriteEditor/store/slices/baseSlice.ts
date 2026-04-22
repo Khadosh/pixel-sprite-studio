@@ -43,17 +43,58 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     if (p === 'side') idx = s.activeSide === 'right' ? 1 : 3;
     else if (p === 'back') idx = 2;
     
-    // Safety check: ensure the target index is within bounds of the actual frames
-    const maxFrames = Math.max(0, (s.editedAsset.layers?.[0]?.frames.length || 0) - 1);
-    const finalIdx = Math.min(idx, maxFrames);
+    const layers = s.editedAsset.layers || [];
+    const currentMaxIdx = (layers[0]?.frames.length || 0) - 1;
     
-    return { activePerspective: p, editingFrameIndex: finalIdx };
+    if (idx > currentMaxIdx) {
+      const size = s.editedAsset.size;
+      const newLayers = layers.map(layer => {
+        const newFrames = [...layer.frames];
+        while (newFrames.length <= idx) {
+          newFrames.push(Array.from({ length: size }, () => Array(size).fill(0)));
+        }
+        return { ...layer, frames: newFrames };
+      });
+      return { 
+        activePerspective: p, 
+        editingFrameIndex: idx,
+        editedAsset: { ...s.editedAsset, layers: newLayers },
+        isDirty: true
+      };
+    }
+    
+    return { activePerspective: p, editingFrameIndex: idx };
   }),
   setActiveSide: (side) => set(s => {
     const isSide = s.activePerspective === 'side';
+    let targetIdx = s.editingFrameIndex;
+    let newAsset = s.editedAsset;
+    let dirty = s.isDirty;
+
+    if (isSide) {
+      targetIdx = side === 'right' ? 1 : 3;
+      const layers = s.editedAsset.layers || [];
+      const currentMaxIdx = (layers[0]?.frames.length || 0) - 1;
+      
+      if (targetIdx > currentMaxIdx) {
+        const size = s.editedAsset.size;
+        const newLayers = layers.map(layer => {
+          const newFrames = [...layer.frames];
+          while (newFrames.length <= targetIdx) {
+            newFrames.push(Array.from({ length: size }, () => Array(size).fill(0)));
+          }
+          return { ...layer, frames: newFrames };
+        });
+        newAsset = { ...s.editedAsset, layers: newLayers };
+        dirty = true;
+      }
+    }
+
     return { 
       activeSide: side, 
-      editingFrameIndex: isSide ? (side === 'right' ? 1 : 3) : s.editingFrameIndex 
+      editingFrameIndex: targetIdx,
+      editedAsset: newAsset,
+      isDirty: dirty
     };
   }),
   setShowIsometricGrid: (onOrFn) => set(s => ({ 

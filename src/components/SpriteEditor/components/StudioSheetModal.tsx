@@ -36,9 +36,11 @@ export const StudioSheetModal: React.FC<StudioSheetModalProps> = ({ open, onOpen
           <PaletteProvider defaultPalette={editedAsset.palette}>
             <div className="space-y-8">
               {/* Animation Rows */}
-              {['base', ...editedAsset.animations.map(a => a.name)].map((animName) => {
+              {['VIEWS', ...editedAsset.animations.map(a => a.name)].map((animName) => {
                 const anim = editedAsset.animations.find(a => a.name === animName);
-                const frameIndices = anim ? anim.frameIndices : [0];
+                const frameIndices = animName === 'VIEWS' 
+                  ? [0, 1, 2, 3].filter(idx => idx < (editedAsset.layers?.[0]?.frames.length || 0))
+                  : (anim ? anim.frameIndices : [0]);
                 
                 return (
                   <div key={animName} className="space-y-2">
