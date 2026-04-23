@@ -1,6 +1,7 @@
 # Pixel Sprite Studio — Roadmap
 
-> Última actualización: 2026-04-09 (TS Strict Mode + AI Rate Limiting)
+> **Visión Estratégica**: Para tareas inmediatas y el sprint actual, consultar [ROADMAP_IMMEDIATE.md](./ROADMAP_IMMEDIATE.md)
+> Última actualización: 2026-04-22 (Reorganización Dual)
 
 ## Visión
 

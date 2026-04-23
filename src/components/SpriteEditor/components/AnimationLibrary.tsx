@@ -139,7 +139,7 @@ export const AnimationLibrary = React.memo(() => {
               disabled={isGenerating || isAnimGenerating}
             >
               <PxSparkles size={11} className={isAnimGenerating ? 'animate-spin' : ''} />
-              {isAnimGenerating ? 'GENERANDO...' : '✨ GENERAR DESDE FRONT'}
+              {isAnimGenerating ? 'GENERANDO...' : 'GENERAR DESDE FRONT'}
             </Button>
           )}
         </div>

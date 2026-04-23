@@ -61,6 +61,12 @@ Key capabilities:
 | `src/integrations/supabase/types.ts` | Auto-generated DB schema types |
 | `src/components/ui/` | shadcn/ui components — do NOT edit manually, use shadcn CLI |
 
+## Roadmap Duality
+
+El proyecto utiliza dos archivos de roadmap para separar la visión de la ejecución:
+- **`ROADMAP.md`**: Roadmap Estratégico. Contiene la visión a largo plazo, hitos de alto nivel y el histórico de fases completadas. Consultar para entender el "norte" del proyecto.
+- **`ROADMAP_IMMEDIATE.md`**: Roadmap Táctico. Contiene las tareas críticas, bugs inmediatos y prioridades del sprint actual. **Consultar siempre antes de empezar nuevas tareas** para asegurar alineación con las prioridades del usuario.
+
 ## Architecture & Patterns
 
 ### Sprite Data Format
