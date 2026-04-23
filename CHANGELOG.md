@@ -5,14 +5,15 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-22 (Hoy)
-**4 commits realizados**
+**6 commits realizados**
 
 - **Novedad**: **Consistencia de Perspectivas (IA)**. Implementado sistema Img2Img que permite generar vistas laterales y traseras basadas en la vista frontal, manteniendo coherencia de diseño.
 - **Mejora**: **Preview de Animación Flotante**. Rediseñado el panel de previsualización como una ventana flotante (Picture-in-Picture) escalable y adaptable que optimiza el espacio de trabajo.
 - **Mejora**: **Navegación de Sidebar Inteligente**. Implementado un sistema de pestañas dinámicas que solo expande la opción activa, eliminando la necesidad de scroll vertical.
 - **Mejora**: **Fidelidad de IA (Nearest Neighbor)**. Optimizado el envío de referencias a la IA mediante escalado pixel-perfect, eliminando borrosidad y mejorando la coherencia en rotaciones.
 - **Mejora**: **Remapeo Inteligente de Color**. Nuevo motor de sincronización de paletas que protege los índices originales del sprite al integrar resultados de la IA, evitando cambios de color no deseados.
-- **Limpieza**: **Depuración de Interfaz**. Eliminada la pestaña redundante de Historial Cloud para simplificar el flujo creativo y despejar el área de herramientas.
+- **Limpieza**: **Depuración de Interfaz**. Eliminada la pestaña redundante de Historial Cloud y corregidos iconos duplicados en el botón de generación IA.
+- **Estructura**: **Dualidad de Roadmap**. Restructurada la planificación en dos niveles: Estratégico (Visión) y Táctico (Ejecución Inmediata) para mejorar el foco del desarrollo.
 - **Fix**: **Tooltips Portaled**. Corregido error de clipping y scrollbars horizontales en los tooltips (especialmente Reset Zoom) mediante el uso de Portals de Radix UI.
 
 ---
