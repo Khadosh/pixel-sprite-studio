@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SpriteAsset } from '@/lib/types';
 import { ensureLayerSupport } from '@/lib/layerUtils';
 import { useAuth } from '@/hooks/useAuth';
+import { useSpriteEditorStoreApi } from '@/components/SpriteEditor/context/SpriteEditorContext';
 import { imageToPixelData } from '@/lib/imageToPixelData';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -15,19 +16,36 @@ interface GenerateState {
 
 export function useGenerateSpriteFal() {
   const { session } = useAuth();
+  
+  // Safely attempt to get store api, might be null if used outside editor (e.g. Dashboard)
+  let storeApi: any = null;
+  try {
+    storeApi = useSpriteEditorStoreApi();
+  } catch (e) {
+    // Not in editor context, that's fine
+  }
+
   const [state, setState] = useState<GenerateState>({
     isGenerating: false,
     error: null,
     result: null,
   });
 
-  const generate = async (prompt: string, size: number = 64, referenceImageUrl?: string) => {
+  const generate = async (
+    prompt: string, 
+    size: number = 64, 
+    referenceImageUrl?: string,
+    options?: { strength?: number; maxColors?: number }
+  ) => {
     setState({ isGenerating: true, error: null, result: null });
+    
+    // Get palette only if we are in the editor context
+    const currentPalette = storeApi ? storeApi.getState().editedAsset.palette : null;
 
     try {
       const token = session?.access_token || SUPABASE_KEY;
       
-      // Step 1: Call Edge Function to get the Image URL from Fal.ai
+      // Step 1: Call Edge Function
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-sprite-fal`, {
         method: 'POST',
         headers: {
@@ -38,7 +56,10 @@ export function useGenerateSpriteFal() {
         body: JSON.stringify({ 
           prompt, 
           size,
-          image_url: referenceImageUrl 
+          image_url: referenceImageUrl,
+          palette: currentPalette,
+          strength: options?.strength ?? 0.75,
+          maxColors: options?.maxColors ?? 24
         }),
       });
 
@@ -51,7 +72,7 @@ export function useGenerateSpriteFal() {
       const { imageUrl } = data;
 
       // Step 2: Load the image and pixelize it
-      const pixelizedData = await pixelizeImageUrl(imageUrl, size);
+      const pixelizedData = await pixelizeImageUrl(imageUrl, size, options?.maxColors ?? 24);
 
       const sprite: SpriteAsset = {
         id: crypto.randomUUID(),
@@ -83,13 +104,12 @@ export function useGenerateSpriteFal() {
 }
 
 /** Helper to load a URL and convert it to pixel data */
-async function pixelizeImageUrl(url: string, targetSize: number) {
+async function pixelizeImageUrl(url: string, targetSize: number, maxColors: number = 24) {
   return new Promise<any>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      // We use a reasonably large internal canvas to sample from
       const internalSize = 512;
       canvas.width = internalSize;
       canvas.height = internalSize;
@@ -100,14 +120,15 @@ async function pixelizeImageUrl(url: string, targetSize: number) {
         return;
       }
       
-      // Draw image centered and covering the square
+      // CRITICAL: Disable smoothing to maintain pixel-perfect reference for the AI
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, 0, 0, internalSize, internalSize);
       
       const imageData = ctx.getImageData(0, 0, internalSize, internalSize);
       const result = imageToPixelData(imageData, {
         targetSize,
-        maxColors: 24, // Use a generous palette for high resolution 64x64
-        alphaThreshold: 200, // Be aggressive with transparency for clean silhouettes
+        maxColors,
+        alphaThreshold: 200,
       });
       
       resolve(result);

@@ -5,13 +5,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCopy } from '@/components/icons/PixelIcon';
+import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCopy, PxGrid } from '@/components/icons/PixelIcon';
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSpriteFal } from '@/hooks/useGenerateSpriteFal';
 import type { SpriteAsset } from '@/lib/types';
 import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
 import { createSpec, parseSpec } from '@/lib/slugUtils';
+import { AICreatorWizard } from '@/components/AICreatorWizard';
 
 export default function ProjectWorkspace() {
   const { projectSlug } = useParams<{ projectSlug: string }>();
@@ -28,10 +29,11 @@ export default function ProjectWorkspace() {
   const deleteSpriteMutation = useDeleteSprite();
 
   // Creation panel state
-  const [generatePrompt, setGeneratePrompt] = useState('');
   const [showCreator, setShowCreator] = useState(false);
-  const [canvasSize, setCanvasSize] = useState<16 | 32 | 64>(16);
-  const { isGenerating, error: generateError, result: generatedSprite, generate, clear: clearGenerated } = useGenerateSpriteFal();
+  const [showAIWizard, setShowAIWizard] = useState(false);
+  const [canvasSize, setCanvasSize] = useState<16 | 32 | 64>(64);
+  const aiGeneration = useGenerateSpriteFal();
+  const { result: generatedSprite, clear: clearGenerated } = aiGeneration;
 
   // Editor modal state
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,18 +41,24 @@ export default function ProjectWorkspace() {
   // When generation completes, save and navigate to studio
   useEffect(() => {
     if (generatedSprite && project?.id) {
+      console.log('Generated sprite received, saving to project:', project.id);
       createSpriteMutation.mutate({ projectId: project.id, asset: generatedSprite }, {
         onSuccess: (newSprite) => {
+          console.log('Sprite saved successfully, navigating...');
           clearGenerated();
-          setGeneratePrompt('');
           setShowCreator(false);
+          setShowAIWizard(false);
           const pPath = projectSlug || id;
           const sPath = newSprite.slug;
           navigate(`/project/${pPath}/editor/${sPath}`);
+        },
+        onError: (err) => {
+          console.error('Failed to save generated sprite:', err);
+          toast({ title: 'Error al guardar', description: 'No se pudo guardar el sprite generado.', variant: 'destructive' });
         }
       });
     }
-  }, [generatedSprite, id]);
+  }, [generatedSprite, project?.id, id, navigate]);
 
   // Handle project loading error
   useEffect(() => {
@@ -72,12 +80,6 @@ export default function ProjectWorkspace() {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
       }
     });
-  };
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!generatePrompt.trim() || isGenerating) return;
-    await generate(generatePrompt.trim(), canvasSize);
   };
 
   const handleOpenEditorForSprite = (sprite: ProjectSprite) => {
@@ -192,16 +194,18 @@ export default function ProjectWorkspace() {
         {/* Unified Creation Panel */}
         {showCreator && (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
-            {/* Resolution Header */}
-            <div className="flex items-center justify-between bg-card/50 border border-border p-3 rounded-xl px-4">
-              <div className="flex items-center gap-3">
-                <span className="font-pixel text-[9px] text-muted-foreground uppercase tracking-widest">Resolución del lienzo:</span>
-                <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1 border border-border">
+            {/* Resolution Header — highly visible */}
+            <div className="relative flex items-center justify-between bg-card/80 border-2 border-primary/40 p-4 rounded-xl px-5 shadow-[0_0_25px_rgba(34,197,94,0.08)]">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 rounded-xl blur-sm pointer-events-none" />
+              <div className="relative flex items-center gap-4">
+                <PxGrid size={18} className="text-primary" />
+                <span className="font-pixel text-[10px] text-primary uppercase tracking-widest">Resolución del lienzo:</span>
+                <div className="flex items-center gap-1.5 bg-background/80 rounded-lg p-1.5 border border-primary/30">
                   {[16, 32, 64].map((s) => (
                     <button
                       key={s}
                       onClick={() => setCanvasSize(s as 16 | 32 | 64)}
-                      className={`font-pixel text-[8px] px-4 py-1.5 rounded-md transition-all ${canvasSize === s ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}
+                      className={`font-pixel text-[10px] px-5 py-2 rounded-md transition-all duration-200 ${canvasSize === s ? 'bg-primary text-primary-foreground shadow-[0_0_12px_rgba(34,197,94,0.3)]' : 'text-muted-foreground hover:text-foreground hover:bg-white/10'}`}
                     >
                       {s}×{s}
                     </button>
@@ -210,7 +214,7 @@ export default function ProjectWorkspace() {
               </div>
               <button 
                 onClick={() => { setShowCreator(false); clearGenerated(); }} 
-                className="text-muted-foreground hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full"
+                className="relative text-muted-foreground hover:text-white transition-colors p-1.5 hover:bg-white/5 rounded-full"
               >
                 <PxX size={18} />
               </button>
@@ -220,7 +224,7 @@ export default function ProjectWorkspace() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
               {/* Card 1: AI (Premium Violet) */}
-              <div className="relative group">
+              <div className="relative group cursor-pointer" onClick={() => setShowAIWizard(true)}>
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 shadow-[0_0_30px_rgba(168,85,247,0.15)]"></div>
                 <div className="relative bg-card border border-purple-500/30 p-5 rounded-2xl flex flex-col h-full space-y-4 transition-all hover:border-purple-500/50">
                   <div className="space-y-2">
@@ -231,30 +235,13 @@ export default function ProjectWorkspace() {
                       <span className="bg-purple-500/20 text-purple-300 text-[7px] font-pixel px-2 py-0.5 rounded-full border border-purple-500/30 tracking-tighter">PREMIUM</span>
                     </div>
                     <h3 className="font-pixel text-xs text-purple-100 tracking-wider pt-2">MAGIA DE IA</h3>
-                    <p className="font-mono text-[9px] text-purple-200/60 leading-relaxed">Describe tu idea y deja que la red neuronal genere un asset único para ti.</p>
+                    <p className="font-mono text-[9px] text-purple-200/60 leading-relaxed">Crea personajes, criaturas u objetos únicos con nuestro asistente de nueva generación.</p>
                   </div>
                   
-                  <form onSubmit={handleGenerate} className="space-y-2 pt-2 mt-auto">
-                    <Input
-                      value={generatePrompt}
-                      onChange={(e) => setGeneratePrompt(e.target.value)}
-                      placeholder="ej: un dragón rojo..."
-                      className="bg-purple-950/20 border-purple-500/20 font-mono text-[10px] h-8 focus-visible:ring-purple-500"
-                      maxLength={500}
-                      disabled={isGenerating}
-                    />
-                    <Button
-                      type="submit"
-                      disabled={isGenerating || !generatePrompt.trim()}
-                      className="w-full font-pixel text-[9px] bg-purple-600 hover:bg-purple-500 text-white border-purple-400/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
-                    >
-                      {isGenerating ? (
-                        <PxLoader size={12} className="animate-spin mr-2" />
-                      ) : (
-                        "GENERAR AHORA"
-                      )}
-                    </Button>
-                  </form>
+                  <div className="mt-auto pt-4 flex items-center justify-between text-purple-400 font-pixel text-[8px] opacity-60 group-hover:opacity-100 transition-opacity">
+                    <span>COMENZAR PROCESO</span>
+                    <PxArrowLeft size={10} className="rotate-180" />
+                  </div>
                 </div>
               </div>
 
@@ -325,11 +312,6 @@ export default function ProjectWorkspace() {
               </div>
             </div>
 
-            {generateError && (
-              <div className="text-sm font-mono text-destructive bg-destructive/10 border border-destructive/30 rounded p-3">
-                {generateError}
-              </div>
-            )}
           </div>
         )}
 
@@ -489,6 +471,12 @@ export default function ProjectWorkspace() {
       </div>
 
       {/* Editor Modal is no longer used, we direct to Studio page */}
+      <AICreatorWizard 
+        open={showAIWizard} 
+        onOpenChange={setShowAIWizard} 
+        projectSize={canvasSize}
+        aiGeneration={aiGeneration}
+      />
     </div>
   );
 }

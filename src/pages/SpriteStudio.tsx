@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useSprite, useUpdateSprite } from '@/hooks/useProjectQueries';
+import { useProject, useSprite, useUpdateSprite } from '@/hooks/useProjectQueries';
 import { SpriteEditorStoreProvider, useSpriteEditorStore, useSpriteEditorStoreApi } from '@/components/SpriteEditor/context/SpriteEditorContext';
 import { createSpriteEditorStore } from '@/components/SpriteEditor/store/useSpriteEditorStore';
 import { EditorLayout } from '@/components/SpriteEditor/components/EditorLayout';
@@ -30,8 +30,11 @@ export default function SpriteStudio() {
   const previewPanelRef = useRef<AnimationPreviewPanelHandle>(null);
   const [showImportModal, setShowImportModal] = useState(false);
 
-  // 1. Load Sprite Data
-  const { data: sprite, isLoading, error } = useSprite(spriteId);
+  // 1. Load Project and then Sprite Data
+  const { data: project, isLoading: isProjectLoading } = useProject(projectSlug);
+  const { data: sprite, isLoading: isSpriteLoading, error } = useSprite(spriteId, project?.id);
+
+  const isLoading = isProjectLoading || isSpriteLoading;
   const updateSpriteMutation = useUpdateSprite();
 
   // 2. Local State for Store

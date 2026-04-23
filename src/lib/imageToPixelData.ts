@@ -38,7 +38,53 @@ export function imageToPixelData(
   const { targetSize, maxColors = 16, alphaThreshold = 128, fixedPalette } = options;
   const { data, width, height } = imageData;
 
-  // --- Step 1: Sample pixels from ImageData into an NxN grid (Box Average) ---
+  // --- Step 1: Detect Background Color automatically ---
+  // We sample 4 points slightly offset from corners to avoid edge artifacts
+  const offset = 5;
+  const corners = [
+    (offset * width + offset) * 4, // Top-left
+    (offset * width + (width - 1 - offset)) * 4, // Top-right
+    ((height - 1 - offset) * width + offset) * 4, // Bottom-left
+    ((height - 1 - offset) * width + (width - 1 - offset)) * 4 // Bottom-right
+  ];
+  
+  const cornerColors = corners.map(idx => ({
+    r: data[idx],
+    g: data[idx + 1],
+    b: data[idx + 2]
+  }));
+
+  // Find most frequent corner color (if at least 2 are similar)
+  let bgColor: RGB | null = null;
+  for (let i = 0; i < cornerColors.length; i++) {
+    let matches = 0;
+    for (let j = 0; j < cornerColors.length; j++) {
+      const dist = Math.sqrt(
+        (cornerColors[i].r - cornerColors[j].r) ** 2 + 
+        (cornerColors[i].g - cornerColors[j].g) ** 2 + 
+        (cornerColors[i].b - cornerColors[j].b) ** 2
+      );
+      if (dist < 30) matches++;
+    }
+    if (matches >= 2) {
+      bgColor = cornerColors[i];
+      break;
+    }
+  }
+  
+  const isBgMatch = (r: number, g: number, b: number) => {
+    if (!bgColor) return false;
+    const dist = Math.sqrt((r - bgColor.r) ** 2 + (g - bgColor.g) ** 2 + (b - bgColor.b) ** 2);
+    
+    // Increased threshold to 65 to catch more edge artifacts (the "halos")
+    // If the background is very green (lime green), we can be even more aggressive
+    const isLimeGreen = bgColor.g > 200 && bgColor.r < 100 && bgColor.b < 100;
+    const finalThreshold = isLimeGreen ? 85 : 65;
+    
+    return dist < finalThreshold;
+  };
+
+  // --- Step 2: Sample pixels into grid ---
   const grid: (RGB | null)[][] = [];
 
   const cellWidth = width / targetSize;
@@ -72,11 +118,16 @@ export function imageToPixelData(
       }
 
       if (count > 0 && (aSum / count) >= alphaThreshold) {
-        gridRow.push({
-          r: Math.round(rSum / count),
-          g: Math.round(gSum / count),
-          b: Math.round(bSum / count)
-        });
+        const r = Math.round(rSum / count);
+        const g = Math.round(gSum / count);
+        const b = Math.round(bSum / count);
+
+        // --- DYNAMIC BACKGROUND REMOVAL ---
+        if (isBgMatch(r, g, b)) {
+          gridRow.push(null);
+        } else {
+          gridRow.push({ r, g, b });
+        }
       } else {
         gridRow.push(null);
       }

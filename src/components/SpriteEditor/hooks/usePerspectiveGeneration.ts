@@ -21,13 +21,20 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
     else if (activePerspective === 'side' && activeSide === 'left') perspectiveName = 'left side view';
     else if (activePerspective === 'side') perspectiveName = 'right side view';
 
-    const prompt = `${perspectiveName} of the character in the reference image, same colors, same armor design, professional pixel art`;
+    // Use asset name or category for a better prompt than just "character"
+    const charDesc = editedAsset.name || editedAsset.category || 'character';
+    const prompt = `Professional pixel art sprite of ${perspectiveName} of the ${charDesc} from the reference image, matching exactly the same design, style and outfit.`;
 
     state.setIsAnimGenerating(true);
     state.setAnimError(null);
 
     try {
-      const result = await generate(prompt, editedAsset.size, referenceImageUrl);
+      // Pass size and reference image with a balanced strength for perspective shifts
+      // 0.65 is usually the "sweet spot" for rotating pixel art characters
+      const result = await generate(prompt, editedAsset.size, referenceImageUrl, {
+        strength: 0.65,
+        maxColors: 32
+      });
       
       if (result && result.layers && result.layers[0].frames[0]) {
         const aiFrame = result.layers[0].frames[0];
@@ -43,33 +50,55 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
           const updatedPalette = { ...currentPalette };
           let latestIndex = nextIndex;
 
-          // Helper to find color in palette (case insensitive)
-          const findColorIndex = (hex: string) => {
-            const entry = Object.entries(updatedPalette).find(([_, color]) => 
-              color.toLowerCase() === hex.toLowerCase()
-            );
-            return entry ? Number(entry[0]) : null;
+          // --- COLOR SNAPING LOGIC ---
+          const hexToRgb = (hex: string) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return { r, g, b };
           };
+
+          const colorDistance = (c1: {r: number, g: number, b: number}, c2: {r: number, g: number, b: number}) => {
+            return Math.sqrt((c1.r - c2.r) ** 2 + (c1.g - c2.g) ** 2 + (c1.b - c2.b) ** 2);
+          };
+
+          const findBestMatch = (hex: string) => {
+            const rgb = hexToRgb(hex);
+            let bestMatchIdx: number | null = null;
+            let minDistance = 25; // Tolerance for "near" colors (about 10% diff)
+
+            Object.entries(updatedPalette).forEach(([idx, color]) => {
+              if (color === 'transparent') return;
+              const d = colorDistance(rgb, hexToRgb(color));
+              if (d < minDistance) {
+                minDistance = d;
+                bestMatchIdx = Number(idx);
+              }
+            });
+            return bestMatchIdx;
+          };
+          // ---------------------------
 
           // 1. Process the generated frame and remap indices
           const remappedFrame = aiFrame.map(row => 
             row.map(aiIdx => {
               if (aiIdx === 0) return 0;
-              
-              // If already mapped in this run, reuse
               if (indexMap[aiIdx] !== undefined) return indexMap[aiIdx];
 
               const aiHex = aiPalette[aiIdx];
-              if (!aiHex) return 0;
+              // Auto-treat white OR lime green as transparent
+              const isWhite = aiHex.toLowerCase() === '#ffffff';
+              const isGreen = aiHex.toLowerCase() === '#00ff00';
+              if (!aiHex || isWhite || isGreen) return 0; 
 
-              // Check if color already exists in current palette
-              const existingIdx = findColorIndex(aiHex);
-              if (existingIdx !== null) {
-                indexMap[aiIdx] = existingIdx;
-                return existingIdx;
+              // Try to snap to an existing color first
+              const snappedIdx = findBestMatch(aiHex);
+              if (snappedIdx !== null) {
+                indexMap[aiIdx] = snappedIdx;
+                return snappedIdx;
               }
 
-              // It's a new color! Add it to palette
+              // Only if it's very different, add as new
               const newIdx = latestIndex++;
               updatedPalette[newIdx] = aiHex;
               indexMap[aiIdx] = newIdx;

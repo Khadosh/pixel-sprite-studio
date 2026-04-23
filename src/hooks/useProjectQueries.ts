@@ -126,9 +126,9 @@ export function useProjectSprites(projectId?: string) {
   });
 }
 
-export function useSprite(idOrSlug?: string) {
+export function useSprite(idOrSlug?: string, projectId?: string) {
   return useQuery({
-    queryKey: spriteKeys.detail(idOrSlug || ''),
+    queryKey: [...spriteKeys.detail(idOrSlug || ''), projectId],
     queryFn: async () => {
       if (!idOrSlug) throw new Error('Sprite ID or Slug is required');
       
@@ -139,13 +139,16 @@ export function useSprite(idOrSlug?: string) {
         query.eq('id', idOrSlug);
       } else {
         query.eq('slug', idOrSlug);
+        if (projectId) {
+          query.eq('project_id', projectId);
+        }
       }
       
       const { data, error } = await query.single();
       if (error) throw error;
       return data as ProjectSprite;
     },
-    enabled: !!idOrSlug,
+    enabled: !!idOrSlug && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug) || !!projectId),
   });
 }
 

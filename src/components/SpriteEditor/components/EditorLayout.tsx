@@ -210,61 +210,68 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                 <DrawingToolbar tool={pixelEditor.tool} onToolChange={pixelEditor.setTool} />
               </div>
 
-              <div className="flex-1 overflow-auto custom-scrollbar flex items-center justify-center p-4 relative">
-                <SpritePixelEditor
-                  asset={editedAsset}
-                  frameIndex={editingFrameIndex}
-                  activeColorKey={pixelEditor.activeColorKey}
-                  activeLayerId={activeLayerId}
-                  tool={pixelEditor.tool}
-                  brushSize={pixelEditor.brushSize}
-                  onPointerDown={pixelEditor.handlePointerDown}
-                  onPointerMove={pixelEditor.handlePointerMove}
-                  onPointerUp={pixelEditor.handlePointerUp}
-                  draftFrame={pixelEditor.draftFrame}
-                  rotationAngle={pixelEditor.rotationAngle}
-                  rotationCenter={pixelEditor.rotationCenter}
-                  onionSkinPrevFrame={onionGhostFrames.prev}
-                  onionSkinNextFrame={onionGhostFrames.next}
-                  zoom={zoom}
-                  setZoom={setZoom}
-                  selectionRect={pixelEditor.selectionRect}
-                  movingSelectionPixels={pixelEditor.movingSelectionPixels}
-                  canvasBg={canvasBg}
-                  leftSidebarTab={leftSidebarTab}
-                  onAnatomyChange={handleAnatomyChange}
-                  onPushUndo={pushUndo}
-                  showIsometricGrid={showIsometricGrid}
-                  referenceFrame={perspectiveReferenceFrame}
-                />
+              <div className="flex-1 overflow-auto custom-scrollbar relative bg-[#0a0a0f] p-4">
+                <div className="min-w-full min-h-full flex items-center justify-center p-20">
+                  <SpritePixelEditor
+                    asset={editedAsset}
+                    frameIndex={editingFrameIndex}
+                    activeColorKey={pixelEditor.activeColorKey}
+                    activeLayerId={activeLayerId}
+                    tool={pixelEditor.tool}
+                    brushSize={pixelEditor.brushSize}
+                    onPointerDown={pixelEditor.handlePointerDown}
+                    onPointerMove={pixelEditor.handlePointerMove}
+                    onPointerUp={pixelEditor.handlePointerUp}
+                    draftFrame={pixelEditor.draftFrame}
+                    rotationAngle={pixelEditor.rotationAngle}
+                    rotationCenter={pixelEditor.rotationCenter}
+                    onionSkinPrevFrame={onionGhostFrames.prev}
+                    onionSkinNextFrame={onionGhostFrames.next}
+                    zoom={zoom}
+                    setZoom={setZoom}
+                    selectionRect={pixelEditor.selectionRect}
+                    movingSelectionPixels={pixelEditor.movingSelectionPixels}
+                    canvasBg={canvasBg}
+                    leftSidebarTab={leftSidebarTab}
+                    onAnatomyChange={handleAnatomyChange}
+                    onPushUndo={pushUndo}
+                    showIsometricGrid={showIsometricGrid}
+                    referenceFrame={perspectiveReferenceFrame}
+                  />
+                </div>
               </div>
               <ZoomControl />
             </div>
           </div>
 
           {/* RIGHT SIDEBAR */}
-          <div className="w-[350px] min-w-[350px] flex-shrink-0 flex bg-secondary/10 rounded-lg border border-border overflow-hidden">
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              {leftSidebarTab && (
-                <div className="flex-1 overflow-hidden flex flex-col p-3">
-                  {leftSidebarTab === 'layers' && <LayersList />}
-                  {leftSidebarTab === 'animations' && <AnimationLibrary />}
-                  {leftSidebarTab === 'anatomy' && <AnatomyPanel />}
-                  {leftSidebarTab === 'themes' && <PaletteLibrary />}
-                  {leftSidebarTab === 'assets' && <AssetLibrary />}
-                  {leftSidebarTab === 'config' && <MetadataPanel />}
-                  {leftSidebarTab === 'history' && <HistoryPanel />}
-                </div>
-              )}
+          <div className="w-[350px] min-w-[350px] flex-shrink-0 flex flex-col bg-secondary/10 rounded-lg border border-border overflow-hidden">
+            <div className="flex-1 flex overflow-hidden">
+              <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                {leftSidebarTab && (
+                  <div className="flex-1 overflow-hidden flex flex-col p-3">
+                    {leftSidebarTab === 'layers' && <LayersList />}
+                    {leftSidebarTab === 'animations' && <AnimationLibrary />}
+                    {leftSidebarTab === 'anatomy' && <AnatomyPanel />}
+                    {leftSidebarTab === 'themes' && <PaletteLibrary />}
+                    {leftSidebarTab === 'assets' && <AssetLibrary />}
+                    {leftSidebarTab === 'config' && <MetadataPanel />}
+                  </div>
+                )}
+              </div>
+              <EditorSidebarNavigator />
             </div>
-            <EditorSidebarNavigator />
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className="flex flex-row items-center justify-between pt-3 border-t border-border gap-4 flex-shrink-0">
+        <div className="flex flex-row items-center justify-between pt-3 border-t border-border gap-4 flex-shrink-0 relative">
           <TimelineStrip sensors={sensors} />
-          <AnimationPreviewPanel ref={previewPanelRef} />
+
+          {/* FLOATING PREVIEW BOX - Positioned bottom-right but clearing the navigator icons */}
+          <div className="absolute right-[90px] bottom-[0] z-50 pointer-events-auto">
+            <AnimationPreviewPanel ref={previewPanelRef} />
+          </div>
         </div>
 
         <StudioSheetModal open={showStudioSheet} onOpenChange={setShowStudioSheet} />

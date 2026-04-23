@@ -63,13 +63,22 @@ export default function SpritePreview({
 
   const label = currentAnimation?.label ?? 'STATIC';
 
+  if (!showLabel) {
+    return (
+      <canvas
+        ref={canvasRef}
+        width={PREVIEW_SIZE}
+        height={PREVIEW_SIZE}
+        style={{ imageRendering: 'pixelated' }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-2">
-      {showLabel && (
-        <div className="text-[10px] font-pixel text-primary tracking-wider uppercase opacity-70">
-          Preview · {label}
-        </div>
-      )}
+      <div className="text-[10px] font-pixel text-primary tracking-wider uppercase opacity-70">
+        Preview · {label}
+      </div>
       <canvas
         ref={canvasRef}
         width={PREVIEW_SIZE}
