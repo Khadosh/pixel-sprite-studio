@@ -44,7 +44,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
 
   // AI generation bridge
   const { handleGenerateAnimationsAI } = useAnimationGenerationBridge(store);
-  const { handleGeneratePerspectiveAI } = usePerspectiveGenerationBridge(store);
+  const { handleGeneratePerspectiveAI, handleDownloadReferenceImage } = usePerspectiveGenerationBridge(store);
 
   // Subscribe to store values needed by usePixelEditor
   const editedAsset = useSpriteEditorStore(s => s.editedAsset);
@@ -94,6 +94,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     clearFloatingPixels: pixelEditor.clearFloatingPixels,
     _handleGenerateAnimationsAI: handleGenerateAnimationsAI,
     _handleGeneratePerspectiveAI: handleGeneratePerspectiveAI,
+    _handleDownloadReferenceImage: handleDownloadReferenceImage,
   }), [
     pixelEditor.tool, pixelEditor.setTool,
     pixelEditor.activeColorKey, pixelEditor.setActiveColorKey,
@@ -111,7 +112,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     pixelEditor.stampSelection,
     pixelEditor.clearFloatingPixels,
     handleGenerateAnimationsAI,
-    handleGeneratePerspectiveAI
+    handleGeneratePerspectiveAI,
+    handleDownloadReferenceImage
   ]);
 
   const lastBridgeRef = useRef<any>(null);

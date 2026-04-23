@@ -131,16 +131,27 @@ export const AnimationLibrary = React.memo(() => {
           )}
 
           {activePerspective !== 'front' && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full h-8 font-pixel text-[8px] bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 flex gap-2 items-center animate-in fade-in slide-in-from-top-2 duration-300"
-              onClick={() => storeApi.getState().generatePerspectiveAI()}
-              disabled={isGenerating || isAnimGenerating}
-            >
-              <PxSparkles size={11} className={isAnimGenerating ? 'animate-spin' : ''} />
-              {isAnimGenerating ? 'GENERANDO...' : 'GENERAR DESDE FRONT'}
-            </Button>
+            <div className="flex gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 h-8 font-pixel text-[8px] bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 flex gap-2 items-center"
+                onClick={() => storeApi.getState().generatePerspectiveAI()}
+                disabled={isGenerating || isAnimGenerating}
+              >
+                <PxSparkles size={11} className={isAnimGenerating ? 'animate-spin' : ''} />
+                {isAnimGenerating ? 'GENERANDO...' : 'GENERAR DESDE FRONT'}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-8 h-8 bg-secondary/20 border-border text-muted-foreground hover:text-primary hover:border-primary/30 shrink-0"
+                onClick={() => storeApi.getState()._pixelEditorBridge?._handleDownloadReferenceImage?.()}
+                title="Debug: Exportar imagen de referencia"
+              >
+                <PxImage size={12} />
+              </Button>
+            </div>
           )}
         </div>
       {/* SECTION: GENERATION PANEL - MOVED TO TOP */}

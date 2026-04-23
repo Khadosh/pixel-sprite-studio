@@ -71,6 +71,7 @@ export interface SpriteEditorState {
     clearFloatingPixels: () => void;
     _handleGenerateAnimationsAI: (type?: string) => Promise<void>;
     _handleGeneratePerspectiveAI: () => Promise<void>;
+    _handleDownloadReferenceImage?: () => void;
   } | null;
 
   // actions

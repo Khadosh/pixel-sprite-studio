@@ -26,7 +26,7 @@ function getUserIdFromToken(authHeader: string | null): string {
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -38,11 +38,9 @@ Deno.serve(async (req) => {
     const userId = getUserIdFromToken(authHeader);
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { prompt, size = 64, image_url = null, strength = 0.75, palette = null } = await req.json();
+    const { prompt, size = 64, palette = null } = await req.json();
 
     if (!prompt) throw new Error("A text prompt is required");
-
-    const isImg2Img = !!image_url;
 
     // Construct technical prompt with palette guidance if provided
     let paletteGuidance = "";
@@ -51,26 +49,11 @@ Deno.serve(async (req) => {
       paletteGuidance = `Use strictly this color palette: ${colors}. `;
     }
 
-    const colorPreservation = image_url 
-      ? "STRICT CHARACTER CONSISTENCY: The subject MUST be the same person from the reference image. Keep the same hair, face, clothing, and colors exactly. Do NOT change the outfit. " 
-      : "PRIORITIZE CHARACTER FEATURES: Ensure colors match the description exactly. ";
+    const technicalPrompt = `Professional pixel art sprite of ${prompt}. ${paletteGuidance}Isolated character on a solid flat LIME GREEN background (#00FF00). Full body, centered, clean retro pixel art.`;
+    
+    const endpoint = "https://fal.run/fal-ai/flux/schnell";
 
-    let colorFix = "";
-    const lowerPrompt = prompt.toLowerCase();
-    if (lowerPrompt.includes("rubia") || lowerPrompt.includes("dorado") || lowerPrompt.includes("blonde") || lowerPrompt.includes("gold")) {
-      colorFix = "The character MUST have light YELLOW-BLONDE hair. NO red or orange hair. ";
-    }
-
-    const technicalPrompt = isImg2Img 
-      ? `Professional pixel art of ${prompt}. ${colorPreservation} Maintain the same character design, clothing, and colors. Clean pixel art, solid background.`
-      : `Professional pixel art sprite of ${prompt}. ${paletteGuidance}${colorPreservation}${colorFix}Isolated character on a solid flat LIME GREEN background (#00FF00). Full body, centered, clean retro pixel art.`;
-
-    // Choose endpoint based on whether we have a reference image
-    const endpoint = image_url 
-      ? "https://fal.run/fal-ai/flux/dev/image-to-image" 
-      : "https://fal.run/fal-ai/flux/schnell";
-
-    console.log(`[Edge Function] Calling endpoint: ${endpoint} (Img2Img: ${isImg2Img})`);
+    console.log(`[generate-sprite-fal] Calling Txt2Img (Schnell) for: ${prompt}`);
 
     const falRes = await fetch(endpoint, {
       method: "POST",
@@ -80,10 +63,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         prompt: technicalPrompt,
-        image_url: image_url,
-        strength: parseFloat(strength), // Use the strength provided by the user
         image_size: "square_hd",
-        num_inference_steps: isImg2Img ? 30 : 4,
+        num_inference_steps: 4,
         enable_safety_checker: false,
       }),
     });

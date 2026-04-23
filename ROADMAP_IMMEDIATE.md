@@ -4,12 +4,13 @@
 
 ---
 
-## 1. Estabilización: Generar desde Front 🔴
-*El objetivo es que la rotación (Front -> Side) sea nítida y coherente.*
+## 1. Estabilización: Generar desde Front 🟢
+*Objetivo alcanzado: Diagnóstico mediante Debug Export y mejora de fidelidad con Flux Pro Kontext.*
 
-- [ ] **Debug Export Button**: Implementar un botón temporal en el editor que permita descargar el `DataURL` exacto que se envía a Fal.ai. Queremos ver si la fuente llega pixel-perfect o si hay ruido.
-- [ ] **Auto-Background Removal**: Pre-procesar la imagen de referencia para eliminar el fondo verde/transparente antes de enviarla a la IA.
-- [ ] **Prompt Fine-tuning**: Refinar los prompts para Flux/Dev enfocados en mantener la anatomía vertical y proporciones exactas.
+- [x] **Debug Export Button**: Implementado. Permite verificar la calidad de la referencia enviada a la IA.
+- [x] **Upscale de Referencia (16x)**: Implementado. Enviamos imágenes de 512px para evitar borrosidad.
+- [x] **Prompt Fine-tuning**: Refinados los prompts para rotación de 90 grados y anatomía consistente.
+- [ ] **Auto-Background Removal**: Refinar la lógica de limpieza de croma verde en el cliente.
 
 ## 2. Animaciones Procedurales Direccionales 🟠
 *Hacer que el sistema de animación entienda la perspectiva.*

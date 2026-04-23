@@ -4,7 +4,19 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-22 (Hoy)
+## 2026-04-23 (Hoy)
+**6 commits realizados**
+
+- **Novedad**: **Depurador de Generación IA**. Implementado botón de exportación de referencia (debug) que permite descargar la imagen exacta enviada a la IA para diagnóstico.
+- **Mejora**: **Referencia HD (16x Upscale)**. Optimizado el envío de imágenes a la IA con un escalado pixel-perfect de 16x (512px) que elimina la borrosidad y mejora drásticamente el reconocimiento anatómico.
+- **Arquitectura**: **Especialización de Edge Functions**. Separada la lógica de generación en dos funciones independientes: `generate-sprite` (Txt2Img/Schnell) y `generate-perspective` (Img2Img/Kontext).
+- **Mejora**: **Fidelidad de Rotación (Kontext)**. Migrada la generación de perspectivas al modelo Flux Pro Kontext, optimizado para mantener la consistencia del personaje en giros de 90 grados.
+- **Mejora**: **Prompting Imperativo**. Refinados los prompts de rotación para forzar vistas de perfil y evitar el sesgo de "frente" del modelo original.
+- **Fix**: **Estabilidad de Tipos**. Resueltos errores de sintaxis y tipado en los hooks de generación y el bridge del editor, asegurando compatibilidad con el nuevo flujo de trabajo.
+
+---
+
+## 2026-04-22
 **6 commits realizados**
 
 - **Novedad**: **Consistencia de Perspectivas (IA)**. Implementado sistema Img2Img que permite generar vistas laterales y traseras basadas en la vista frontal, manteniendo coherencia de diseño.

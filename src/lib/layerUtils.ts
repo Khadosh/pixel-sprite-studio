@@ -372,24 +372,29 @@ export function cleanupOrphanedFrames(asset: SpriteAsset): SpriteAsset {
  * Converts a single frame (number[][]) into a base64 PNG data URL.
  * Useful for sending a reference image to an AI or exporting a single frame.
  */
-export function frameToDataUrl(frame: number[][], palette: Record<number, string>, size: number): string {
+export function frameToDataUrl(frame: number[][], palette: Record<number, string>, size: number, upscale: number = 1): string {
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  const targetSize = size * upscale;
+  canvas.width = targetSize;
+  canvas.height = targetSize;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
 
+  // Use nearest-neighbor-like rendering by disabling image smoothing if we were drawing images,
+  // but here we are drawing rects so it's naturally pixel-perfect.
+  ctx.imageSmoothingEnabled = false;
+
   // Clear background (transparent)
-  ctx.clearRect(0, 0, size, size);
+  ctx.clearRect(0, 0, targetSize, targetSize);
 
   // Draw pixels
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const colorIdx = frame[y][x];
-      if (colorIdx === 0) continue; // Skip transparency
+      const colorIdx = frame[y]?.[x];
+      if (colorIdx === 0 || colorIdx === undefined) continue; // Skip transparency
 
       ctx.fillStyle = palette[colorIdx] || '#000000';
-      ctx.fillRect(x, y, 1, 1);
+      ctx.fillRect(x * upscale, y * upscale, upscale, upscale);
     }
   }
 

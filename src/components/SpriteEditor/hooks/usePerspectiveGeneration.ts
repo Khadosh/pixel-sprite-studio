@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import { useGenerateSpriteFal } from '@/hooks/useGenerateSpriteFal';
+import { useGeneratePerspectiveAI } from '@/hooks/useGeneratePerspectiveAI';
 import { frameToDataUrl } from '@/lib/layerUtils';
 import { SpriteEditorStore } from '../store/useSpriteEditorStore';
 
 export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
-  const { generate, isGenerating, error } = useGenerateSpriteFal();
+  const { generate, isGenerating, error } = useGeneratePerspectiveAI();
 
   const handleGeneratePerspectiveAI = useCallback(async () => {
     const state = store.getState();
@@ -13,7 +13,7 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
     // 1. Get the Front Frame as reference
     // Index 0 is always Front in our canonical system
     const frontFrame = editedAsset.layers![0].frames[0];
-    const referenceImageUrl = frameToDataUrl(frontFrame, editedAsset.palette, editedAsset.size);
+    const referenceImageUrl = frameToDataUrl(frontFrame, editedAsset.palette, editedAsset.size, 16);
 
     // 2. Determine target index and prompt based on perspective
     let perspectiveName = 'side view';
@@ -22,8 +22,7 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
     else if (activePerspective === 'side') perspectiveName = 'right side view';
 
     // Use asset name or category for a better prompt than just "character"
-    const charDesc = editedAsset.name || editedAsset.category || 'character';
-    const prompt = `Professional pixel art sprite of ${perspectiveName} of the ${charDesc} from the reference image, matching exactly the same design, style and outfit.`;
+    const prompt = `Professional pixel art sprite of ${perspectiveName} of the character from the reference image, matching exactly the same design, style and outfit.`;
 
     state.setIsAnimGenerating(true);
     state.setAnimError(null);
@@ -32,12 +31,12 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
       // Pass size and reference image with a balanced strength for perspective shifts
       // 0.65 is usually the "sweet spot" for rotating pixel art characters
       const result = await generate(prompt, editedAsset.size, referenceImageUrl, {
-        strength: 0.65,
+        strength: 0.6,
         maxColors: 32
       });
       
-      if (result && result.layers && result.layers[0].frames[0]) {
-        const aiFrame = result.layers[0].frames[0];
+      if (result && result.frame) {
+        const aiFrame = result.frame;
         const aiPalette = result.palette;
         
         state.pushUndo();
@@ -80,8 +79,8 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
           // ---------------------------
 
           // 1. Process the generated frame and remap indices
-          const remappedFrame = aiFrame.map(row => 
-            row.map(aiIdx => {
+          const remappedFrame = aiFrame.map((row: number[]) => 
+            row.map((aiIdx: number) => {
               if (aiIdx === 0) return 0;
               if (indexMap[aiIdx] !== undefined) return indexMap[aiIdx];
 
@@ -131,8 +130,23 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
     }
   }, [store, generate]);
 
+  const handleDownloadReferenceImage = useCallback(() => {
+    const state = store.getState();
+    const { editedAsset } = state;
+    const frontFrame = editedAsset.layers![0].frames[0];
+    const dataUrl = frameToDataUrl(frontFrame, editedAsset.palette, editedAsset.size, 16);
+    
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `debug-reference-${editedAsset.name || 'sprite'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [store]);
+
   return {
     handleGeneratePerspectiveAI,
+    handleDownloadReferenceImage,
     isGenerating,
     error
   };
