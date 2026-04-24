@@ -13,7 +13,8 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
   (_, ref) => {
     const editedAsset = useSpriteEditorStore(s => s.editedAsset);
     const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
-    const { currentFrame, isPlaying, setIsPlaying, fps, setFps } = useAssetPreview(editedAsset, viewingAnimation);
+    const selectedOrientation = useSpriteEditorStore(s => s.anatomySelectedOrientation);
+    const { currentFrame, isPlaying, setIsPlaying, fps, setFps } = useAssetPreview(editedAsset, viewingAnimation, selectedOrientation);
     const [isExpanded, setIsExpanded] = React.useState(false);
 
     useImperativeHandle(ref, () => ({

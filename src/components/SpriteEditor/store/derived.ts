@@ -12,7 +12,8 @@ export const selectFrameCount = (state: SpriteEditorState) =>
 /** Get visible frame indices based on viewing animation */
 export const selectVisibleFramesIndices = (state: SpriteEditorState): number[] => {
   if (state.viewingAnimation === 'base' || !state.editedAsset.animations || state.editedAsset.animations.length === 0) {
-    return [0];
+    // When in "Base" mode, show the frame corresponding to the active orientation (Front: 0, Side: 1, Back: 2)
+    return [state.anatomySelectedOrientation];
   }
   const anim = state.editedAsset.animations!.find(a => a.name === state.viewingAnimation);
   if (!anim) return [0];

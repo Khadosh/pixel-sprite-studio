@@ -22,7 +22,7 @@ export function useGeneratePerspectiveAI() {
     prompt: string, 
     size: number, 
     referenceImageUrl: string,
-    options?: { strength?: number; maxColors?: number }
+    options?: { strength?: number; maxColors?: number; fixedPalette?: Record<number, string> }
   ) => {
     setState({ isGenerating: true, error: null });
     
@@ -41,6 +41,7 @@ export function useGeneratePerspectiveAI() {
           size,
           image_url: referenceImageUrl,
           strength: options?.strength ?? 0.55,
+          palette: options?.fixedPalette
         }),
       });
 
@@ -53,8 +54,8 @@ export function useGeneratePerspectiveAI() {
       const resultUrl = data.images?.[0]?.url || data.imageUrl;
       if (!resultUrl) throw new Error("No image URL returned from AI");
 
-      // Load the image and pixelize it
-      const pixelizedData = await pixelizeImageUrl(resultUrl, size, options?.maxColors ?? 24);
+      // Load the image and pixelize it using the FIXED PALETTE if provided
+      const pixelizedData = await pixelizeImageUrl(resultUrl, size, options?.maxColors ?? 24, options?.fixedPalette);
 
       setState({ isGenerating: false, error: null });
       return {
@@ -73,7 +74,7 @@ export function useGeneratePerspectiveAI() {
 }
 
 /** Helper to load a URL and convert it to pixel data */
-async function pixelizeImageUrl(url: string, targetSize: number, maxColors: number = 24) {
+async function pixelizeImageUrl(url: string, targetSize: number, maxColors: number = 24, fixedPalette?: Record<number, string>) {
   return new Promise<any>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -96,6 +97,7 @@ async function pixelizeImageUrl(url: string, targetSize: number, maxColors: numb
       const result = imageToPixelData(imageData, {
         targetSize,
         maxColors,
+        fixedPalette,
         alphaThreshold: 200,
       });
       

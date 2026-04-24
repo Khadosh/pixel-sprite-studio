@@ -7,17 +7,18 @@ import { compositeFrame } from '@/lib/layerUtils';
  * Handles frame cycling based on the selected animation.
  * For static assets (no animations), returns the first frame.
  */
-export function useAssetPreview(asset: SpriteAsset, animationName: string | null = null) {
+export function useAssetPreview(
+  asset: SpriteAsset, 
+  animationName: string | null = null,
+  defaultFrameIndex: number = 0
+) {
   const [frameStep, setFrameStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [fps, setFps] = useState<number>(5);
 
   const currentAnimation = useMemo(() => {
-    if (animationName === 'base') return null;
-    if (animationName) {
-      return asset.animations.find(a => a.name === animationName) || null;
-    }
-    return asset.animations.length > 0 ? asset.animations[0] : null;
+    if (animationName === 'base' || !animationName) return null;
+    return asset.animations.find(a => a.name === animationName) || null;
   }, [asset.animations, animationName]);
 
   // Sync FPS with animation's default when it changes, unless overridden
@@ -53,11 +54,13 @@ export function useAssetPreview(asset: SpriteAsset, animationName: string | null
         ? compositeFrame(asset, frameIdx) 
         : (asset.frames?.[frameIdx] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
     } else {
+      // Use the provided defaultFrameIndex (useful for showing active perspective/orientation)
+      const targetIdx = defaultFrameIndex;
       return asset.layers && asset.layers.length > 0 
-        ? compositeFrame(asset, 0) 
-        : (asset.frames?.[0] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
+        ? compositeFrame(asset, targetIdx) 
+        : (asset.frames?.[targetIdx] || (asset.size ? Array.from({ length: asset.size }, () => Array(asset.size).fill(0)) : []));
     }
-  }, [asset, currentAnimation, frameStep]);
+  }, [asset, currentAnimation, frameStep, defaultFrameIndex]);
 
   return {
     currentFrame,

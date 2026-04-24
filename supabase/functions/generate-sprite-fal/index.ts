@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
     // @ts-ignore
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { prompt, size = 64, palette = null } = await req.json();
+    const { prompt, size = 64, palette = null, image_url = null, strength = 0.5 } = await req.json();
 
     if (!prompt) throw new Error("A text prompt is required");
 
@@ -57,9 +57,28 @@ Deno.serve(async (req: Request) => {
 
     const technicalPrompt = `Professional pixel art sprite of ${prompt}. ${paletteGuidance}Isolated character on a solid flat LIME GREEN background (#00FF00). Full body, centered, clean retro pixel art.`;
     
-    const endpoint = "https://fal.run/fal-ai/flux/schnell";
+    let endpoint = "https://fal.run/fal-ai/flux/schnell";
+    let body: any = {
+      prompt: technicalPrompt,
+      image_size: "square_hd",
+      num_inference_steps: 4,
+      enable_safety_checker: false,
+    };
 
-    console.log(`[generate-sprite-fal] Calling Txt2Img (Schnell) for: ${prompt}`);
+    // Use Seedream V4 Edit if a reference image is provided
+    if (image_url) {
+      console.log(`[generate-sprite-fal] Using Img2Img (Seedream V4 Edit) with reference: ${image_url}`);
+      endpoint = "https://fal.run/fal-ai/bytedance/seedream/v4/edit";
+      body = {
+        prompt: technicalPrompt,
+        image_urls: [image_url],
+        sync_mode: true,
+        image_size: "square_hd",
+        enable_safety_checker: false,
+      };
+    } else {
+      console.log(`[generate-sprite-fal] Using Txt2Img (Schnell) for: ${prompt}`);
+    }
 
     const falRes = await fetch(endpoint, {
       method: "POST",
@@ -67,12 +86,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Key ${FAL_AI_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        prompt: technicalPrompt,
-        image_size: "square_hd",
-        num_inference_steps: 4,
-        enable_safety_checker: false,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!falRes.ok) {
