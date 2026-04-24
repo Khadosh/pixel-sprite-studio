@@ -239,6 +239,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                     onPushUndo={pushUndo}
                     showIsometricGrid={showIsometricGrid}
                     referenceFrame={perspectiveReferenceFrame}
+                    anatomyActiveMemberId={useSpriteEditorStore(s => s.anatomyActiveMemberId)}
+                    anatomyIsSelectionMode={useSpriteEditorStore(s => s.anatomyIsSelectionMode)}
+                    onToggleMemberPixel={store.getState().toggleMemberPixel}
+                    anatomySelectedOrientation={useSpriteEditorStore(s => s.anatomySelectedOrientation)}
                   />
                 </div>
               </div>

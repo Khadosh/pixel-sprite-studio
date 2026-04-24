@@ -31,6 +31,12 @@ interface SpritePixelEditorProps {
   onPushUndo?: () => void;
   showIsometricGrid?: boolean;
   referenceFrame?: number[][] | null;
+  
+  // Anatomy selection
+  anatomyActiveMemberId?: string | null;
+  anatomyIsSelectionMode?: boolean;
+  onToggleMemberPixel?: (r: number, c: number) => void;
+  anatomySelectedOrientation?: number;
 }
 
 export default function SpritePixelEditor({
@@ -57,6 +63,10 @@ export default function SpritePixelEditor({
   onPushUndo,
   showIsometricGrid = false,
   referenceFrame,
+  anatomyActiveMemberId,
+  anatomyIsSelectionMode,
+  onToggleMemberPixel,
+  anatomySelectedOrientation,
 }: SpritePixelEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
@@ -272,9 +282,10 @@ export default function SpritePixelEditor({
       }
 
       if (compositeFrame) {
-        const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
+        const segments: import('@/lib/sprite/anatomy').BodySegments = analyzeBodySegments(compositeFrame, asset.anatomy);
+        const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = segments;
         
-        const drawBone = (type: 'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | 'torsoC' | 'knees', color: string, pos: number, isVertical: boolean, dashed: boolean = false) => {
+        const drawBone = (type: string, color: string, pos: number, isVertical: boolean, dashed: boolean = false) => {
           const isSelected = hoveringBone === type || draggingBone === type;
           ctx.strokeStyle = color;
           ctx.globalAlpha = isSelected ? 1.0 : 0.6;
@@ -305,6 +316,27 @@ export default function SpritePixelEditor({
           ctx.setLineDash([]);
         };
 
+        // Regions Visualization (Subtle Rects)
+        const drawRegion = (r1: number, r2: number, c1: number, c2: number, color: string, label: string) => {
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.05;
+          ctx.fillRect(c1 * PIXEL_SCALE, r1 * PIXEL_SCALE, (c2 - c1 + 1) * PIXEL_SCALE, (r2 - r1 + 1) * PIXEL_SCALE);
+          ctx.globalAlpha = 0.3;
+          ctx.strokeStyle = color;
+          ctx.setLineDash([2, 2]);
+          ctx.strokeRect(c1 * PIXEL_SCALE, r1 * PIXEL_SCALE, (c2 - c1 + 1) * PIXEL_SCALE, (r2 - r1 + 1) * PIXEL_SCALE);
+          ctx.setLineDash([]);
+          
+          // Label
+          ctx.fillStyle = color;
+          ctx.font = '8px Inter, sans-serif';
+          ctx.fillText(label, c1 * PIXEL_SCALE + 2, r1 * PIXEL_SCALE + 8);
+        };
+
+        // Draw Areas
+        drawRegion(0, neckRow - 1, torsoLeft, torsoRight, '#38bdf8', 'HEAD');
+        drawRegion(neckRow, waistRow - 1, torsoLeft, torsoRight, '#fb923c', 'TORSO');
+
         // Neck line (Sky Blue)
         drawBone('neck', 'rgba(135, 206, 235)', neckRow, false);
         // Waist line (Coral)
@@ -319,6 +351,35 @@ export default function SpritePixelEditor({
         drawBone('torsoR', 'rgba(249, 115, 22)', torsoRight, true);
         // Torso Center line (Yellow)
         drawBone('torsoC', 'rgba(253, 224, 71)', torsoCenterCol, true, true);
+
+        // ─── DISMEMBERMENT (Custom Pixels) ───
+        const currentOrientation = asset.anatomy?.orientations?.[anatomySelectedOrientation ?? 0];
+        if (currentOrientation?.members) {
+          currentOrientation.members.forEach(member => {
+            const isActive = member.id === anatomyActiveMemberId;
+            const isEditing = isActive && anatomyIsSelectionMode;
+            
+            if (member.pixels && member.pixels.length > 0) {
+              const color = member.type.includes('arm') ? '#38bdf8' :
+                          member.type.includes('leg') ? '#fb7185' :
+                          member.type === 'head' ? '#fbbf24' : '#fb923c';
+              
+              ctx.fillStyle = color;
+              ctx.globalAlpha = isActive ? 0.6 : 0.2;
+              
+              member.pixels.forEach(p => {
+                ctx.fillRect(p.c * PIXEL_SCALE, p.r * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+                
+                if (isEditing) {
+                  ctx.strokeStyle = '#ffffff';
+                  ctx.lineWidth = 1;
+                  ctx.strokeRect(p.c * PIXEL_SCALE + 1, p.r * PIXEL_SCALE + 1, PIXEL_SCALE - 2, PIXEL_SCALE - 2);
+                }
+              });
+              ctx.globalAlpha = 1.0;
+            }
+          });
+        }
       }
     }
 
@@ -395,12 +456,20 @@ export default function SpritePixelEditor({
     e.currentTarget.setPointerCapture(e.pointerId);
 
     const cell = getCell(e);
+    if (!cell) return;
 
     // Anatomy Interaction First
-    if (leftSidebarTab === 'anatomy' && hoveringBone) {
-      if (onPushUndo) onPushUndo();
-      setDraggingBone(hoveringBone);
-      return;
+    if (leftSidebarTab === 'anatomy') {
+      if (anatomyIsSelectionMode && anatomyActiveMemberId && onToggleMemberPixel) {
+        onToggleMemberPixel(cell.r, cell.c);
+        return;
+      }
+      
+      if (hoveringBone) {
+        if (onPushUndo) onPushUndo();
+        setDraggingBone(hoveringBone);
+        return;
+      }
     }
 
     if (e.button === 1) { // Middle Click (Wheel)
@@ -435,6 +504,16 @@ export default function SpritePixelEditor({
     }
     const { r, c, x, y } = data;
     setHoverCell({ r, c });
+    
+    // 0. Handle Anatomy Selection Painting
+    if (leftSidebarTab === 'anatomy' && anatomyIsSelectionMode && anatomyActiveMemberId && e.buttons === 1) {
+       // Only toggle if different from last hover or something to avoid rapid flickering
+       // Actually toggleMemberPixel should be idempotent for a single drag if we track it,
+       // but for now let's just call it (it will toggle on/off).
+       // To avoid rapid toggling, maybe we only "add" pixels while dragging if they aren't there?
+       // For now, let's just make it work for single clicks to be safe, or check distance.
+       return;
+    }
 
     // 1. Handle Bone Dragging
     if (draggingBone && onAnatomyChange) {
@@ -466,7 +545,8 @@ export default function SpritePixelEditor({
         });
       }
 
-      const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
+      const segments: import('@/lib/sprite/anatomy').BodySegments = analyzeBodySegments(compositeFrame, asset.anatomy);
+      const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = segments;
       
       const neckY = neckRow * PIXEL_SCALE + PIXEL_SCALE / 2;
       const waistY = waistRow * PIXEL_SCALE + PIXEL_SCALE / 2;

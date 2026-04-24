@@ -14,6 +14,7 @@ import { createPaletteSlice } from './slices/paletteSlice';
 import { createAnimationSlice } from './slices/animationSlice';
 import { createTransformSlice } from './slices/transformSlice';
 import { createExportSlice } from './slices/exportSlice';
+import { createAnatomySlice } from './slices/anatomySlice';
 
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -50,6 +51,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         ...createAnimationSlice(set as any, get),
         ...createTransformSlice(set as any, get),
         ...createExportSlice(set as any, get),
+        ...createAnatomySlice(set as any, get),
 
         // --- Initial State Overrides (from options) ---
         editedAsset: options.isIconMode ? {

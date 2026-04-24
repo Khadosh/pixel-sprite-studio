@@ -4,7 +4,18 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-23 (Hoy)
+## 2026-04-24 (Hoy)
+**5 commits realizados**
+
+- **Anatomía**: **Motor de Desmembramiento (Dismemberment)**. Evolución radical del sistema de límites a un motor de miembros funcional con soporte para configuraciones específicas por orientación (Frente, Perfil, Espalda).
+- **Herramienta**: **Selector de Píxeles Anatómicos**. Implementado modo de selección libre para definir con precisión qué píxeles pertenecen a cada miembro (Cabeza, Torso, Extremidades).
+- **Interfaz**: **Rediseño del Panel de Anatomía**. Nueva UI con pestañas de orientación, gestión de miembros personalizados y controles jerárquicos mejorados.
+- **Visualización**: **Highlighting de Miembros**. Feedback visual en tiempo real en el canvas con códigos de color para cada segmento anatómico durante la edición.
+- **Fix**: **Estabilidad de Tipos (Anatomy)**. Resueltos errores críticos de nulabilidad y propagación de tipos en el motor de análisis anatómico.
+
+---
+
+## 2026-04-23
 **8 commits realizados**
 
 - **IA**: **Migración a Seedream V4 Edit**. Actualizado el motor de Img2Img para usar el modelo de Bytedance (`fal-ai/bytedance/seedream/v4/edit`), optimizando la consistencia visual en la generación de perspectivas laterales.

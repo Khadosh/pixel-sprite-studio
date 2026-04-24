@@ -22,9 +22,9 @@
 ## 3. Evolución del Sistema de Huesos (Limb-based) 🟠
 *Pasar de anatomía global a control por miembros.*
 
-- [x] **Control de Miembros**: Implementado manejo independiente de brazos y piernas (L/R) en el motor procedural.
-- [ ] **Jerarquías de Pivote**: Implementar hombro -> brazo -> mano (actualmente solo tenemos áreas de traslación).
-- [ ] **UI de Selección**: Rediseñar la pestaña **BONES** para interactuar con miembros específicos.
+- [x] **Control de Miembros**: Implementado manejo independiente de cabeza, torso y extremidades.
+- [x] **Jerarquías de Pivote**: Implementado sistema de pivots para Cabeza y Torso, además de hombros y caderas.
+- [x] **UI de Selección**: Rediseñada la pestaña **BONES** (Anatomy Engine) con modos Auto/Humanoid/Custom y visualización de regiones en el canvas.
 
 ## 4. Refinamiento UI/UX Final 🟢
 *Detalles premium y limpieza.*

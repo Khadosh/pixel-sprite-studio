@@ -74,6 +74,11 @@ export interface SpriteEditorState {
     _handleDownloadReferenceImage?: () => void;
   } | null;
 
+  // --- Anatomy State ---
+  anatomyActiveMemberId: string | null;
+  anatomySelectedOrientation: number; // 0, 1, 2
+  anatomyIsSelectionMode: boolean;
+
   // actions
   setEditedAsset: (asset: SpriteAsset | ((prev: SpriteAsset) => SpriteAsset)) => void;
   setActiveLayerId: (id: string | null) => void;
@@ -105,9 +110,16 @@ export interface SpriteEditorState {
   addTag: (tag: string) => void;
   removeTag: (tag: string) => void;
 
+  setAnatomyActiveMemberId: (id: string | null) => void;
+  setAnatomySelectedOrientation: (idx: number) => void;
+  setAnatomyIsSelectionMode: (on: boolean) => void;
+  toggleMemberPixel: (r: number, c: number) => void;
+
   duplicateFrame: (idx: number) => void;
   deleteFrame: (idx: number) => void;
   insertEmptyFrame: (idx: number) => void;
+  
+  // ... rest of actions
 
   addLayer: () => void;
   removeLayer: (id: string) => void;

@@ -145,7 +145,13 @@ export function generateAdvancedCastSequence(
     randomizedOrigin.r += (Math.random() - 0.5) * 4;
     randomizedOrigin.c += (Math.random() - 0.5) * 4;
   }
-  
+  // Pre-calculate composite frame for anatomy analysis
+  const compositeFrame = layers.filter(l => l.isVisible).reduce((acc, l) => {
+    const f = l.frames[options?.baseIndex ?? 0] || l.frames[0];
+    return acc.map((r, ri) => r.map((c, ci) => c || f[ri][ci]));
+  }, Array.from({ length: size }, () => Array(size).fill(0)));
+  const segments: import('@/lib/sprite/anatomy').BodySegments = analyzeBodySegments(compositeFrame, asset.anatomy);
+
   // Define 6 frames for all layers
   for (let i = 0; i < 6; i++) {
     layers.forEach((layer, lIdx) => {
@@ -156,7 +162,7 @@ export function generateAdvancedCastSequence(
       
       if (isBase) {
         // Character recoil logic using anatomical segments
-        const { neckRow, waistRow } = analyzeBodySegments(baseFrame);
+        const { neckRow, waistRow } = segments;
         
         if (i < 2) { // Buildup: anticipation lean
            nextFrame = leanBody(baseFrame, waistRow, neckRow, -1);

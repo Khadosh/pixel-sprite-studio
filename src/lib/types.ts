@@ -28,7 +28,31 @@ export interface AnimationDef {
   fps?: number;
 }
 
+export type MemberType = 'head' | 'torso' | 'arm_left' | 'arm_right' | 'leg_left' | 'leg_right' | 'tail' | 'wing' | 'prop';
+
+export interface MemberConfig {
+  id: string;
+  type: MemberType;
+  label: string;
+  /** Bounding box of the member relative to the canvas (fallback) */
+  area: { startR: number; endR: number; startC: number; endC: number };
+  /** Exact pixel coordinates that belong to this member (for precision selection) */
+  pixels?: { r: number; c: number }[];
+  /** Pivot point for rotation/scaling */
+  pivot: { r: number; c: number };
+  /** Optional parent member ID for hierarchical movement */
+  parentId?: string;
+}
+
+export interface OrientationAnatomy {
+  members: MemberConfig[];
+}
+
 export type AnatomyConfig = {
+  /** Mode of the anatomy system */
+  mode?: 'auto' | 'humanoid' | 'custom';
+  
+  // Legacy/Shortcut fields (kept for compatibility and ease of use)
   neckRow?: number;
   waistRow?: number;
   ankleRow?: number;
@@ -40,6 +64,12 @@ export type AnatomyConfig = {
   rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
   leftLegArea?: { startR: number; endR: number; startC: number; endC: number };
   rightLegArea?: { startR: number; endR: number; startC: number; endC: number };
+  
+  // Orientation-specific member configurations (Key: frame index, e.g. 0=Front, 1=Side, 2=Back)
+  orientations?: Record<number, OrientationAnatomy>;
+  
+  // Global Member-based system (fallback or default)
+  members?: MemberConfig[];
 };
 
 /** A complete sprite asset with its own palette, layers, and optional animations. */

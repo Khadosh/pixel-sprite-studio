@@ -1,21 +1,19 @@
-import type { Frame, AnatomyConfig } from '../types';
+import type { Frame, AnatomyConfig, MemberConfig } from '../types';
 import { findBounds, getCenterOfMass } from './transforms';
 
 export interface BodySegments {
+  mode?: 'auto' | 'humanoid' | 'custom';
+  members?: MemberConfig[];
   neckRow: number;
   waistRow: number;
-  headEndRow: number;
-  torsoEndRow: number;
-  isHumanoid: boolean;
+  kneeRow: number;
+  ankleRow: number;
   torsoLeft: number;
   torsoRight: number;
   torsoCenterCol: number;
-  ankleRow: number;
-  kneeRow: number;
-  leftArmArea?: { startR: number; endR: number; startC: number; endC: number };
-  rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
-  leftLegArea: { startR: number; endR: number; startC: number; endC: number };
-  rightLegArea: { startR: number; endR: number; startC: number; endC: number };
+  headEndRow: number;
+  torsoEndRow: number;
+  isHumanoid: boolean;
   pivots: {
     leftShoulder: { r: number; c: number };
     rightShoulder: { r: number; c: number };
@@ -23,7 +21,14 @@ export interface BodySegments {
     rightHip: { r: number; c: number };
     leftKnee: { r: number; c: number };
     rightKnee: { r: number; c: number };
+    head: { r: number; c: number };
+    torso: { r: number; c: number };
   };
+  // Computed areas for easy access during animation
+  leftArmArea?: { startR: number; endR: number; startC: number; endC: number };
+  rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
+  leftLegArea: { startR: number; endR: number; startC: number; endC: number };
+  rightLegArea: { startR: number; endR: number; startC: number; endC: number };
 }
 
 /**
@@ -45,14 +50,16 @@ export function analyzeBodySegments(
   const defaultAnkle = bounds ? Math.floor(bounds.bottom - 1) : Math.floor(size * 0.9);
 
   // Manual Overrides
-  let neckRow = anatomy?.neckRow ?? defaultNeck;
-  let waistRow = anatomy?.waistRow ?? defaultWaist;
-  let kneeRow = anatomy?.kneeRow ?? defaultKnee;
-  let ankleRow = anatomy?.ankleRow ?? defaultAnkle;
+  const neckRow = anatomy?.neckRow ?? defaultNeck;
+  const waistRow = anatomy?.waistRow ?? defaultWaist;
+  const kneeRow = anatomy?.kneeRow ?? defaultKnee;
+  const ankleRow = anatomy?.ankleRow ?? defaultAnkle;
 
   if (!bounds || !com) {
     const mid = Math.floor(size / 2);
     return { 
+      mode: anatomy?.mode,
+      members: anatomy?.members,
       neckRow, 
       waistRow, 
       ankleRow,
@@ -72,6 +79,8 @@ export function analyzeBodySegments(
         rightHip: { r: waistRow, c: mid + 1 },
         leftKnee: { r: kneeRow, c: mid - 1 },
         rightKnee: { r: kneeRow, c: mid + 1 },
+        head: { r: Math.floor(neckRow / 2), c: mid },
+        torso: { r: Math.floor((neckRow + waistRow) / 2), c: mid },
       }
     };
   }
@@ -81,10 +90,10 @@ export function analyzeBodySegments(
   const neckWidth = profile[neckRow] || 1;
   const waistWidth = profile[waistRow] || 1;
   
-  let leftLimit = anatomy?.torsoLeft;
-  let rightLimit = anatomy?.torsoRight;
+  let leftLimit = anatomy?.torsoLeft ?? 0;
+  let rightLimit = anatomy?.torsoRight ?? size - 1;
 
-  if (leftLimit === undefined || rightLimit === undefined) {
+  if (anatomy?.torsoLeft === undefined || anatomy?.torsoRight === undefined) {
     let bestStart = bounds.left;
     let bestEnd = bounds.right;
     let maxDensity = 0;
@@ -107,11 +116,11 @@ export function analyzeBodySegments(
         }
       }
     }
-    if (leftLimit === undefined) leftLimit = bestStart;
-    if (rightLimit === undefined) rightLimit = bestEnd;
+    if (anatomy?.torsoLeft === undefined) leftLimit = bestStart;
+    if (anatomy?.torsoRight === undefined) rightLimit = bestEnd;
   }
 
-  const torsoCenterCol = anatomy?.torsoCenterCol ?? Math.floor(((leftLimit || 0) + (rightLimit || 0)) / 2);
+  const torsoCenterCol = anatomy?.torsoCenterCol ?? Math.floor((leftLimit + rightLimit) / 2);
 
   const leftArmArea = anatomy?.leftArmArea || (bounds.left < leftLimit ? { 
     startR: neckRow, 
@@ -143,13 +152,15 @@ export function analyzeBodySegments(
   const maxWidth = Math.max(...profile);
 
   return {
+    mode: anatomy?.mode,
+    members: anatomy?.members,
     neckRow,
     waistRow,
     headEndRow: neckRow,
     torsoEndRow: waistRow,
     isHumanoid: profile[neckRow] < maxWidth * 0.9,
-    torsoLeft: leftLimit || 0,
-    torsoRight: rightLimit || size - 1,
+    torsoLeft: leftLimit,
+    torsoRight: rightLimit,
     torsoCenterCol,
     ankleRow,
     kneeRow,
@@ -158,12 +169,14 @@ export function analyzeBodySegments(
     leftLegArea,
     rightLegArea,
     pivots: {
-      leftShoulder: { r: neckRow, c: leftLimit || 0 },
-      rightShoulder: { r: neckRow, c: rightLimit || size - 1 },
+      leftShoulder: { r: neckRow, c: leftLimit },
+      rightShoulder: { r: neckRow, c: rightLimit },
       leftHip: { r: waistRow, c: torsoCenterCol - 1 },
       rightHip: { r: waistRow, c: torsoCenterCol + 1 },
       leftKnee: { r: kneeRow, c: torsoCenterCol - 1 },
       rightKnee: { r: kneeRow, c: torsoCenterCol + 1 },
+      head: { r: Math.floor(neckRow / 2), c: torsoCenterCol },
+      torso: { r: Math.floor((neckRow + waistRow) / 2), c: torsoCenterCol },
     }
   };
 }
