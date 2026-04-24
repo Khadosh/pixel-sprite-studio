@@ -461,7 +461,7 @@ export default function SpritePixelEditor({
     // Anatomy Interaction First
     if (leftSidebarTab === 'anatomy') {
       if (anatomyIsSelectionMode && anatomyActiveMemberId && onToggleMemberPixel) {
-        onToggleMemberPixel(cell.r, cell.c);
+        onToggleMemberPixel(Math.floor(cell.r), Math.floor(cell.c));
         return;
       }
       
@@ -507,27 +507,42 @@ export default function SpritePixelEditor({
     
     // 0. Handle Anatomy Selection Painting
     if (leftSidebarTab === 'anatomy' && anatomyIsSelectionMode && anatomyActiveMemberId && e.buttons === 1) {
-       // Only toggle if different from last hover or something to avoid rapid flickering
-       // Actually toggleMemberPixel should be idempotent for a single drag if we track it,
-       // but for now let's just call it (it will toggle on/off).
-       // To avoid rapid toggling, maybe we only "add" pixels while dragging if they aren't there?
-       // For now, let's just make it work for single clicks to be safe, or check distance.
        return;
     }
 
     // 1. Handle Bone Dragging
     if (draggingBone && onAnatomyChange) {
-      if (draggingBone === 'neck') onAnatomyChange({ neckRow: r });
-      else if (draggingBone === 'waist') onAnatomyChange({ waistRow: r });
-      else if (draggingBone === 'knees') onAnatomyChange({ kneeRow: r });
-      else if (draggingBone === 'ankles') onAnatomyChange({ ankleRow: r });
-      else if (draggingBone === 'torsoL') onAnatomyChange({ torsoLeft: c });
-      else if (draggingBone === 'torsoR') onAnatomyChange({ torsoRight: c });
-      else if (draggingBone === 'torsoC') onAnatomyChange({ torsoCenterCol: c });
+      const ir = Math.round(r);
+      const ic = Math.round(c);
+      if (draggingBone === 'neck') onAnatomyChange({ neckRow: ir });
+      else if (draggingBone === 'waist') onAnatomyChange({ waistRow: ir });
+      else if (draggingBone === 'knees') onAnatomyChange({ kneeRow: ir });
+      else if (draggingBone === 'ankles') onAnatomyChange({ ankleRow: ir });
+      else if (draggingBone === 'torsoL') onAnatomyChange({ torsoLeft: ic });
+      else if (draggingBone === 'torsoR') onAnatomyChange({ torsoRight: ic });
+      else if (draggingBone === 'torsoC') onAnatomyChange({ torsoCenterCol: ic });
       return;
     }
 
-    // 2. Handle Bone Hover Detection (only in anatomy tab)
+    // 2. Handle Panning
+    if (e.buttons === 4 && panStart.current && scrollStart.current) {
+      const dx = e.clientX - panStart.current.x;
+      const dy = e.clientY - panStart.current.y;
+      const parent = e.currentTarget.parentElement?.parentElement;
+      if (parent) {
+        parent.scrollLeft = scrollStart.current.left - dx;
+        parent.scrollTop = scrollStart.current.top - dy;
+      }
+      return;
+    }
+
+    // 3. Handle Drawing
+    if (e.buttons === 1 && !draggingBone) {
+      onPointerMove(r, c);
+      return;
+    }
+
+    // 4. Handle Bone Hover Detection (only in anatomy tab)
     if (leftSidebarTab === 'anatomy' && !isPanning.current && e.buttons === 0) {
       const tolerance = 6;
       const compositeFrame = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
@@ -566,23 +581,6 @@ export default function SpritePixelEditor({
       else setHoveringBone(null);
     } else if (leftSidebarTab !== 'anatomy') {
        setHoveringBone(null);
-    }
-
-    // 3. Handle Panning
-    if (e.buttons === 4 && panStart.current && scrollStart.current) {
-      const dx = e.clientX - panStart.current.x;
-      const dy = e.clientY - panStart.current.y;
-      const parent = e.currentTarget.parentElement?.parentElement;
-      if (parent) {
-        parent.scrollLeft = scrollStart.current.left - dx;
-        parent.scrollTop = scrollStart.current.top - dy;
-      }
-      return;
-    }
-
-    // 4. Handle Drawing
-    if (e.buttons === 1 && !draggingBone) {
-      onPointerMove(r, c);
     }
 
     // 5. Cursor Feedback

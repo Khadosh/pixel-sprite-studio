@@ -99,8 +99,8 @@ export function useEditorEffects(store: SpriteEditorStore) {
               if (baseFrame) {
                 const selRect = bridge.selectionRect;
                 const newFrame = baseFrame.map(row => [...row]);
-                for (let r = selRect.r; r < selRect.r + selRect.h; r++) {
-                  for (let c = selRect.c; c < selRect.c + selRect.w; c++) {
+                for (let r = Math.round(selRect.r); r < Math.round(selRect.r + selRect.h); r++) {
+                  for (let c = Math.round(selRect.c); c < Math.round(selRect.c + selRect.w); c++) {
                     if (r >= 0 && r < state.editedAsset.size && c >= 0 && c < state.editedAsset.size) {
                       newFrame[r][c] = 0;
                     }

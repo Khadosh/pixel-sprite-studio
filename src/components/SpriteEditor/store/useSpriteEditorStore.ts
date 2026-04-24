@@ -15,6 +15,7 @@ import { createAnimationSlice } from './slices/animationSlice';
 import { createTransformSlice } from './slices/transformSlice';
 import { createExportSlice } from './slices/exportSlice';
 import { createAnatomySlice } from './slices/anatomySlice';
+import { compressState, decompressState } from '@/lib/storageCompression';
 
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -110,17 +111,55 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
       } as SpriteEditorState),
       {
         name: `pps-editor-${options.initialAsset.id || 'new'}`,
-        storage: createJSONStorage(() => localStorage),
+        storage: {
+          getItem: (name: string) => {
+            const raw = localStorage.getItem(name);
+            if (!raw) return null;
+            try {
+              const data = JSON.parse(raw);
+              if (data.version === 'dedupe-v1') {
+                data.state = decompressState(data.state);
+              }
+              return data;
+            } catch (e) {
+              return null;
+            }
+          },
+          setItem: (name: string, value: any) => {
+            try {
+              const compressed = compressState(value.state);
+              localStorage.setItem(name, JSON.stringify({
+                version: 'dedupe-v1',
+                state: compressed
+              }));
+            } catch (e) {
+              // If still too large, try one more time without versions as fallback
+              try {
+                const fallbackValue = JSON.parse(JSON.stringify(value));
+                if (fallbackValue.state?.editedAsset) {
+                  fallbackValue.state.editedAsset.versions = [];
+                }
+                const compressed = compressState(fallbackValue.state);
+                localStorage.setItem(name, JSON.stringify({
+                  version: 'dedupe-v1',
+                  state: compressed
+                }));
+              } catch (e2) {
+                console.warn("Storage totally full", e2);
+              }
+            }
+          },
+          removeItem: (name: string) => localStorage.removeItem(name)
+        } as any,
         partialize: (state) => ({ 
           editedAsset: state.editedAsset, 
           isDirty: state.isDirty,
           assetName: state.assetName,
           canvasBg: state.canvasBg
-        }),
+        } as any),
       }
     )
   );
 }
-
 export type SpriteEditorStore = ReturnType<typeof createSpriteEditorStore>;
 export * from './types';

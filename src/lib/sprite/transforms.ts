@@ -97,11 +97,12 @@ export function leanBody(frame: Frame, pivotRow: number, topRow: number, shift: 
 export function stretchBody(frame: Frame, pivotRow: number): Frame {
   const size = frame.length;
   const next = Array.from({ length: size }, () => Array(size).fill(0));
+  const pr = Math.round(pivotRow);
   
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       if (frame[r][c] !== 0) {
-        if (r <= pivotRow) {
+        if (r <= pr) {
           if (r - 1 >= 0) next[r - 1][c] = frame[r][c];
         } else {
           next[r][c] = frame[r][c];
@@ -111,8 +112,8 @@ export function stretchBody(frame: Frame, pivotRow: number): Frame {
   }
   // Fill neck gap
   for (let c = 0; c < size; c++) {
-    if (frame[pivotRow][c] !== 0) {
-      next[pivotRow][c] = frame[pivotRow][c];
+    if (frame[pr] && frame[pr][c] !== 0) {
+      next[pr][c] = frame[pr][c];
     }
   }
   return next;
@@ -122,7 +123,7 @@ export function stretchBody(frame: Frame, pivotRow: number): Frame {
 export function squash(frame: Frame, rowsToRemove: number[], keepBottom = true, pivotRow?: number): Frame {
   const size = frame.length;
   const next = Array.from({ length: size }, () => Array(size).fill(0));
-  const removeSet = new Set(rowsToRemove);
+  const removeSet = new Set(rowsToRemove.map(r => Math.round(r)));
   
   let targetR = keepBottom ? size - 1 : 0;
   const step = keepBottom ? -1 : 1;

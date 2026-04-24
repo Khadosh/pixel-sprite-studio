@@ -279,8 +279,30 @@ export function usePixelEditor(
             setDraggingHandle(i);
             isDrawing.current = true;
             strokeStart.current = { r: floatR, c: floatC };
-            originalMovingPixels.current = movingSelectionPixels?.map(row => [...row]) || null;
-            originalSelectionRect.current = selectionRect ? { ...selectionRect } : null;
+            
+            // AUTO-LIFT if not already lifted
+            if (!movingSelectionPixels) {
+              pushUndo();
+              const newFrame = frame.map(row => [...row]);
+              const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+              for (let ir = 0; ir < Math.round(selectionRect.h); ir++) {
+                for (let ic = 0; ic < Math.round(selectionRect.w); ic++) {
+                  const fr = Math.round(selectionRect.r) + ir;
+                  const fc = Math.round(selectionRect.c) + ic;
+                  if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
+                    liftedPixels[fr][fc] = frame[fr][fc];
+                    newFrame[fr][fc] = 0;
+                  }
+                }
+              }
+              setMovingSelectionPixels(liftedPixels);
+              updateActiveLayerFrame(newFrame);
+              originalMovingPixels.current = liftedPixels;
+            } else {
+              originalMovingPixels.current = movingSelectionPixels.map(row => [...row]);
+            }
+            
+            originalSelectionRect.current = { ...selectionRect };
             return;
           }
         }
@@ -289,11 +311,11 @@ export function usePixelEditor(
       // Check if clicking inside existing selection
       if (selectionRect && floatR >= selectionRect.r && floatR < selectionRect.r + selectionRect.h && floatC >= selectionRect.c && floatC < selectionRect.c + selectionRect.w) {
         // START MOVING SELECTION
+        isDrawing.current = true;
+        strokeStart.current = { r: floatR, c: floatC };
+        
         if (!movingSelectionPixels) {
           pushUndo();
-          isDrawing.current = true;
-          strokeStart.current = { r: floatR, c: floatC };
-          
           const newFrame = frame.map(row => [...row]);
           const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
           
@@ -310,9 +332,12 @@ export function usePixelEditor(
           
           setMovingSelectionPixels(liftedPixels);
           updateActiveLayerFrame(newFrame); // Update frame with cleared area
+          
+          originalMovingPixels.current = liftedPixels;
+          originalSelectionRect.current = { ...selectionRect };
         } else {
-          isDrawing.current = true;
-          strokeStart.current = { r: floatR, c: floatC };
+          originalMovingPixels.current = movingSelectionPixels.map(row => [...row]);
+          originalSelectionRect.current = { ...selectionRect };
         }
       } else {
         // START NEW SELECTION
@@ -373,11 +398,12 @@ export function usePixelEditor(
     }
 
     if (activeTool === 'select' && strokeStart.current) {
-      if (draggingHandle !== null && selectionRect && movingSelectionPixels) {
+      const dr = floatR - strokeStart.current.r;
+      const dc = floatC - strokeStart.current.c;
+
+      if (draggingHandle !== null && originalSelectionRect.current && originalMovingPixels.current) {
         // RESIZE SELECTION
-        let { r: nr, c: nc, w: nw, h: nh } = selectionRect;
-        const dr = floatR - strokeStart.current.r;
-        const dc = floatC - strokeStart.current.c;
+        let { r: nr, c: nc, w: nw, h: nh } = originalSelectionRect.current;
 
         if (draggingHandle === 0) { nr += dr; nc += dc; nw -= dc; nh -= dr; } // TL
         else if (draggingHandle === 1) { nr += dr; nw += dc; nh -= dr; } // TR
@@ -394,47 +420,43 @@ export function usePixelEditor(
 
         setSelectionRect({ r: nr, c: nc, w: nw, h: nh });
         
-        if (originalMovingPixels.current && originalSelectionRect.current) {
-          const oldRect = originalSelectionRect.current;
-          
-          // Extract the selected snippet from original
-          const snippet = Array.from({ length: Math.round(oldRect.h) }, () => Array(Math.round(oldRect.w)).fill(0));
-          for (let ir = 0; ir < snippet.length; ir++) {
-            for (let ic = 0; ic < snippet[0].length; ic++) {
-              const fr = Math.round(oldRect.r) + ir;
-              const fc = Math.round(oldRect.c) + ic;
-              if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
-                snippet[ir][ic] = originalMovingPixels.current[fr][fc];
-              }
+        // Extract the selected snippet from original
+        const oldRect = originalSelectionRect.current;
+        const snippet = Array.from({ length: Math.round(oldRect.h) }, () => Array(Math.round(oldRect.w)).fill(0));
+        for (let ir = 0; ir < snippet.length; ir++) {
+          for (let ic = 0; ic < snippet[0].length; ic++) {
+            const fr = Math.round(oldRect.r) + ir;
+            const fc = Math.round(oldRect.c) + ic;
+            if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
+              snippet[ir][ic] = originalMovingPixels.current[fr][fc];
             }
           }
-          
-          // Scale it
-          const scaled = resizeFrameNearest(snippet, Math.max(1, Math.round(nw)), Math.max(1, Math.round(nh)));
-          
-          // Embed back into a full frame
-          const newFull = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
-          for (let ir = 0; ir < scaled.length; ir++) {
-            for (let ic = 0; ic < scaled[0].length; ic++) {
-              const tr = Math.round(nr) + ir;
-              const tc = Math.round(nc) + ic;
-              if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
-                newFull[tr][tc] = scaled[ir][ic];
-              }
-            }
-          }
-          setMovingSelectionPixels(newFull);
         }
-        strokeStart.current = { r: floatR, c: floatC };
-      } else if (movingSelectionPixels) {
-        // MOVE EXISTING SELECTION
-        const dr = floatR - strokeStart.current.r;
-        const dc = floatC - strokeStart.current.c;
         
-        const shiftedPixels = shiftFrame(movingSelectionPixels, Math.round(dr), Math.round(dc));
+        // Scale it
+        const scaled = resizeFrameNearest(snippet, Math.max(1, Math.round(nw)), Math.max(1, Math.round(nh)));
+        
+        // Embed back into a full frame
+        const newFull = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+        for (let ir = 0; ir < scaled.length; ir++) {
+          for (let ic = 0; ic < scaled[0].length; ic++) {
+            const tr = Math.round(nr) + ir;
+            const tc = Math.round(nc) + ic;
+            if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
+              newFull[tr][tc] = scaled[ir][ic];
+            }
+          }
+        }
+        setMovingSelectionPixels(newFull);
+      } else if (originalMovingPixels.current && originalSelectionRect.current) {
+        // MOVE EXISTING SELECTION
+        const shiftedPixels = shiftFrame(originalMovingPixels.current, Math.round(dr), Math.round(dc));
         setMovingSelectionPixels(shiftedPixels);
-        setSelectionRect(prev => prev ? { ...prev, r: prev.r + dr, c: prev.c + dc } : null);
-        strokeStart.current = { r: floatR, c: floatC };
+        setSelectionRect({ 
+          ...originalSelectionRect.current, 
+          r: originalSelectionRect.current.r + dr, 
+          c: originalSelectionRect.current.c + dc 
+        });
       } else {
         // DRAW NEW SELECTION RECT
         const minR = Math.min(strokeStart.current.r, floatR);
@@ -444,8 +466,8 @@ export function usePixelEditor(
         setSelectionRect({
           r: minR,
           c: minC,
-          w: maxC - minC,
-          h: maxR - minR
+          w: Math.max(0.1, maxC - minC),
+          h: Math.max(0.1, maxR - minR)
         });
       }
       return;
@@ -462,6 +484,10 @@ export function usePixelEditor(
       if (strokeMutableFrame.current) {
         const startR = Math.floor(strokeStart.current.r);
         const startC = Math.floor(strokeStart.current.c);
+        
+        // Optimize: skip if we are in the same pixel
+        if (startR === r && startC === c) return;
+
         applyPixelsToFrame(strokeMutableFrame.current, getLinePixels(startR, startC, r, c, value, asset.size), asset.size);
         strokeStart.current = { r: floatR, c: floatC }; 
 
