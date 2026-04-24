@@ -137,13 +137,13 @@ export function analyzeBodySegments(
   } : undefined);
 
   const leftLegArea = anatomy?.leftLegArea || {
-    startR: ankleRow,
+    startR: waistRow,
     endR: bounds.bottom,
     startC: bounds.left,
     endC: torsoCenterCol
   };
   const rightLegArea = anatomy?.rightLegArea || {
-    startR: ankleRow,
+    startR: waistRow,
     endR: bounds.bottom,
     startC: torsoCenterCol + 1,
     endC: bounds.right

@@ -251,6 +251,52 @@ export function rotateArea(
   return next;
 }
 
+/** 
+ * Shifts an area vertically but stretches the pixels to fill the gap.
+ * Useful for limbs to maintain connection to the torso.
+ */
+export function stretchArea(
+  source: Frame,
+  target: Frame,
+  area: { startR: number; endR: number; startC: number; endC: number },
+  dr: number,
+  pivotSide: 'top' | 'bottom' = 'top'
+): Frame {
+  const size = source.length;
+  const next = cloneFrame(target);
+  if (dr === 0) return next;
+
+  // 1. Move pixels from SOURCE to TARGET (OVERWRITE)
+  // We don't clear the target area first to allow for a "smear/stretch" effect
+  // that maintains connectivity naturally.
+  for (let r = area.startR; r <= area.endR; r++) {
+    for (let c = area.startC; c <= area.endC; c++) {
+      const nr = r + dr;
+      if (source[r][c] !== 0 && nr >= 0 && nr < size) {
+        next[nr][c] = source[r][c];
+      }
+    }
+  }
+
+  // 2. Handle Gaps if dr > 1 (fill the middle pixels)
+  if (Math.abs(dr) > 1) {
+    for (let r = area.startR; r <= area.endR; r++) {
+      for (let c = area.startC; c <= area.endC; c++) {
+        if (source[r][c] !== 0) {
+          // Fill all pixels between r and r+dr
+          const step = dr > 0 ? 1 : -1;
+          for (let i = step; Math.abs(i) < Math.abs(dr); i += step) {
+            const nr = r + i;
+            if (nr >= 0 && nr < size) next[nr][c] = source[r][c];
+          }
+        }
+      }
+    }
+  }
+
+  return next;
+}
+
 /** Rotates a frame 90 degrees */
 export function rotate90(frame: Frame): Frame {
   const size = frame.length;

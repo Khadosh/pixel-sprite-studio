@@ -1,5 +1,5 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { cloneFrame, shiftArea, leanBody, stretchBody, squash, findBounds, getCenterOfMass } from '../transforms';
+import { cloneFrame, shiftArea, leanBody, stretchBody, squash, findBounds, getCenterOfMass, stretchArea } from '../transforms';
 import { analyzeBodySegments } from '../anatomy';
 
 /** 
@@ -20,8 +20,8 @@ export function generateWalk(
   const createStep = (isLeftLeading: boolean) => {
     // 1. CONTACT: Both feet down, split distance.
     let fContact = cloneFrame(base);
-    if (leftArmArea) fContact = shiftArea(fContact, leftArmArea, isLeftLeading ? 1 : -1, 0);
-    if (rightArmArea) fContact = shiftArea(fContact, rightArmArea, isLeftLeading ? -1 : 1, 0);
+    if (leftArmArea) fContact = stretchArea(base, fContact, leftArmArea, isLeftLeading ? 1 : -1, 'top');
+    if (rightArmArea) fContact = stretchArea(base, fContact, rightArmArea, isLeftLeading ? -1 : 1, 'top');
     
     // 2. DOWN: Subtle 1px squash for weight
     let fDown = squash(base, [waistRow], undefined, neckRow);
@@ -91,32 +91,50 @@ export function generateWalkTopDown(
 ): Frame[] {
   const size = base.length;
   const bounds = findBounds(base);
-  const com = getCenterOfMass(base);
-  if (!bounds || !com) return Array(4).fill(cloneFrame(base));
+  if (!bounds) return Array(8).fill(cloneFrame(base));
 
   const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, ankleRow, leftArmArea, rightArmArea } = segments;
-  const centerCol = Math.floor(com.c);
+  const { neckRow, waistRow, kneeRow, torsoCenterCol } = segments;
   
-  const leftLegArea = { startR: ankleRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
-  const rightLegArea = { startR: ankleRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
+  // ARMS: More aggressive fallback if not detected
+  const lArm = segments.leftArmArea || { 
+    startR: neckRow, 
+    endR: waistRow, 
+    startC: bounds.left, 
+    endC: Math.max(bounds.left, torsoCenterCol - 3) 
+  };
+  const rArm = segments.rightArmArea || { 
+    startR: neckRow, 
+    endR: waistRow, 
+    startC: Math.min(bounds.right, torsoCenterCol + 3), 
+    endC: bounds.right 
+  };
 
-  // Frame 0: Left foot lifts (shifts UP), Right arm forward (shifts DOWN)
-  let f0 = shiftArea(base, leftLegArea, -1, 0); 
-  if (rightArmArea) f0 = shiftArea(f0, rightArmArea, 1, 0); 
-  if (leftArmArea) f0 = shiftArea(f0, leftArmArea, -1, 0); 
+  const createStep = (isLeftLeading: boolean) => {
+    const leadArm = isLeftLeading ? rArm : lArm;
+    const backArm = isLeftLeading ? lArm : rArm;
+    const leadLeg = isLeftLeading ? segments.leftLegArea : segments.rightLegArea;
+    const backLeg = isLeftLeading ? segments.rightLegArea : segments.leftLegArea;
 
-  // Frame 1: Mid height bob down
-  const headArea = { startR: bounds.top, endR: neckRow, startC: 0, endC: size - 1 };
-  let f1 = shiftArea(base, headArea, 1, 0);
+    // 1. CONTACT: High stride. 2px offset.
+    let f1 = cloneFrame(base);
+    f1 = stretchArea(base, f1, leadLeg, 2, 'top'); 
+    f1 = stretchArea(base, f1, backLeg, -1, 'top');
+    f1 = stretchArea(base, f1, leadArm, 1, 'top'); 
+    f1 = stretchArea(base, f1, backArm, -1, 'top');
+    
+    // 2. DOWN: Weight impact. Squash.
+    let f2 = squash(f1, [kneeRow]);
+    
+    // 3. PASSING: Lifting one leg.
+    let f3 = cloneFrame(base);
+    f3 = stretchArea(base, f3, backLeg, -2, 'top'); 
+    
+    // 4. UP: High point. Stretch torso.
+    let f4 = stretchBody(base, neckRow);
+    
+    return [f1, f2, f3, f4];
+  };
 
-  // Frame 2: Right foot lifts (shifts UP), Left arm forward (shifts DOWN)
-  let f2 = shiftArea(base, rightLegArea, -1, 0); 
-  if (leftArmArea) f2 = shiftArea(f2, leftArmArea, 1, 0);
-  if (rightArmArea) f2 = shiftArea(f2, rightArmArea, -1, 0);
-
-  // Frame 3: Mid height stretch up
-  const f3 = stretchBody(base, neckRow);
-
-  return [f0, f1, f2, f3];
+  return [...createStep(true), ...createStep(false)];
 }

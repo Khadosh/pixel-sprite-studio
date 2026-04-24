@@ -11,6 +11,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Herramienta**: **Selector de Píxeles Anatómicos**. Implementado modo de selección libre para definir con precisión qué píxeles pertenecen a cada miembro (Cabeza, Torso, Extremidades).
 - **Interfaz**: **Rediseño del Panel de Anatomía**. Nueva UI con pestañas de orientación, gestión de miembros personalizados y controles jerárquicos mejorados.
 - **Visualización**: **Highlighting de Miembros**. Feedback visual en tiempo real en el canvas con códigos de color para cada segmento anatómico durante la edición.
+- **Mejora**: **Algoritmo de Estiramiento Pro (Smear)**. Evolucionada la transformación de miembros para evitar huecos mediante un sistema de duplicación de píxeles y relleno de gaps en desplazamientos rápidos.
+- **Mejora**: **Caminata Top-Down Sincronizada**. Rediseñada la animación vertical con un ciclo de 8 frames, balanceo de hombros y movimiento de brazos reactivo.
+- **Fix**: **Exportación GIF Premium**. Resuelto el error de ghosting en GIFs animados mediante el método de disposición "Restore to Background", asegurando frames limpios con transparencia.
 - **Fix**: **Animación de Respiración (Idle)**. Corregido error de píxeles cortados y restaurada la fluidez del pecho usando el motor de estiramiento anatómico (`stretchBody`).
 - **Fix**: **Estabilidad de Tipos (Anatomy)**. Resueltos errores críticos de nulabilidad y propagación de tipos en el motor de análisis anatómico.
 

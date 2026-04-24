@@ -138,7 +138,8 @@ export const exportAsGIF = async (asset: SpriteAsset, animationName: string, fps
     gifWriter.addFrame(0, 0, size, size, frameData as any, {
       palette: gifPalette,
       delay: Math.round(100 / fps),
-      transparent: transparentIndex >= 0 ? transparentIndex : undefined
+      transparent: transparentIndex >= 0 ? transparentIndex : undefined,
+      disposal: 2 // Restore to background color (avoids ghosting)
     });
   }
 
