@@ -5,14 +5,25 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-24 (Hoy)
-**6 commits realizados**
+**9 commits realizados**
 
+- **Workflow**: **Sincronización Total de Perspectivas**. Rediseñado el sistema de navegación para que el canvas, las miniaturas, la previsualización de animación y el panel de anatomía operen sobre una base de datos unificada (Front, Side R/L, Back).
+- **Animación**: **Asociación Contextual y Auto-Selección**. Implementado filtrado dinámico de la biblioteca de animaciones según la vista activa y sistema de pre-selección automática de `Idle` al cambiar de perspectiva.
+- **Fix**: **Persistencia de Base en Orientación**. Corregido el bug que reseteaba la vista al Frente al interactuar con el botón BASE; ahora respeta el frame base de la orientación actual (Side/Back).
+- **IA**: **Cableado de Perspectiva Back**. Integrado el frame de espalda (idx 2) como destino oficial para la generación por IA y sincronizado con el motor de anatomía.
 - **Herramienta**: **Estabilización de Selección y Resize**. Rediseño total del motor de transformación usando deltas absolutos y sistema de **Auto-Lift**, eliminando el "drift" de redondeo y permitiendo redimensionar o borrar selecciones al instante sin necesidad de moverlas primero.
 - **Rendimiento**: **Optimización del Pincel Pro**. Implementada detección de cambios por celda y suspensión de cálculos anatómicos durante el trazo, restaurando la sensación de respuesta instantánea y eliminando el delay en sprites de alta resolución.
 - **Persistencia**: **Motor de Compresión por Hashing**. Implementado sistema de deduplicación estructural para `localStorage` que reduce drásticamente el tamaño de los datos al reutilizar frames idénticos, permitiendo restaurar el historial completo de versiones (Checkpoints) sin superar el límite de 5MB del navegador.
 - **Arquitectura**: **Modularización de Utilidades**. Extraída la lógica de compresión a un helper independiente con cobertura total de tests unitarios.
 - **Fix**: **Estabilidad en Animación 32x32**. Corregidos errores de acceso a arrays mediante el forzado de redondeo de coordenadas anatómicas en todo el flujo de generación.
 - **Anatomía**: **Motor de Desmembramiento (Dismemberment)**. Evolución radical del sistema de límites a un motor de miembros funcional con soporte para configuraciones específicas por orientación (Frente, Perfil, Espalda).
+- **IA**: **Chroma Key Inteligente (HSL)**. Reemplazada la detección de fondo verde por un motor basado en HSL que elimina halos con mayor precisión y suprime la filtración de color verde en los bordes del sprite.
+- **UI/UX**: **Memoria de Paneles**. El panel de previsualización de animación ahora persiste su estado expandido/colapsado entre sesiones.
+- **UI/UX**: **Optimización de Espaciado**. Reducidos gaps y paddings del layout para maximizar el área de canvas disponible.
+- **Iconografía**: **Consistencia PxBone**. Creado icono pixel-art de hueso (`PxBone`) y reemplazado el ícono Lucide en el sidebar y panel de anatomía para unificar la identidad visual.
+- **Anatomía**: **Pincel de Miembros**. Implementado soporte para "pintar" la selección de píxeles en el motor de anatomía, permitiendo arrastrar el puntero para añadir/eliminar regiones de miembros de forma fluida.
+- **Fix**: **Bloqueo de Guías**. Deshabilitada la interacción con las líneas guía (huesos) mientras se están editando los píxeles de un miembro, evitando arrastres accidentales.
+- **Fix**: **Posicionamiento de Icono**. Ajustada la posición del icono `PxBone` para evitar overflow lateral en contenedores estrechos.
 
 ---
 

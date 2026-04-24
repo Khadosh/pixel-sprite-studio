@@ -113,7 +113,7 @@ export interface SpriteEditorState {
   setAnatomyActiveMemberId: (id: string | null) => void;
   setAnatomySelectedOrientation: (idx: number) => void;
   setAnatomyIsSelectionMode: (on: boolean) => void;
-  toggleMemberPixel: (r: number, c: number) => void;
+  toggleMemberPixel: (r: number, c: number, force?: boolean) => void;
 
   duplicateFrame: (idx: number) => void;
   deleteFrame: (idx: number) => void;

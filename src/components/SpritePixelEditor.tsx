@@ -35,7 +35,7 @@ interface SpritePixelEditorProps {
   // Anatomy selection
   anatomyActiveMemberId?: string | null;
   anatomyIsSelectionMode?: boolean;
-  onToggleMemberPixel?: (r: number, c: number) => void;
+  onToggleMemberPixel?: (r: number, c: number, force?: boolean) => void;
   anatomySelectedOrientation?: number;
 }
 
@@ -74,6 +74,10 @@ export default function SpritePixelEditor({
   // Anatomy interaction state
   const [hoveringBone, setHoveringBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | 'torsoC' | 'knees' | null>(null);
   const [draggingBone, setDraggingBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | 'torsoC' | 'knees' | null>(null);
+  
+  // Track if we are adding or removing during anatomy drag
+  const anatomyPaintMode = useRef<boolean | null>(null);
+  const lastPaintedCell = useRef<{ r: number, c: number } | null>(null);
 
   // Panning state
   const panStart = useRef<{ x: number; y: number } | null>(null);
@@ -461,11 +465,22 @@ export default function SpritePixelEditor({
     // Anatomy Interaction First
     if (leftSidebarTab === 'anatomy') {
       if (anatomyIsSelectionMode && anatomyActiveMemberId && onToggleMemberPixel) {
-        onToggleMemberPixel(Math.floor(cell.r), Math.floor(cell.c));
+        const ir = Math.floor(cell.r);
+        const ic = Math.floor(cell.c);
+        
+        // Determine if we are adding or removing based on current state of clicked pixel
+        const currentOrientation = asset.anatomy?.orientations?.[anatomySelectedOrientation ?? 0];
+        const member = currentOrientation?.members.find(m => m.id === anatomyActiveMemberId);
+        const isSelected = member?.pixels?.some(p => p.r === ir && p.c === ic);
+        
+        anatomyPaintMode.current = !isSelected;
+        lastPaintedCell.current = { r: ir, c: ic };
+        onToggleMemberPixel(ir, ic, !isSelected);
         return;
       }
       
-      if (hoveringBone) {
+      // Only allow bone dragging if NOT in selection mode
+      if (hoveringBone && !anatomyIsSelectionMode) {
         if (onPushUndo) onPushUndo();
         setDraggingBone(hoveringBone);
         return;
@@ -506,7 +521,14 @@ export default function SpritePixelEditor({
     setHoverCell({ r, c });
     
     // 0. Handle Anatomy Selection Painting
-    if (leftSidebarTab === 'anatomy' && anatomyIsSelectionMode && anatomyActiveMemberId && e.buttons === 1) {
+    if (leftSidebarTab === 'anatomy' && anatomyIsSelectionMode && anatomyActiveMemberId && e.buttons === 1 && anatomyPaintMode.current !== null) {
+       const ir = Math.floor(r);
+       const ic = Math.floor(c);
+       
+       if (!lastPaintedCell.current || lastPaintedCell.current.r !== ir || lastPaintedCell.current.c !== ic) {
+          lastPaintedCell.current = { r: ir, c: ic };
+          onToggleMemberPixel?.(ir, ic, anatomyPaintMode.current);
+       }
        return;
     }
 
@@ -542,8 +564,8 @@ export default function SpritePixelEditor({
       return;
     }
 
-    // 4. Handle Bone Hover Detection (only in anatomy tab)
-    if (leftSidebarTab === 'anatomy' && !isPanning.current && e.buttons === 0) {
+    // 4. Handle Bone Hover Detection (only in anatomy tab and NOT in selection mode)
+    if (leftSidebarTab === 'anatomy' && !anatomyIsSelectionMode && !isPanning.current && e.buttons === 0) {
       const tolerance = 6;
       const compositeFrame = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
       if (asset.layers) {
@@ -637,6 +659,8 @@ export default function SpritePixelEditor({
     panStart.current = null;
     scrollStart.current = null;
     isPanning.current = false;
+    anatomyPaintMode.current = null;
+    lastPaintedCell.current = null;
     setDraggingBone(null);
     onPointerUp();
   };

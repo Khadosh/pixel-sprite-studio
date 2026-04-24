@@ -1,9 +1,8 @@
 import React from 'react';
-import { PxFilm, PxLayers, PxPalette, PxSword, PxSettings, PxClock } from '@/components/icons/PixelIcon';
+import { PxFilm, PxLayers, PxPalette, PxSword, PxSettings, PxClock, PxBone } from '@/components/icons/PixelIcon';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bone } from 'lucide-react';
 
 export const EditorSidebarNavigator = () => {
   const activeTab = useSpriteEditorStore(s => s.leftSidebarTab);
@@ -12,7 +11,7 @@ export const EditorSidebarNavigator = () => {
   const tabs = [
     { id: 'animations', icon: PxFilm, label: 'ANIMS' },
     { id: 'layers', icon: PxLayers, label: 'LAYERS' },
-    { id: 'anatomy', icon: Bone, label: 'BONES' },
+    { id: 'anatomy', icon: PxBone, label: 'BONES' },
     { id: 'themes', icon: PxPalette, label: 'THEMES' },
     { id: 'assets', icon: PxSword, label: 'ASSETS' },
     { id: 'config', icon: PxSettings, label: 'CONFIG' },

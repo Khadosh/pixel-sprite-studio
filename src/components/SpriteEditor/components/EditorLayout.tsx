@@ -165,13 +165,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
 
   return (
     <PaletteProvider defaultPalette={editedAsset.palette}>
-      <div className="flex-1 flex flex-col min-h-0 bg-background p-4 gap-4 overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-h-0 bg-background p-3 gap-3 overflow-hidden relative">
         {!hideHeader && <EditorHeader />}
 
         {/* MAIN BODY: 3 Columns */}
-        <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-3 min-h-0 overflow-hidden">
           {/* LEFT SIDEBAR */}
-          <div className="w-[250px] min-w-[250px] flex-shrink-0 flex flex-col bg-secondary/10 rounded-lg border border-border p-4 overflow-hidden">
+          <div className="w-[240px] min-w-[240px] flex-shrink-0 flex flex-col bg-secondary/10 rounded-lg border border-border p-3 overflow-hidden">
             <PaletteSection />
           </div>
 
@@ -271,7 +271,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
         </div>
 
         {/* FOOTER */}
-        <div className="flex flex-row items-center justify-between pt-3 border-t border-border gap-4 flex-shrink-0 relative">
+        <div className="flex flex-row items-center justify-between pt-2 border-t border-border gap-3 flex-shrink-0 relative">
           <TimelineStrip sensors={sensors} />
 
           {/* FLOATING PREVIEW BOX - Positioned bottom-right but clearing the navigator icons */}

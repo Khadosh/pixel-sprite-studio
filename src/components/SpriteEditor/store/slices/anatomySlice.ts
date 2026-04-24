@@ -9,7 +9,7 @@ export const createAnatomySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
   setAnatomyActiveMemberId: (id) => set({ anatomyActiveMemberId: id }),
   setAnatomyIsSelectionMode: (on) => set({ anatomyIsSelectionMode: on }),
 
-  toggleMemberPixel: (r, c) => set(state => {
+  toggleMemberPixel: (r, c, force) => set(state => {
     const { anatomyActiveMemberId, anatomySelectedOrientation, editedAsset } = state;
     if (!anatomyActiveMemberId) return state;
 
@@ -18,20 +18,23 @@ export const createAnatomySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
     const orientation = orientations[anatomySelectedOrientation] || { members: [] };
     
     const memberIdx = orientation.members.findIndex(m => m.id === anatomyActiveMemberId);
-    if (memberIdx === -1) {
-      // Create member if missing from this orientation
-      // We might want a default set of members
-      return state;
-    }
+    if (memberIdx === -1) return state;
 
     const member = orientation.members[memberIdx];
     const pixels = [...(member.pixels || [])];
     const pixelIdx = pixels.findIndex(p => p.r === r && p.c === c);
 
-    if (pixelIdx >= 0) {
-      pixels.splice(pixelIdx, 1);
-    } else {
+    const shouldAdd = force !== undefined ? force : pixelIdx === -1;
+
+    if (shouldAdd && pixelIdx === -1) {
       pixels.push({ r, c });
+    } else if (!shouldAdd && pixelIdx >= 0) {
+      pixels.splice(pixelIdx, 1);
+    } else if (force === undefined) {
+      // Toggle case handled by the initial shouldAdd calculation
+    } else {
+      // Force match existing state, no change
+      return state;
     }
 
     const updatedMembers = [...orientation.members];

@@ -3,7 +3,8 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
-import { RefreshCcw, Bone, User, Settings2, Boxes, MousePointer2, Eraser, Move } from 'lucide-react';
+import { RefreshCcw, User, Settings2, Boxes, MousePointer2, Eraser, Move } from 'lucide-react';
+import { PxBone } from '@/components/icons/PixelIcon';
 import type { AnatomyConfig, MemberConfig, MemberType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -62,7 +63,7 @@ export function AnatomyPanel() {
     <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border/50">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bone className="w-4 h-4 text-primary" />
+          <PxBone className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold uppercase tracking-wider">Anatomy Engine</h3>
         </div>
         <Button 

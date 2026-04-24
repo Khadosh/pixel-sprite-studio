@@ -72,16 +72,41 @@ export function imageToPixelData(
     }
   }
   
+  // HSL-based chroma detection for robust green screen removal
+  const rgbToHsl = (r: number, g: number, b: number): { h: number; s: number; l: number } => {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return { h: 0, s: 0, l };
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h = 0;
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+    return { h: h * 360, s, l };
+  };
+
+  const isChromaGreen = (r: number, g: number, b: number): boolean => {
+    const { h, s, l } = rgbToHsl(r, g, b);
+    // Hue 80-160 covers lime green through teal-green range
+    // High saturation (>40%) and reasonable lightness (>30%) ensure we only catch vivid greens
+    return h >= 80 && h <= 160 && s > 0.4 && l > 0.3;
+  };
+
   const isBgMatch = (r: number, g: number, b: number) => {
     if (!bgColor) return false;
     const dist = Math.sqrt((r - bgColor.r) ** 2 + (g - bgColor.g) ** 2 + (b - bgColor.b) ** 2);
     
-    // Increased threshold to 65 to catch more edge artifacts (the "halos")
-    // If the background is very green (lime green), we can be even more aggressive
-    const isLimeGreen = bgColor.g > 200 && bgColor.r < 100 && bgColor.b < 100;
-    const finalThreshold = isLimeGreen ? 85 : 65;
+    // If the background is very green (chroma key), use HSL-based detection
+    // This catches a wider range of greens and handles off-hue AI artifacts better
+    if (isChromaGreen(bgColor.r, bgColor.g, bgColor.b)) {
+      // Pure chroma match: either close in RGB distance or is itself a chroma green
+      return dist < 90 || isChromaGreen(r, g, b);
+    }
     
-    return dist < finalThreshold;
+    // Generic background: moderate distance threshold
+    return dist < 65;
   };
 
   // --- Step 2: Sample pixels into grid ---
@@ -126,7 +151,20 @@ export function imageToPixelData(
         if (isBgMatch(r, g, b)) {
           gridRow.push(null);
         } else {
-          gridRow.push({ r, g, b });
+          // Edge spillover suppression: if the pixel has a strong green tint
+          // and we detected a chroma background, desaturate the green channel
+          if (bgColor && isChromaGreen(bgColor.r, bgColor.g, bgColor.b)) {
+            const greenExcess = g - Math.max(r, b);
+            if (greenExcess > 40) {
+              // Reduce green spillover while preserving the base color
+              const corrected = Math.round(Math.max(r, b) + greenExcess * 0.25);
+              gridRow.push({ r, g: corrected, b });
+            } else {
+              gridRow.push({ r, g, b });
+            }
+          } else {
+            gridRow.push({ r, g, b });
+          }
         }
       } else {
         gridRow.push(null);

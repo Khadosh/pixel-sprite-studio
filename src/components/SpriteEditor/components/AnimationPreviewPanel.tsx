@@ -15,7 +15,17 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
     const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
     const editingFrameIndex = useSpriteEditorStore(s => s.editingFrameIndex);
     const { currentFrame, isPlaying, setIsPlaying, fps, setFps } = useAssetPreview(editedAsset, viewingAnimation, editingFrameIndex);
-    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [isExpanded, setIsExpanded] = React.useState(() => {
+      try { return localStorage.getItem('pps-preview-expanded') === 'true'; } catch { return false; }
+    });
+
+    const toggleExpanded = React.useCallback(() => {
+      setIsExpanded(prev => {
+        const next = !prev;
+        try { localStorage.setItem('pps-preview-expanded', String(next)); } catch {}
+        return next;
+      });
+    }, []);
 
     useImperativeHandle(ref, () => ({
       setIsPlaying,
@@ -47,7 +57,7 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
           </div>
 
           <button 
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={toggleExpanded}
             className="absolute top-1 right-1 p-1 rounded-md bg-black/80 border border-white/10 text-white/40 hover:text-primary hover:border-primary/50 transition-all opacity-0 group-hover:opacity-100"
             title={isExpanded ? "Collapse" : "Expand"}
           >

@@ -10,7 +10,7 @@
 - [x] **Debug Export Button**: Implementado. Permite verificar la calidad de la referencia enviada a la IA.
 - [x] **Upscale de Referencia (16x)**: Implementado. Enviamos imágenes de 512px para evitar borrosidad.
 - [x] **Prompt Fine-tuning**: Refinados los prompts para rotación de 90 grados y anatomía consistente.
-- [ ] **Auto-Background Removal**: Refinar la lógica de limpieza de croma verde en el cliente.
+- [x] **Auto-Background Removal**: Implementado motor HSL para detección robusta de chroma green con supresión de spillover en bordes.
 
 ## 2. Animaciones Procedurales Direccionales 🟢
 *Hacer que el sistema de animación entienda la perspectiva.*
@@ -29,9 +29,10 @@
 ## 4. Refinamiento UI/UX Final 🟢
 *Detalles premium y limpieza.*
 
-- [ ] **Memoria de Paneles**: Persistencia del estado (Expandido/Mini) del preview de animación.
-- [ ] **Optimización de Gaps**: Seguir puliendo el espacio en el editor para que el canvas sea el protagonista.
-- [ ] **Corrección de Iconos**: Asegurar consistencia en toda la iconografía pixel-art.
+- [x] **Memoria de Paneles**: Persistencia del estado (Expandido/Mini) del preview de animación via localStorage.
+- [x] **Optimización de Gaps**: Reducidos paddings y gaps del layout principal para maximizar el protagonismo del canvas.
+- [x] **Corrección de Iconos**: Reemplazado ícono Lucide `Bone` con `PxBone` pixel-art; consistencia total en la iconografía del sidebar y paneles.
 
 ---
 *Para ver la visión a largo plazo del proyecto, consultar [ROADMAP.md](./ROADMAP.md)*
+

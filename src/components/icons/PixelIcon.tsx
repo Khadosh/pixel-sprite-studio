@@ -537,6 +537,21 @@ export const PxResetRotate: React.FC<PixelIconProps> = (p) => (
   </Px>
 );
 
+export const PxBone: React.FC<PixelIconProps> = (p) => (
+  <Px {...p}>
+    {/* Top-left joint - Shifted 1px left */}
+    <path d="M1 2h2v1h1v1H3v1H1V4H0V3h1V2z" />
+    {/* Shaft - Shifted 1px left */}
+    <path d="M4 5h1v1h1v1h1v1h1v1h1v1h1v1z" />
+    <path d="M3 4h2v1h1v1h1v1h1v1h1v1h1v1h1v1h-2v-1h-1v-1H7V9H6V8H5V7H4V6H3V4z" />
+    {/* Bottom-right joint - Shifted 1px left */}
+    <path d="M11 11h2v1h1v1h-1v1h-1v1h-2v-1h-1v-1h1v-1h2v-1z" />
+    {/* Highlights */}
+    <path d="M1 2h2v1H1V2z" fill="var(--px-light)" opacity="0.4" />
+    <path d="M4 5h1v1H4V5z" fill="var(--px-light)" opacity="0.3" />
+  </Px>
+);
+
 // ─── Convenience map for dynamic lookup ──────────────
 
 export const PIXEL_ICONS = {
@@ -597,6 +612,7 @@ export const PIXEL_ICONS = {
   xCircle: PxXCircle,
   monitor: PxMonitor,
   resetRotate: PxResetRotate,
+  bone: PxBone,
 } as const;
 
 export const PxFolder: React.FC<PixelIconProps> = (p) => (
