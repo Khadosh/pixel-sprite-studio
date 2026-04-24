@@ -182,14 +182,44 @@ export function usePixelEditor(
     updateActiveLayerFrame(newFrame);
   };
 
-  const handlePointerDown = useCallback((r: number, c: number, forceTool?: EditorTool) => {
+  const stampSelection = useCallback(() => {
+    if (!movingSelectionPixels) return;
+    const baseFrame = getActiveLayerFrame();
+    if (!baseFrame) return;
+
+    const mergedFrame = baseFrame.map((row, r) => 
+      row.map((val, c) => {
+        const floatingVal = movingSelectionPixels[r][c];
+        return floatingVal !== 0 ? floatingVal : val;
+      })
+    );
+    
+    // Check if anything actually changed to avoid redundant undos
+    let changed = false;
+    for (let r = 0; r < asset.size; r++) {
+      for (let c = 0; c < asset.size; c++) {
+        if (mergedFrame[r][c] !== baseFrame[r][c]) {
+          changed = true;
+          break;
+        }
+      }
+      if (changed) break;
+    }
+
+    if (changed) {
+      updateActiveLayerFrame(mergedFrame);
+    }
+    setMovingSelectionPixels(null);
+  }, [movingSelectionPixels, getActiveLayerFrame, updateActiveLayerFrame, asset.size]);
+
+  const handlePointerDown = useCallback((floatR: number, floatC: number, forceTool?: EditorTool) => {
     const frame = getActiveLayerFrame();
     if (!frame) return;
     
+    const r = Math.floor(floatR);
+    const c = Math.floor(floatC);
     const activeTool = forceTool || tool;
     
-
-
     if (activeTool === 'rotate') {
       isDrawing.current = true;
       
@@ -220,7 +250,7 @@ export function usePixelEditor(
       }
 
       setRotationCenter({ ...center, activeLayerId: scope === 'layer' ? activeLayerId : null });
-      const angle = Math.atan2(r - center.r, c - center.c);
+      const angle = Math.atan2(floatR - center.r, floatC - center.c);
       setInitialRotationAngle(angle);
       setRotationAngle(0);
 
@@ -230,9 +260,9 @@ export function usePixelEditor(
     }
 
     if (activeTool === 'select') {
-      // Check for handle clicks first
+      // Check for handle clicks first (using floating point precision)
       if (selectionRect) {
-        const threshold = 0.5; // half pixel threshold for hit testing
+        const threshold = 0.8; // larger threshold for easier handle grabbing
         const handles = [
           { r: selectionRect.r, c: selectionRect.c }, // 0: TL
           { r: selectionRect.r, c: selectionRect.c + selectionRect.w }, // 1: TR
@@ -245,10 +275,10 @@ export function usePixelEditor(
         ];
         
         for (let i = 0; i < handles.length; i++) {
-          if (Math.abs(r - handles[i].r) <= threshold && Math.abs(c - handles[i].c) <= threshold) {
+          if (Math.abs(floatR - handles[i].r) <= threshold && Math.abs(floatC - handles[i].c) <= threshold) {
             setDraggingHandle(i);
             isDrawing.current = true;
-            strokeStart.current = { r, c };
+            strokeStart.current = { r: floatR, c: floatC };
             originalMovingPixels.current = movingSelectionPixels?.map(row => [...row]) || null;
             originalSelectionRect.current = selectionRect ? { ...selectionRect } : null;
             return;
@@ -257,12 +287,12 @@ export function usePixelEditor(
       }
 
       // Check if clicking inside existing selection
-      if (selectionRect && r >= selectionRect.r && r < selectionRect.r + selectionRect.h && c >= selectionRect.c && c < selectionRect.c + selectionRect.w) {
+      if (selectionRect && floatR >= selectionRect.r && floatR < selectionRect.r + selectionRect.h && floatC >= selectionRect.c && floatC < selectionRect.c + selectionRect.w) {
         // START MOVING SELECTION
         if (!movingSelectionPixels) {
           pushUndo();
           isDrawing.current = true;
-          strokeStart.current = { r, c };
+          strokeStart.current = { r: floatR, c: floatC };
           
           const newFrame = frame.map(row => [...row]);
           const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
@@ -282,7 +312,7 @@ export function usePixelEditor(
           updateActiveLayerFrame(newFrame); // Update frame with cleared area
         } else {
           isDrawing.current = true;
-          strokeStart.current = { r, c };
+          strokeStart.current = { r: floatR, c: floatC };
         }
       } else {
         // START NEW SELECTION
@@ -291,8 +321,8 @@ export function usePixelEditor(
            stampSelection(); 
         }
         isDrawing.current = true;
-        strokeStart.current = { r, c };
-        setSelectionRect({ r, c, w: 1, h: 1 });
+        strokeStart.current = { r: floatR, c: floatC };
+        setSelectionRect({ r: floatR, c: floatC, w: 0.1, h: 0.1 });
         setMovingSelectionPixels(null);
       }
       return;
@@ -330,15 +360,13 @@ export function usePixelEditor(
       applyPixelsToFrame(emptyDraft, expandBrush(r, c, value, asset.size), asset.size);
       setDraftFrame(emptyDraft);
     }
-  }, [tool, activeColorKey, asset, frameIndex, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush, scope, selectionRect, movingSelectionPixels]);
+  }, [tool, activeColorKey, asset, frameIndex, getActiveLayerFrame, updateActiveLayerFrame, brushSize, mirrorX, pushUndo, executeFloodFill, expandBrush, scope, selectionRect, movingSelectionPixels, stampSelection]);
 
-  const handlePointerMove = useCallback((r: number, c: number, forceTool?: EditorTool) => {
+  const handlePointerMove = useCallback((floatR: number, floatC: number, forceTool?: EditorTool) => {
     const activeTool = forceTool || tool;
 
-
-
     if (activeTool === 'rotate' && rotationCenter) {
-      const currentAngle = Math.atan2(r - rotationCenter.r, c - rotationCenter.c);
+      const currentAngle = Math.atan2(floatR - rotationCenter.r, floatC - rotationCenter.c);
       const diff = ((currentAngle - initialRotationAngle) * 180) / Math.PI;
       setRotationAngle(diff);
       return;
@@ -348,8 +376,8 @@ export function usePixelEditor(
       if (draggingHandle !== null && selectionRect && movingSelectionPixels) {
         // RESIZE SELECTION
         let { r: nr, c: nc, w: nw, h: nh } = selectionRect;
-        const dr = r - strokeStart.current.r;
-        const dc = c - strokeStart.current.c;
+        const dr = floatR - strokeStart.current.r;
+        const dc = floatC - strokeStart.current.c;
 
         if (draggingHandle === 0) { nr += dr; nc += dc; nw -= dc; nh -= dr; } // TL
         else if (draggingHandle === 1) { nr += dr; nw += dc; nh -= dr; } // TR
@@ -361,14 +389,11 @@ export function usePixelEditor(
         else if (draggingHandle === 7) { nw += dc; } // RM
 
         // Ensure minimum size
-        if (nw < 1) nw = 1;
-        if (nh < 1) nh = 1;
+        if (nw < 0.1) nw = 0.1;
+        if (nh < 0.1) nh = 0.1;
 
         setSelectionRect({ r: nr, c: nc, w: nw, h: nh });
         
-        // RESIZE PIXELS INTERNALLY (PREVIEW ONLY)
-        // If we want high performance, we might wait for pointerUp to do the heavy resize
-        // But for pixel art (16x16 / 32x32), it should be fine.
         if (originalMovingPixels.current && originalSelectionRect.current) {
           const oldRect = originalSelectionRect.current;
           
@@ -385,7 +410,7 @@ export function usePixelEditor(
           }
           
           // Scale it
-          const scaled = resizeFrameNearest(snippet, Math.round(nw), Math.round(nh));
+          const scaled = resizeFrameNearest(snippet, Math.max(1, Math.round(nw)), Math.max(1, Math.round(nh)));
           
           // Embed back into a full frame
           const newFull = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
@@ -400,47 +425,53 @@ export function usePixelEditor(
           }
           setMovingSelectionPixels(newFull);
         }
-        strokeStart.current = { r, c };
+        strokeStart.current = { r: floatR, c: floatC };
       } else if (movingSelectionPixels) {
         // MOVE EXISTING SELECTION
-        const dr = r - strokeStart.current.r;
-        const dc = c - strokeStart.current.c;
+        const dr = floatR - strokeStart.current.r;
+        const dc = floatC - strokeStart.current.c;
         
-        const shiftedPixels = shiftFrame(movingSelectionPixels, dr, dc);
+        const shiftedPixels = shiftFrame(movingSelectionPixels, Math.round(dr), Math.round(dc));
         setMovingSelectionPixels(shiftedPixels);
         setSelectionRect(prev => prev ? { ...prev, r: prev.r + dr, c: prev.c + dc } : null);
-        strokeStart.current = { r, c };
+        strokeStart.current = { r: floatR, c: floatC };
       } else {
         // DRAW NEW SELECTION RECT
-        const minR = Math.min(strokeStart.current.r, r);
-        const maxR = Math.max(strokeStart.current.r, r);
-        const minC = Math.min(strokeStart.current.c, c);
-        const maxC = Math.max(strokeStart.current.c, c);
+        const minR = Math.min(strokeStart.current.r, floatR);
+        const maxR = Math.max(strokeStart.current.r, floatR);
+        const minC = Math.min(strokeStart.current.c, floatC);
+        const maxC = Math.max(strokeStart.current.c, floatC);
         setSelectionRect({
           r: minR,
           c: minC,
-          w: maxC - minC + 1,
-          h: maxR - minR + 1
+          w: maxC - minC,
+          h: maxR - minR
         });
       }
       return;
     }
 
     const frame = getActiveLayerFrame();
+    const r = Math.floor(floatR);
+    const c = Math.floor(floatC);
     if (!isDrawing.current || !strokeStart.current || !frame) return;
 
     const value = activeTool === 'eraser' ? 0 : activeColorKey;
 
     if (activeTool === 'pencil' || activeTool === 'eraser') {
       if (strokeMutableFrame.current) {
-        applyPixelsToFrame(strokeMutableFrame.current, getLinePixels(strokeStart.current.r, strokeStart.current.c, r, c, value, asset.size), asset.size);
-        strokeStart.current = { r, c }; 
+        const startR = Math.floor(strokeStart.current.r);
+        const startC = Math.floor(strokeStart.current.c);
+        applyPixelsToFrame(strokeMutableFrame.current, getLinePixels(startR, startC, r, c, value, asset.size), asset.size);
+        strokeStart.current = { r: floatR, c: floatC }; 
 
         updateActiveLayerFrame([...strokeMutableFrame.current.map(row => [...row])]);
       }
     } else {
       const shapeDraft = Array.from({ length: asset.size }, () => Array(asset.size).fill(-1));
-      const pixels = getShapePixels(activeTool as string, strokeStart.current.r, strokeStart.current.c, r, c, value, asset.size);
+      const startR = Math.floor(strokeStart.current.r);
+      const startC = Math.floor(strokeStart.current.c);
+      const pixels = getShapePixels(activeTool as string, startR, startC, r, c, value, asset.size);
       applyPixelsToFrame(shapeDraft, pixels, asset.size);
       setDraftFrame(shapeDraft);
     }
@@ -450,35 +481,6 @@ export function usePixelEditor(
     rotationCenter, initialRotationAngle, selectionRect, movingSelectionPixels
   ]);
 
-  const stampSelection = useCallback(() => {
-    if (!movingSelectionPixels) return;
-    const baseFrame = getActiveLayerFrame();
-    if (!baseFrame) return;
-
-    const mergedFrame = baseFrame.map((row, r) => 
-      row.map((val, c) => {
-        const floatingVal = movingSelectionPixels[r][c];
-        return floatingVal !== 0 ? floatingVal : val;
-      })
-    );
-    
-    // Check if anything actually changed to avoid redundant undos
-    let changed = false;
-    for (let r = 0; r < asset.size; r++) {
-      for (let c = 0; c < asset.size; c++) {
-        if (mergedFrame[r][c] !== baseFrame[r][c]) {
-          changed = true;
-          break;
-        }
-      }
-      if (changed) break;
-    }
-
-    if (changed) {
-      updateActiveLayerFrame(mergedFrame);
-    }
-    setMovingSelectionPixels(null);
-  }, [movingSelectionPixels, getActiveLayerFrame, updateActiveLayerFrame, asset.size]);
 
   const overwriteLayerFrame = useCallback((newFrame: Frame) => {
     pushUndo(); // Save current state before overwriting
@@ -519,10 +521,8 @@ export function usePixelEditor(
       return;
     }
 
-
-
     if (tool === 'select') {
-      if (!movingSelectionPixels && !draggingHandle && selectionRect && selectionRect.w === 1 && selectionRect.h === 1) {
+      if (!movingSelectionPixels && !draggingHandle && selectionRect && selectionRect.w < 0.5 && selectionRect.h < 0.5) {
         // Just a click outside? Deselect.
         setSelectionRect(null);
       }
@@ -550,7 +550,7 @@ export function usePixelEditor(
     isDrawing.current = false;
     strokeMutableFrame.current = null;
     strokeStart.current = null;
-  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo, rotationAngle, rotationCenter]);
+  }, [tool, draftFrame, getActiveLayerFrame, updateActiveLayerFrame, asset, frameIndex, onAssetChange, scope, overwriteLayerFrame, pushUndo, rotationAngle, rotationCenter, selectionRect, movingSelectionPixels, draggingHandle]);
   
   const handleSetTool = useCallback((newTool: EditorTool) => {
     if (newTool !== tool) {

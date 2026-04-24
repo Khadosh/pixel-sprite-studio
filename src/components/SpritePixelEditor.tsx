@@ -92,8 +92,8 @@ export default function SpritePixelEditor({
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
-    const col = Math.floor(x / PIXEL_SCALE);
-    const row = Math.floor(y / PIXEL_SCALE);
+    const col = x / PIXEL_SCALE;
+    const row = y / PIXEL_SCALE;
     
     // Return both cell and sub-pixel coordinates for bone hit testing
     return { r: row, c: col, x, y };
@@ -606,8 +606,9 @@ export default function SpritePixelEditor({
           ];
           
           let foundHandle = false;
+          const hitThreshold = 0.8;
           for (const h of handles) {
-            if (Math.abs(r - h.r) <= threshold && Math.abs(c - h.c) <= threshold) {
+            if (Math.abs(r - h.r) <= hitThreshold && Math.abs(c - h.c) <= hitThreshold) {
               canvasRef.current.style.cursor = h.cursor;
               foundHandle = true;
               break;
