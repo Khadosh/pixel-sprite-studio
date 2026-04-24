@@ -12,17 +12,18 @@
 - [x] **Prompt Fine-tuning**: Refinados los prompts para rotación de 90 grados y anatomía consistente.
 - [ ] **Auto-Background Removal**: Refinar la lógica de limpieza de croma verde en el cliente.
 
-## 2. Animaciones Procedurales Direccionales 🟠
+## 2. Animaciones Procedurales Direccionales 🟢
 *Hacer que el sistema de animación entienda la perspectiva.*
 
-- [ ] **Templates por Vista**: Crear lógicas de movimiento específicas para vistas laterales (`walk_right`, `walk_left`) y traseras (`walk_up`).
-- [ ] **Inercia Adaptativa**: Ajustar `leanBody` y `squash` según el ángulo de visión.
+- [x] **Templates por Vista**: Implementadas lógicas para vistas laterales (`walk_side`) y frontales/top-down con 8 frames (Richard Williams style).
+- [x] **Inercia Adaptativa**: Implementada flexión de rodillas (`knee flexion`) y estabilidad de torso en todos los generadores.
+- [x] **Refactor Modular**: Migrado todo el motor a `src/lib/sprite/` para escalabilidad futura.
 
-## 3. Evolución del Sistema de Huesos (Limb-based) 🟡
+## 3. Evolución del Sistema de Huesos (Limb-based) 🟠
 *Pasar de anatomía global a control por miembros.*
 
-- [ ] **Control de Miembros**: Implementar manejo independiente de brazos y piernas (L/R).
-- [ ] **Jerarquías Básicas**: hombro -> brazo -> mano.
+- [x] **Control de Miembros**: Implementado manejo independiente de brazos y piernas (L/R) en el motor procedural.
+- [ ] **Jerarquías de Pivote**: Implementar hombro -> brazo -> mano (actualmente solo tenemos áreas de traslación).
 - [ ] **UI de Selección**: Rediseñar la pestaña **BONES** para interactuar con miembros específicos.
 
 ## 4. Refinamiento UI/UX Final 🟢

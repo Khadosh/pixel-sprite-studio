@@ -65,7 +65,8 @@ export function generateAnimationsClientSide(
     const finalName = options?.customName || type;
     const finalLabel = options?.customLabel || type.toUpperCase();
 
-    const fps = type === 'idle' ? 3 : type === 'cast' ? 4 : 5;
+    const isWalk = type.includes('walk') || type.includes('move') || type.includes('run');
+    const fps = isWalk ? 10 : (type === 'idle' ? 3 : (type === 'cast' ? 4 : 5));
     const newAnimDef: AnimationDef = {
       name: finalName,
       label: finalLabel,
