@@ -5,18 +5,14 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-24 (Hoy)
-**5 commits realizados**
+**6 commits realizados**
 
+- **Herramienta**: **Estabilización de Selección y Resize**. Rediseño total del motor de transformación usando deltas absolutos y sistema de **Auto-Lift**, eliminando el "drift" de redondeo y permitiendo redimensionar o borrar selecciones al instante sin necesidad de moverlas primero.
+- **Rendimiento**: **Optimización del Pincel Pro**. Implementada detección de cambios por celda y suspensión de cálculos anatómicos durante el trazo, restaurando la sensación de respuesta instantánea y eliminando el delay en sprites de alta resolución.
+- **Persistencia**: **Motor de Compresión por Hashing**. Implementado sistema de deduplicación estructural para `localStorage` que reduce drásticamente el tamaño de los datos al reutilizar frames idénticos, permitiendo restaurar el historial completo de versiones (Checkpoints) sin superar el límite de 5MB del navegador.
+- **Arquitectura**: **Modularización de Utilidades**. Extraída la lógica de compresión a un helper independiente con cobertura total de tests unitarios.
+- **Fix**: **Estabilidad en Animación 32x32**. Corregidos errores de acceso a arrays mediante el forzado de redondeo de coordenadas anatómicas en todo el flujo de generación.
 - **Anatomía**: **Motor de Desmembramiento (Dismemberment)**. Evolución radical del sistema de límites a un motor de miembros funcional con soporte para configuraciones específicas por orientación (Frente, Perfil, Espalda).
-- **Herramienta**: **Selector de Píxeles Anatómicos**. Implementado modo de selección libre para definir con precisión qué píxeles pertenecen a cada miembro (Cabeza, Torso, Extremidades).
-- **Interfaz**: **Rediseño del Panel de Anatomía**. Nueva UI con pestañas de orientación, gestión de miembros personalizados y controles jerárquicos mejorados.
-- **Visualización**: **Highlighting de Miembros**. Feedback visual en tiempo real en el canvas con códigos de color para cada segmento anatómico durante la edición.
-- **IA**: **Generación de Perspectivas Pro**. Integrado soporte para paletas fijas en el flujo de IA, forzando al modelo a usar los colores existentes y evitando la creación de tonos redundantes.
-- **IA**: **Modelo Seedream V4**. Migrado el sistema de Img2Img al modelo de edición de ByteDance para mayor fidelidad en transformaciones de perspectiva.
-- **Fix**: **Sincronización de UI (Perspectiva)**. Corregida la previsualización de miniaturas y la línea de tiempo para mostrar la orientación activa (Side/Back) en lugar de resetear siempre al frente.
-- **Mejora**: **Algoritmo de Estiramiento Pro (Smear)**. Evolucionada la transformación de miembros para evitar huecos mediante un sistema de duplicación de píxeles y relleno de gaps en desplazamientos rápidos.
-- **Fix**: **Animación de Respiración (Idle)**. Corregido error de píxeles cortados y restaurada la fluidez del pecho usando el motor de estiramiento anatómico (`stretchBody`).
-- **Fix**: **Estabilidad de Tipos (Anatomy)**. Resueltos errores críticos de nulabilidad y propagación de tipos en el motor de análisis anatómico.
 
 ---
 

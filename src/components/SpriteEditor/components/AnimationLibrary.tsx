@@ -46,6 +46,22 @@ export const AnimationLibrary = React.memo(() => {
     setEditingName(null);
   };
 
+  // Sync genType with perspective changes
+  React.useEffect(() => {
+    const perspectiveSuffixMap: Record<string, string> = {
+      'front': 'down',
+      'back': 'up',
+      'side': activeSide === 'right' ? 'right' : 'left'
+    };
+    const suffix = perspectiveSuffixMap[activePerspective];
+    const newGenType = `idle_${suffix}`;
+    
+    // Check if this type exists in AVAILABLE_ANIMS
+    if (AVAILABLE_ANIMS.some(a => a.value === newGenType)) {
+      setGenType(newGenType);
+    }
+  }, [activePerspective, activeSide]);
+
   const handleGenerateAI = async (type: string) => {
     // Access the bridge function stored on the store by SpriteEditor.tsx
     const fn = storeApi.getState()._pixelEditorBridge?._handleGenerateAnimationsAI;
@@ -85,8 +101,6 @@ export const AnimationLibrary = React.memo(() => {
                 key={p.id}
                 onClick={() => {
                   setActivePerspective(p.id as any);
-                  setViewingAnimation('base');
-                  setGenType('idle');
                 }}
                 className={`font-pixel text-[8px] py-1.5 rounded transition-all uppercase flex justify-center items-center gap-1 ${
                   activePerspective === p.id 
@@ -255,7 +269,11 @@ export const AnimationLibrary = React.memo(() => {
             type="button"
             onClick={() => {
               setViewingAnimation('base');
-              setEditingFrameIndex(0);
+              // Maintain current orientation frame
+              let idx = 0;
+              if (activePerspective === 'side') idx = activeSide === 'right' ? 1 : 3;
+              else if (activePerspective === 'back') idx = 2;
+              setEditingFrameIndex(idx);
             }}
             className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between group ${viewingAnimation === 'base'
               ? 'bg-primary/10 border-primary text-primary shadow-[0_0_10px_rgba(34,197,94,0.1)]'
@@ -264,11 +282,20 @@ export const AnimationLibrary = React.memo(() => {
           >
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)] shrink-0" />
-              <span>BASE (ESTATICO)</span>
+              <span>BASE ({activePerspective.toUpperCase()})</span>
             </div>
           </button>
 
-          {editedAsset.animations.map((anim: any) => {
+          {editedAsset.animations.filter((anim: any) => {
+            const isDirectional = anim.name.endsWith('_down') || anim.name.endsWith('_up') || anim.name.endsWith('_right') || anim.name.endsWith('_left');
+            if (!isDirectional) return true;
+            if (activePerspective === 'front') return anim.name.endsWith('_down');
+            if (activePerspective === 'back') return anim.name.endsWith('_up');
+            if (activePerspective === 'side') {
+              return activeSide === 'right' ? anim.name.endsWith('_right') : anim.name.endsWith('_left');
+            }
+            return true;
+          }).map((anim: any) => {
             const isViewing = viewingAnimation === anim.name;
             const isEditing = editingName === anim.name;
             

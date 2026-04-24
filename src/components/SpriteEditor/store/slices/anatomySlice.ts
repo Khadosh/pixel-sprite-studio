@@ -7,7 +7,6 @@ export const createAnatomySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
   anatomyIsSelectionMode: false,
 
   setAnatomyActiveMemberId: (id) => set({ anatomyActiveMemberId: id }),
-  setAnatomySelectedOrientation: (idx) => set({ anatomySelectedOrientation: idx, editingFrameIndex: idx }),
   setAnatomyIsSelectionMode: (on) => set({ anatomyIsSelectionMode: on }),
 
   toggleMemberPixel: (r, c) => set(state => {

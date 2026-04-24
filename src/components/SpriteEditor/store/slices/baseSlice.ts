@@ -7,7 +7,16 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setEditedAsset: (assetOrFn) => set(state => ({
     editedAsset: typeof assetOrFn === 'function' ? assetOrFn(state.editedAsset) : assetOrFn,
   })),
-  setActiveLayerId: (id) => set({ activeLayerId: id }),
+  setAnatomySelectedOrientation: (idx) => set(s => {
+    let p: 'front' | 'side' | 'back' = 'front';
+    if (idx === 1 || idx === 3) p = 'side';
+    else if (idx === 2) p = 'back';
+    return { 
+      anatomySelectedOrientation: idx, 
+      editingFrameIndex: idx,
+      activePerspective: p
+    };
+  }),
   setEditingFrameIndex: (idx) => set({ editingFrameIndex: idx }),
   setViewingAnimation: (name) => set({ viewingAnimation: name }),
   setIsDirty: (dirty) => set({ isDirty: dirty }),
@@ -46,6 +55,18 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     const layers = s.editedAsset.layers || [];
     const currentMaxIdx = (layers[0]?.frames.length || 0) - 1;
     
+    // Find best idle animation for this perspective
+    let targetAnim = 'base';
+    const idleMap: Record<string, string> = {
+      'front': 'idle_down',
+      'back': 'idle_up',
+      'side': s.activeSide === 'right' ? 'idle_right' : 'idle_left'
+    };
+    const desiredIdle = idleMap[p];
+    if (s.editedAsset.animations?.some(a => a.name === desiredIdle)) {
+      targetAnim = desiredIdle;
+    }
+
     if (idx > currentMaxIdx) {
       const size = s.editedAsset.size;
       const newLayers = layers.map(layer => {
@@ -59,11 +80,18 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
         activePerspective: p, 
         editingFrameIndex: idx,
         editedAsset: { ...s.editedAsset, layers: newLayers },
+        viewingAnimation: targetAnim,
+        anatomySelectedOrientation: idx,
         isDirty: true
       };
     }
     
-    return { activePerspective: p, editingFrameIndex: idx };
+    return { 
+      activePerspective: p, 
+      editingFrameIndex: idx, 
+      viewingAnimation: targetAnim,
+      anatomySelectedOrientation: idx
+    };
   }),
   setActiveSide: (side) => set(s => {
     const isSide = s.activePerspective === 'side';
@@ -90,10 +118,21 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
       }
     }
 
+    // Update animation too if it's idle
+    let targetAnim = s.viewingAnimation;
+    if (isSide) {
+      const desiredIdle = side === 'right' ? 'idle_right' : 'idle_left';
+      if (s.editedAsset.animations?.some(a => a.name === desiredIdle)) {
+        targetAnim = desiredIdle;
+      }
+    }
+
     return { 
       activeSide: side, 
       editingFrameIndex: targetIdx,
       editedAsset: newAsset,
+      viewingAnimation: targetAnim,
+      anatomySelectedOrientation: targetIdx,
       isDirty: dirty
     };
   }),
