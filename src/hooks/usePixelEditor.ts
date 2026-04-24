@@ -231,10 +231,10 @@ export function usePixelEditor(
           pushUndo();
           const newFrame = frame.map(row => [...row]);
           const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
-          for (let ir = 0; ir < selectionRect.h; ir++) {
-            for (let ic = 0; ic < selectionRect.w; ic++) {
-              const fr = selectionRect.r + ir;
-              const fc = selectionRect.c + ic;
+          for (let ir = 0; ir < Math.round(selectionRect.h); ir++) {
+            for (let ic = 0; ic < Math.round(selectionRect.w); ic++) {
+              const fr = Math.round(selectionRect.r) + ir;
+              const fc = Math.round(selectionRect.c) + ic;
               if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
                 liftedPixels[fr][fc] = frame[fr][fc];
                 newFrame[fr][fc] = 0;
@@ -297,10 +297,10 @@ export function usePixelEditor(
           const newFrame = frame.map(row => [...row]);
           const liftedPixels = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
           
-          for (let ir = 0; ir < selectionRect.h; ir++) {
-            for (let ic = 0; ic < selectionRect.w; ic++) {
-              const fr = selectionRect.r + ir;
-              const fc = selectionRect.c + ic;
+          for (let ir = 0; ir < Math.round(selectionRect.h); ir++) {
+            for (let ic = 0; ic < Math.round(selectionRect.w); ic++) {
+              const fr = Math.round(selectionRect.r) + ir;
+              const fc = Math.round(selectionRect.c) + ic;
               if (fr >= 0 && fr < asset.size && fc >= 0 && fc < asset.size) {
                 liftedPixels[fr][fc] = frame[fr][fc];
                 newFrame[fr][fc] = 0; // Clear original
