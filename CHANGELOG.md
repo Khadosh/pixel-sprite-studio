@@ -5,8 +5,11 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-23 (Hoy)
-**7 commits realizados**
+**8 commits realizados**
 
+- **IA**: **Migración a Seedream V4 Edit**. Actualizado el motor de Img2Img para usar el modelo de Bytedance (`fal-ai/bytedance/seedream/v4/edit`), optimizando la consistencia visual en la generación de perspectivas laterales.
+- **Anatomía**: **Sistema de Pivotes Óseos**. Implementada detección automática de hombros, caderas y rodillas en `analyzeBodySegments`, permitiendo animaciones basadas en rotación real de miembros.
+- **Mejora**: **Ataque con Rotación**. Rediseñada la animación de ataque para usar arcos de rotación desde el hombro, logrando un movimiento mucho más dinámico y natural.
 - **Arquitectura**: **Refactor Modular de Animación**. Migrado todo el motor de transformación y generación procedural a una nueva librería especializada en `src/lib/sprite/`. Separada la lógica de anatomía, transformaciones atómicas y generadores por tipo (`walk`, `idle`, `combat`, `movement`).
 - **Mejora**: **Ciclos de 8 Frames (High Fidelity)**. Actualizados los algoritmos de caminata para seguir el estándar de 8 frames (estilo Richard Williams), logrando un movimiento mucho más fluido y profesional.
 - **Mejora**: **Física de Rodillas (Knee Flexion)**. Implementada lógica de flexión de rodillas y estabilidad de torso en todo el catálogo de animaciones procedurales, eliminando la rigidez y el "jitter" vertical excesivo.
