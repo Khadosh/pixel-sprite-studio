@@ -106,8 +106,12 @@ Un editor de pixel art sprite sheets enfocado, pulido, y con asistencia de IA pa
 ## Fase 8 — Studio Pro: Personalización y Creación Avanzada 🚀
 *Prioridad: MÁXIMA — Enfoque en generación de assets listos para producción*
 
-### 8.1 — Humanoides Multidireccionales y Perspectivas
-- [ ] **Bases Pro**: Implementación de bases con 5 direcciones (Frente, Espalda, Lateral, Diagonal).
+### 8.1 — Humanoides Multidireccionales y Motor de Desmembramiento ✅
+*Completado 2026-04-24*
+- [x] **Motor de Desmembramiento**: Implementación de `AnatomyConfig` con soporte para miembros jerárquicos (`MemberConfig`).
+- [x] **Orientaciones de Anatomía**: Soporte para configuraciones anatómicas únicas por vista (Front, Side, Back).
+- [x] **Selector Libre de Píxeles**: Herramienta interactiva para delimitar áreas de miembros con precisión de píxel.
+- [x] **Bases Pro**: Implementación de bases con 3 direcciones principales (Frontal, Lateral, Espalda).
 - [ ] **Auto-Mirror**: Lógica de espejado automática para vistas laterales y diagonales.
 - [ ] **Perspectivas**: Selector de modo Top-down e Isométrico.
 - [ ] **Rejilla Isométrica**: Guías visuales de diamante (30º) opcionales para dibujo en perspectiva.
