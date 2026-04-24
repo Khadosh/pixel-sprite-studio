@@ -24,9 +24,9 @@ serve(async (req: Request) => {
     // Aggressive prompt for rotation - Focus on the TARGET perspective, not the source
     const technicalPrompt = `(Character reference sheet:1.3), STRICT SIDE PROFILE VIEW (90-DEGREE TURN). High-quality pixel art of the character from the reference image shown from a complete side profile perspective. Exact same design, colors, and outfit. Precise 1:1 pixel scale, clean lines. Isolated character on a solid flat LIME GREEN background (#00FF00). FULL BODY MUST BE CENTERED. Do not show the front; only the side profile. Maintaining exact height, proportions, and consistency. Professional sprite sheet style.`;
 
-    console.log(`[generate-perspective-fal] Calling Flux Pro Kontext for: ${prompt}`);
+    console.log(`[generate-perspective-fal] Calling Seedream V4 Edit for: ${prompt}`);
 
-    const falRes = await fetch("https://fal.run/fal-ai/flux-pro/kontext", {
+    const falRes = await fetch("https://fal.run/fal-ai/bytedance/seedream/v4/edit", {
       method: "POST",
       headers: {
         "Authorization": `Key ${FAL_AI_KEY}`,
@@ -34,16 +34,10 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         prompt: technicalPrompt,
-        image_url: image_url,
+        image_urls: [image_url],
         sync_mode: true,
-        strength: strength,
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
+        image_size: "square_hd",
         enable_safety_checker: false,
-        image_size: {
-          width: 512,
-          height: 512
-        }
       }),
     })
 
