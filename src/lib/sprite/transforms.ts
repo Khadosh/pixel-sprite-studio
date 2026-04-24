@@ -212,6 +212,45 @@ export function resizeFrameNearest(frame: Frame, newW: number, newH: number): Fr
   return out;
 }
 
+/** Rotates a specific area around a pivot point */
+export function rotateArea(
+  frame: Frame,
+  area: { startR: number; endR: number; startC: number; endC: number },
+  pivot: { r: number; c: number },
+  angleDeg: number
+): Frame {
+  const size = frame.length;
+  const next = cloneFrame(frame);
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
+
+  // 1. Clear original area
+  for (let r = area.startR; r <= area.endR; r++) {
+    for (let c = area.startC; c <= area.endC; c++) {
+      if (r >= 0 && r < size && c >= 0 && c < size) {
+        next[r][c] = 0;
+      }
+    }
+  }
+
+  // 2. Map rotated pixels
+  for (let r = area.startR; r <= area.endR; r++) {
+    for (let c = area.startC; c <= area.endC; c++) {
+      if (frame[r][c] !== 0) {
+        const dr = r - pivot.r;
+        const dc = c - pivot.c;
+        const nr = Math.round(pivot.r + (dr * cos - dc * sin));
+        const nc = Math.round(pivot.c + (dr * sin + dc * cos));
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+          next[nr][nc] = frame[r][c];
+        }
+      }
+    }
+  }
+  return next;
+}
+
 /** Rotates a frame 90 degrees */
 export function rotate90(frame: Frame): Frame {
   const size = frame.length;

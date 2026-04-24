@@ -5,8 +5,11 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-23 (Hoy)
-**6 commits realizados**
+**7 commits realizados**
 
+- **Arquitectura**: **Refactor Modular de Animación**. Migrado todo el motor de transformación y generación procedural a una nueva librería especializada en `src/lib/sprite/`. Separada la lógica de anatomía, transformaciones atómicas y generadores por tipo (`walk`, `idle`, `combat`, `movement`).
+- **Mejora**: **Ciclos de 8 Frames (High Fidelity)**. Actualizados los algoritmos de caminata para seguir el estándar de 8 frames (estilo Richard Williams), logrando un movimiento mucho más fluido y profesional.
+- **Mejora**: **Física de Rodillas (Knee Flexion)**. Implementada lógica de flexión de rodillas y estabilidad de torso en todo el catálogo de animaciones procedurales, eliminando la rigidez y el "jitter" vertical excesivo.
 - **Novedad**: **Depurador de Generación IA**. Implementado botón de exportación de referencia (debug) que permite descargar la imagen exacta enviada a la IA para diagnóstico.
 - **Mejora**: **Referencia HD (16x Upscale)**. Optimizado el envío de imágenes a la IA con un escalado pixel-perfect de 16x (512px) que elimina la borrosidad y mejora drásticamente el reconocimiento anatómico.
 - **Arquitectura**: **Especialización de Edge Functions**. Separada la lógica de generación en dos funciones independientes: `generate-sprite` (Txt2Img/Schnell) y `generate-perspective` (Img2Img/Kontext).

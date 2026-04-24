@@ -1,10 +1,10 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { cloneFrame, shiftArea, squash, leanBody, findBounds, shiftFrame } from '../transforms';
+import { cloneFrame, shiftArea, squash, leanBody, findBounds, shiftFrame, rotateArea } from '../transforms';
 import { analyzeBodySegments } from '../anatomy';
 import { addGlow } from '../drawing';
 
 /** 
- * Attack: Forward lunge with knee flexion on the leading leg.
+ * Attack: Forward lunge with knee flexion and swinging arm.
  */
 export function generateAttack(
   base: Frame, 
@@ -12,18 +12,26 @@ export function generateAttack(
 ): Frame[] {
   const size = base.length;
   const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, kneeRow, leftArmArea, rightArmArea, rightLegArea } = segments;
+  const { neckRow, waistRow, kneeRow, leftArmArea, rightArmArea, rightLegArea, pivots } = segments;
   
-  // 1. Wind up (Lean back)
+  // 1. Wind up (Lean back + Lift arm)
   let f0 = leanBody(base, waistRow, neckRow, -1);
+  if (rightArmArea) {
+    f0 = rotateArea(f0, rightArmArea, pivots.rightShoulder, -30); // Cock back arm
+  }
   
-  // 2. Strike (Lunge forward + Knee Bend)
-  let f1 = shiftArea(base, rightLegArea, -1, 2); // Leading leg lunges and bends
-  f1 = leanBody(f1, waistRow, neckRow, 2); // Lean into strike
-  if (rightArmArea) f1 = shiftArea(f1, rightArmArea, -1, 3); // Arm extends forward
+  // 2. Strike (Lunge forward + Swing arm down)
+  let f1 = shiftArea(base, rightLegArea, -1, 2); // Lunge leg
+  f1 = leanBody(f1, waistRow, neckRow, 2); 
+  if (rightArmArea) {
+    f1 = rotateArea(f1, rightArmArea, pivots.rightShoulder, 60); // Swing down
+  }
   
-  // 3. Recovery
-  const f2 = cloneFrame(base);
+  // 3. Follow through
+  let f2 = leanBody(base, waistRow, neckRow, 1);
+  if (rightArmArea) {
+    f2 = rotateArea(f2, rightArmArea, pivots.rightShoulder, 90); // Full extension
+  }
   
   return [f0, f1, f2, f2];
 }
