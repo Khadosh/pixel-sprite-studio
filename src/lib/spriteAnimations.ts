@@ -3,6 +3,7 @@ import { ensureLayerSupport } from '@/lib/layerUtils';
 import {
   generateIdle,
   generateWalk,
+  generateWalkSide,
   generateCast,
   generateAttack,
   generateHurt,
@@ -312,7 +313,11 @@ function generateFrameSequence(
     case 'walk':
       if (isUpDir || isDownDir) {
         frames = generateWalkTopDown(base, anatomy);
+      } else if (isLeft || anim.endsWith('_right')) {
+        // If explicitly lateral, use the side-view walk cycle
+        frames = generateWalkSide(base, anatomy);
       } else {
+        // Default to front-view walk
         frames = generateWalk(base, anatomy);
       }
       break;

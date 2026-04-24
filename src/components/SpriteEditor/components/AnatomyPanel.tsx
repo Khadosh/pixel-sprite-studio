@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { RefreshCcw, Bone } from 'lucide-react';
+import type { AnatomyConfig } from '@/lib/types';
 
 export function AnatomyPanel() {
   const asset = useSpriteEditorStore(s => s.editedAsset);
@@ -14,7 +15,7 @@ export function AnatomyPanel() {
   const anatomy = asset.anatomy || {};
   const { neckRow, waistRow, ankleRow, torsoLeft, torsoRight } = anatomy;
 
-  const handleUpdate = (updates: Partial<{ neckRow: number; waistRow: number; torsoLeft: number; torsoRight: number } | null>) => {
+  const handleUpdate = (updates: Partial<AnatomyConfig> | null) => {
     const newAnatomy = updates === null ? undefined : { ...anatomy, ...updates };
     setEditedAsset(prev => ({ ...prev, anatomy: newAnatomy }));
   };
@@ -80,6 +81,23 @@ export function AnatomyPanel() {
         />
       </div>
 
+      {/* Knee Control */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-xs">
+          <Label className="text-pink-400 font-medium italic">Knee Row (Pink)</Label>
+          <span className="font-mono bg-background px-1 rounded text-[10px]">
+            {anatomy.kneeRow !== undefined ? anatomy.kneeRow : 'AUTO'}
+          </span>
+        </div>
+        <Slider
+          value={[anatomy.kneeRow !== undefined ? anatomy.kneeRow : Math.floor(asset.size * 0.85)]}
+          min={0}
+          max={asset.size - 1}
+          step={1}
+          onValueChange={([val]) => handleUpdate({ kneeRow: val })}
+        />
+      </div>
+
       {/* Ankle Control */}
       <div className="space-y-2">
         <div className="flex justify-between items-center text-xs">
@@ -94,6 +112,23 @@ export function AnatomyPanel() {
           max={asset.size - 1}
           step={1}
           onValueChange={([val]) => handleUpdate({ ankleRow: val })}
+        />
+      </div>
+
+      {/* Center Column Control */}
+      <div className="space-y-2 pt-2 border-t border-border/10">
+        <div className="flex justify-between items-center text-xs">
+          <Label className="text-yellow-400 font-medium italic underline decoration-dotted">Body Center Axis (Yellow)</Label>
+          <span className="font-mono bg-background px-1 rounded text-[10px]">
+            {anatomy.torsoCenterCol !== undefined ? anatomy.torsoCenterCol : 'AUTO'}
+          </span>
+        </div>
+        <Slider
+          value={[anatomy.torsoCenterCol !== undefined ? anatomy.torsoCenterCol : Math.floor(asset.size / 2)]}
+          min={0}
+          max={asset.size - 1}
+          step={1}
+          onValueChange={([val]) => handleUpdate({ torsoCenterCol: val })}
         />
       </div>
 
@@ -130,6 +165,66 @@ export function AnatomyPanel() {
             step={1}
             onValueChange={([val]) => handleUpdate({ torsoRight: val })}
           />
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-border/20 space-y-4">
+        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
+          <Bone className="w-3 h-3" />
+          <span>Independent Limbs</span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+           {/* Arm Area Control (Simple Version for now) */}
+           <div className="space-y-3">
+              <Label className="text-[10px] text-muted-foreground italic">Manual limb areas allow for independent movement (e.g. side walk).</Label>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-[10px] h-7 gap-2"
+                onClick={() => {
+                  if (anatomy.leftArmArea) {
+                     handleUpdate({ leftArmArea: undefined, rightArmArea: undefined });
+                  } else {
+                    handleUpdate({
+                      leftArmArea: { startR: neckRow || 0, endR: waistRow || 16, startC: 0, endC: (torsoLeft || 8) - 1 },
+                      rightArmArea: { startR: neckRow || 0, endR: waistRow || 16, startC: (torsoRight || 24) + 1, endC: asset.size - 1 }
+                    });
+                  }
+                }}
+              >
+                {anatomy.leftArmArea ? 'Reset to Auto Arms' : 'Enable Manual Arms'}
+              </Button>
+
+              {anatomy.leftArmArea && (
+                <div className="space-y-4 pt-2 border-t border-border/10">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] text-purple-400">Left Arm Verticals (Top-Bottom)</Label>
+                    <Slider
+                      value={[anatomy.leftArmArea.startR, anatomy.leftArmArea.endR]}
+                      min={0}
+                      max={asset.size - 1}
+                      step={1}
+                      onValueChange={([s, e]) => handleUpdate({ 
+                        leftArmArea: { ...anatomy.leftArmArea!, startR: s, endR: e } 
+                      })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] text-orange-400">Right Arm Verticals (Top-Bottom)</Label>
+                    <Slider
+                      value={[anatomy.rightArmArea!.startR, anatomy.rightArmArea!.endR]}
+                      min={0}
+                      max={asset.size - 1}
+                      step={1}
+                      onValueChange={([s, e]) => handleUpdate({ 
+                        rightArmArea: { ...anatomy.rightArmArea!, startR: s, endR: e } 
+                      })}
+                    />
+                  </div>
+                </div>
+              )}
+           </div>
         </div>
       </div>
 

@@ -1,13 +1,6 @@
-import type { Frame } from '@/lib/types';
+import type { Frame, AnatomyConfig } from '@/lib/types';
 
 type Row = number[];
-export type AnatomyConfig = {
-  neckRow?: number;
-  waistRow?: number;
-  ankleRow?: number;
-  torsoLeft?: number;
-  torsoRight?: number;
-};
 
 /** Deep clone a frame */
 function cloneFrame(frame: Frame): Frame {
@@ -276,9 +269,13 @@ interface BodySegments {
   isHumanoid: boolean;
   torsoLeft: number;
   torsoRight: number;
+  torsoCenterCol: number;
   ankleRow: number;
+  kneeRow: number;
   leftArmArea?: { startR: number; endR: number; startC: number; endC: number };
   rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
+  leftLegArea: { startR: number; endR: number; startC: number; endC: number };
+  rightLegArea: { startR: number; endR: number; startC: number; endC: number };
 }
 
 /**
@@ -297,11 +294,13 @@ export function analyzeBodySegments(
   const bodyHeight = bounds ? (bounds.bottom - bounds.top + 1) : size;
   const defaultNeck = bounds ? Math.floor(bounds.top + bodyHeight * 0.35) : Math.floor(size * 0.35);
   const defaultWaist = bounds ? Math.floor(bounds.top + bodyHeight * 0.7) : Math.floor(size * 0.7);
+  const defaultKnee = bounds ? Math.floor(bounds.top + bodyHeight * 0.85) : Math.floor(size * 0.85);
   const defaultAnkle = bounds ? Math.floor(bounds.bottom - 1) : Math.floor(size * 0.9);
 
   // Manual Overrides
   let neckRow = anatomy?.neckRow ?? defaultNeck;
   let waistRow = anatomy?.waistRow ?? defaultWaist;
+  let kneeRow = anatomy?.kneeRow ?? defaultKnee;
   let ankleRow = anatomy?.ankleRow ?? defaultAnkle;
 
   if (!bounds || !com) {
@@ -309,11 +308,15 @@ export function analyzeBodySegments(
       neckRow, 
       waistRow, 
       ankleRow,
+      kneeRow,
       headEndRow: neckRow, 
       torsoEndRow: waistRow, 
       isHumanoid: false,
       torsoLeft: 0,
-      torsoRight: size - 1
+      torsoRight: size - 1,
+      torsoCenterCol: Math.floor(size / 2),
+      leftLegArea: { startR: ankleRow, endR: size - 1, startC: 0, endC: Math.floor(size / 2) },
+      rightLegArea: { startR: ankleRow, endR: size - 1, startC: Math.floor(size / 2) + 1, endC: size - 1 }
     };
   }
 
@@ -367,14 +370,17 @@ export function analyzeBodySegments(
     const coreThreshold = Math.max(1, Math.floor(maxTorsoDensity * 0.5));
 
     // Find the WIDEST contiguous span of columns that meet the threshold
-    let bestStart = 0;
-    let bestEnd = 0;
+    let bestStart = Math.floor(size * 0.3); // Default fallback
+    let bestEnd = Math.floor(size * 0.7);   // Default fallback
+    
+    let currentBestWidth = -1;
     let currentStart = -1;
 
     for (let c = 0; c < size; c++) {
       if (verticalTorsoProfile[c] >= coreThreshold) {
         if (currentStart === -1) currentStart = c;
-        if (c - currentStart > bestEnd - bestStart) {
+        if (c - currentStart > currentBestWidth) {
+          currentBestWidth = c - currentStart;
           bestStart = currentStart;
           bestEnd = c;
         }
@@ -387,9 +393,37 @@ export function analyzeBodySegments(
     if (rightLimit === undefined) rightLimit = bestEnd;
   }
 
-  // 5. Identify Limbs (Arms are any pixels outside this high-density core)
-  const hasLeftArm = bounds.left < leftLimit;
-  const hasRightArm = bounds.right > rightLimit;
+  // 4.5 Torso Center
+  const torsoCenterCol = anatomy?.torsoCenterCol ?? Math.floor(((leftLimit || 0) + (rightLimit || 0)) / 2);
+
+  // 5. Identify Limbs (Arms/Legs are pixels outside core, or manually defined)
+  const leftArmArea = anatomy?.leftArmArea || (bounds.left < leftLimit ? { 
+    startR: neckRow, 
+    endR: bounds.bottom, 
+    startC: bounds.left, 
+    endC: leftLimit - 1 
+  } : undefined);
+
+  const rightArmArea = anatomy?.rightArmArea || (bounds.right > rightLimit ? { 
+    startR: neckRow, 
+    endR: bounds.bottom, 
+    startC: rightLimit + 1, 
+    endC: bounds.right 
+  } : undefined);
+
+  // Default Leg separation if not manual
+  const leftLegArea = anatomy?.leftLegArea || {
+    startR: ankleRow,
+    endR: bounds.bottom,
+    startC: bounds.left,
+    endC: torsoCenterCol
+  };
+  const rightLegArea = anatomy?.rightLegArea || {
+    startR: ankleRow,
+    endR: bounds.bottom,
+    startC: torsoCenterCol + 1,
+    endC: bounds.right
+  };
 
   const maxWidth = Math.max(...profile);
 
@@ -401,19 +435,13 @@ export function analyzeBodySegments(
     isHumanoid: profile[neckRow] < maxWidth * 0.9,
     torsoLeft: leftLimit,
     torsoRight: rightLimit,
+    torsoCenterCol,
     ankleRow,
-    leftArmArea: hasLeftArm ? { 
-      startR: neckRow, 
-      endR: bounds.bottom, 
-      startC: bounds.left, 
-      endC: leftLimit - 1 
-    } : undefined,
-    rightArmArea: hasRightArm ? { 
-      startR: neckRow, 
-      endR: bounds.bottom, 
-      startC: rightLimit + 1, 
-      endC: bounds.right 
-    } : undefined
+    kneeRow,
+    leftArmArea,
+    rightArmArea,
+    leftLegArea,
+    rightLegArea,
   };
 }
 
@@ -463,12 +491,8 @@ export function generateWalk(
   if (!bounds || !com) return Array(4).fill(cloneFrame(base));
 
   const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, ankleRow, leftArmArea, rightArmArea } = segments;
-  const centerCol = Math.floor(com.c);
+  const { neckRow, waistRow, leftArmArea, rightArmArea, leftLegArea, rightLegArea } = segments;
   
-  const leftLegArea = { startR: ankleRow, endR: bounds.bottom, startC: bounds.left, endC: centerCol };
-  const rightLegArea = { startR: ankleRow, endR: bounds.bottom, startC: centerCol + 1, endC: bounds.right };
-
   // Frame 0: Left foot down, Right foot lifts, Right arm forward
   let f0 = shiftArea(base, rightLegArea, -1, 0);
   if (leftArmArea) f0 = shiftArea(f0, leftArmArea, 1, 0);
@@ -489,6 +513,49 @@ export function generateWalk(
   // Frame 3: Mid height (Shoulders/Head high)
   // Instead of shiftArea (which leaves a gap), we use stretchBody to lift the head while keeping the neck connected
   const f3 = stretchBody(base, neckRow);
+
+  return [f0, f1, f2, f3];
+}
+
+/** 
+ * Walk Side: Horizontal scissors pattern for legs and arms.
+ * Ideal for side-scrolling perspectives.
+ */
+export function generateWalkSide(
+  base: Frame, 
+  anatomy?: AnatomyConfig
+): Frame[] {
+  const size = base.length;
+  const bounds = findBounds(base);
+  const com = getCenterOfMass(base);
+  if (!bounds || !com) return Array(4).fill(cloneFrame(base));
+
+  const segments = analyzeBodySegments(base, anatomy);
+  const { neckRow, waistRow, kneeRow, leftArmArea, rightArmArea, leftLegArea, rightLegArea } = segments;
+  
+  // Frame 0: Front leg moves FORWARD and Lifts, Back leg moves BACKWARD
+  let f0 = shiftArea(base, leftLegArea, -1, 1); // -1 is UP, 1 is FORWARD
+  f0 = shiftArea(f0, rightLegArea, 0, -1);
+  if (leftArmArea) f0 = shiftArea(f0, leftArmArea, 0, -1);
+  if (rightArmArea) f0 = shiftArea(f0, rightArmArea, 0, 1);
+  f0 = leanBody(f0, waistRow, neckRow, 1); // Lean forward
+  f0 = stretchBody(f0, neckRow); // head lift
+  
+  // Frame 1: Passing position (legs together)
+  let f1 = cloneFrame(base);
+  const headArea = { startR: bounds.top, endR: neckRow, startC: 0, endC: size - 1 };
+  f1 = shiftArea(f1, headArea, 1, 0); // head bob down
+  
+  // Frame 2: Back leg moves FORWARD and Lifts, Front leg moves BACKWARD
+  let f2 = shiftArea(base, rightLegArea, -1, 1);
+  f2 = shiftArea(f2, leftLegArea, 0, -1);
+  if (leftArmArea) f2 = shiftArea(f2, leftArmArea, 0, 1);
+  if (rightArmArea) f2 = shiftArea(f2, rightArmArea, 0, -1);
+  f2 = leanBody(f2, waistRow, neckRow, 1); // Lean forward
+  f2 = stretchBody(f2, neckRow);
+
+  // Frame 3: Passing position (legs together)
+  let f3 = cloneFrame(base);
 
   return [f0, f1, f2, f3];
 }

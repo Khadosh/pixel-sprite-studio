@@ -28,6 +28,20 @@ export interface AnimationDef {
   fps?: number;
 }
 
+export type AnatomyConfig = {
+  neckRow?: number;
+  waistRow?: number;
+  ankleRow?: number;
+  torsoLeft?: number;
+  torsoRight?: number;
+  torsoCenterCol?: number;
+  kneeRow?: number;
+  leftArmArea?: { startR: number; endR: number; startC: number; endC: number };
+  rightArmArea?: { startR: number; endR: number; startC: number; endC: number };
+  leftLegArea?: { startR: number; endR: number; startC: number; endC: number };
+  rightLegArea?: { startR: number; endR: number; startC: number; endC: number };
+};
+
 /** A complete sprite asset with its own palette, layers, and optional animations. */
 export interface SpriteAsset {
   /** Unique identifier, used in URLs */
@@ -38,7 +52,7 @@ export interface SpriteAsset {
   description: string;
   /** Asset category for catalog filtering */
   category: 'character' | 'terrain' | 'prop' | 'nature' | 'ui';
-
+  
   /** Grid size in pixels (width = height). Typically 16 or 32. */
   size: number;
   /** Color palette: number → hex color string. 0 is always transparent. */
@@ -51,19 +65,13 @@ export interface SpriteAsset {
   
   /** All layers for this asset (auto-populated from frames if missing) */
   layers?: SpriteLayer[];
-
+  
   /** Animation definitions. Empty array = static asset (single frame). */
   animations: AnimationDef[];
   /** Optional tags for search/filtering */
   tags?: string[];
   /** Manual anatomical markers (Bones) for procedural animation overrides */
-  anatomy?: {
-    neckRow?: number;
-    waistRow?: number;
-    ankleRow?: number;
-    torsoLeft?: number;
-    torsoRight?: number;
-  };
+  anatomy?: AnatomyConfig;
   /** Version history / Checkpoints */
   versions?: {
     id: string;

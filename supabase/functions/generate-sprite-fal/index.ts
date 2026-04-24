@@ -1,7 +1,11 @@
+// @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
+// @ts-ignore
 const FAL_AI_KEY = Deno.env.get("FAL_AI_KEY");
+// @ts-ignore
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+// @ts-ignore
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const corsHeaders = {
@@ -26,6 +30,7 @@ function getUserIdFromToken(authHeader: string | null): string {
   }
 }
 
+// @ts-ignore
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -36,6 +41,7 @@ Deno.serve(async (req: Request) => {
 
     const authHeader = req.headers.get("Authorization");
     const userId = getUserIdFromToken(authHeader);
+    // @ts-ignore
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { prompt, size = 64, palette = null } = await req.json();

@@ -27,7 +27,7 @@ interface SpritePixelEditorProps {
   movingSelectionPixels?: number[][] | null;
   canvasBg: 'light' | 'dark';
   leftSidebarTab?: string | null;
-  onAnatomyChange?: (updates: Partial<{ neckRow: number; waistRow: number; ankleRow: number; torsoLeft: number; torsoRight: number }>) => void;
+  onAnatomyChange?: (updates: Partial<import('@/lib/types').AnatomyConfig>) => void;
   onPushUndo?: () => void;
   showIsometricGrid?: boolean;
   referenceFrame?: number[][] | null;
@@ -62,8 +62,8 @@ export default function SpritePixelEditor({
   const [hoverCell, setHoverCell] = useState<{ r: number; c: number } | null>(null);
 
   // Anatomy interaction state
-  const [hoveringBone, setHoveringBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | null>(null);
-  const [draggingBone, setDraggingBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | null>(null);
+  const [hoveringBone, setHoveringBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | 'torsoC' | 'knees' | null>(null);
+  const [draggingBone, setDraggingBone] = useState<'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | 'torsoC' | 'knees' | null>(null);
 
   // Panning state
   const panStart = useRef<{ x: number; y: number } | null>(null);
@@ -256,16 +256,33 @@ export default function SpritePixelEditor({
     
     // ─── ANATOMICAL BONES VISUALIZATION ───
     if (asset.category === 'character' && leftSidebarTab === 'anatomy') {
-      const compositeFrame = asset.layers?.[0]?.frames[frameIndex];
+      // Compute a temporary composite of all visible layers for accurate anatomy detection
+      const compositeFrame = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+      if (asset.layers) {
+        asset.layers.forEach(layer => {
+          if (!layer.isVisible) return;
+          const frame = layer.frames[frameIndex];
+          if (!frame) return;
+          for (let r = 0; r < asset.size; r++) {
+            for (let c = 0; c < asset.size; c++) {
+              if (frame[r][c] !== 0) compositeFrame[r][c] = frame[r][c];
+            }
+          }
+        });
+      }
+
       if (compositeFrame) {
-        const { neckRow, waistRow, torsoLeft, torsoRight, ankleRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
+        const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
         
-        const drawBone = (type: 'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR', color: string, pos: number, isVertical: boolean) => {
+        const drawBone = (type: 'neck' | 'waist' | 'ankles' | 'torsoL' | 'torsoR' | 'torsoC' | 'knees', color: string, pos: number, isVertical: boolean, dashed: boolean = false) => {
           const isSelected = hoveringBone === type || draggingBone === type;
           ctx.strokeStyle = color;
           ctx.globalAlpha = isSelected ? 1.0 : 0.6;
           ctx.lineWidth = isSelected ? 2 : 1;
           
+          if (dashed) ctx.setLineDash([4, 4]);
+          else ctx.setLineDash([]);
+
           if (isSelected) {
              ctx.shadowBlur = 4;
              ctx.shadowColor = color;
@@ -285,18 +302,23 @@ export default function SpritePixelEditor({
           // Reset effects
           ctx.shadowBlur = 0;
           ctx.globalAlpha = 1.0;
+          ctx.setLineDash([]);
         };
 
         // Neck line (Sky Blue)
         drawBone('neck', 'rgba(135, 206, 235)', neckRow, false);
         // Waist line (Coral)
         drawBone('waist', 'rgba(255, 127, 80)', waistRow, false);
+        // Knee line (Pink)
+        drawBone('knees', 'rgba(244, 114, 182)', kneeRow, false);
         // Ankle line (Lime/Yellow-ish)
         drawBone('ankles', 'rgba(163, 230, 53)', ankleRow, false);
         // Torso Left line (Amethyst/Purple)
         drawBone('torsoL', 'rgba(168, 85, 247)', torsoLeft, true);
         // Torso Right line (Orange)
         drawBone('torsoR', 'rgba(249, 115, 22)', torsoRight, true);
+        // Torso Center line (Yellow)
+        drawBone('torsoC', 'rgba(253, 224, 71)', torsoCenterCol, true, true);
       }
     }
 
@@ -418,32 +440,50 @@ export default function SpritePixelEditor({
     if (draggingBone && onAnatomyChange) {
       if (draggingBone === 'neck') onAnatomyChange({ neckRow: r });
       else if (draggingBone === 'waist') onAnatomyChange({ waistRow: r });
+      else if (draggingBone === 'knees') onAnatomyChange({ kneeRow: r });
       else if (draggingBone === 'ankles') onAnatomyChange({ ankleRow: r });
       else if (draggingBone === 'torsoL') onAnatomyChange({ torsoLeft: c });
       else if (draggingBone === 'torsoR') onAnatomyChange({ torsoRight: c });
+      else if (draggingBone === 'torsoC') onAnatomyChange({ torsoCenterCol: c });
       return;
     }
 
     // 2. Handle Bone Hover Detection (only in anatomy tab)
     if (leftSidebarTab === 'anatomy' && !isPanning.current && e.buttons === 0) {
       const tolerance = 6;
-      const compositeFrame = asset.layers?.[0]?.frames[frameIndex];
-      if (compositeFrame) {
-        const { neckRow, waistRow, torsoLeft, torsoRight, ankleRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
-        
-        const neckY = neckRow * PIXEL_SCALE + PIXEL_SCALE / 2;
-        const waistY = waistRow * PIXEL_SCALE + PIXEL_SCALE / 2;
-        const ankleY = ankleRow * PIXEL_SCALE + PIXEL_SCALE / 2;
-        const torsoLX = torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2;
-        const torsoRX = torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2;
-
-        if (Math.abs(y - neckY) < tolerance) setHoveringBone('neck');
-        else if (Math.abs(y - waistY) < tolerance) setHoveringBone('waist');
-        else if (Math.abs(y - ankleY) < tolerance) setHoveringBone('ankles');
-        else if (Math.abs(x - torsoLX) < tolerance) setHoveringBone('torsoL');
-        else if (Math.abs(x - torsoRX) < tolerance) setHoveringBone('torsoR');
-        else setHoveringBone(null);
+      const compositeFrame = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+      if (asset.layers) {
+        asset.layers.forEach(layer => {
+          if (!layer.isVisible) return;
+          const f = layer.frames[frameIndex];
+          if (f) {
+            for (let fr = 0; fr < asset.size; fr++) {
+              for (let fc = 0; fc < asset.size; fc++) {
+                if (f[fr][fc] !== 0) compositeFrame[fr][fc] = f[fr][fc];
+              }
+            }
+          }
+        });
       }
+
+      const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = analyzeBodySegments(compositeFrame, asset.anatomy);
+      
+      const neckY = neckRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+      const waistY = waistRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+      const kneeY = kneeRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+      const ankleY = ankleRow * PIXEL_SCALE + PIXEL_SCALE / 2;
+      const torsoLX = torsoLeft * PIXEL_SCALE + PIXEL_SCALE / 2;
+      const torsoRX = torsoRight * PIXEL_SCALE + PIXEL_SCALE / 2;
+      const torsoCX = torsoCenterCol * PIXEL_SCALE + PIXEL_SCALE / 2;
+
+      if (Math.abs(y - neckY) < tolerance) setHoveringBone('neck');
+      else if (Math.abs(y - waistY) < tolerance) setHoveringBone('waist');
+      else if (Math.abs(y - kneeY) < tolerance) setHoveringBone('knees');
+      else if (Math.abs(y - ankleY) < tolerance) setHoveringBone('ankles');
+      else if (Math.abs(x - torsoLX) < tolerance) setHoveringBone('torsoL');
+      else if (Math.abs(x - torsoRX) < tolerance) setHoveringBone('torsoR');
+      else if (Math.abs(x - torsoCX) < tolerance) setHoveringBone('torsoC');
+      else setHoveringBone(null);
     } else if (leftSidebarTab !== 'anatomy') {
        setHoveringBone(null);
     }
