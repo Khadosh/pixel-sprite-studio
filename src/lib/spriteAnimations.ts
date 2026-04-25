@@ -7,6 +7,8 @@ import {
   generateCast,
   generateAttack,
   generateHurt,
+  generateDie,
+  generateRun,
   generateJump,
   analyzeBodySegments,
   leanBody,
@@ -312,21 +314,27 @@ function generateFrameSequence(
   }
 
   let frames: number[][][];
+  let orientationIdx = 0; // 0: Front, 1: Side, 2: Back
+
+  if (isUpDir) orientationIdx = 2;
+  else if (isLeft || anim.endsWith('_right')) orientationIdx = 1;
+  else orientationIdx = 0;
 
   switch (baseAnim) {
     case 'idle':
-      frames = generateIdle(base, anatomy);
+      frames = generateIdle(base, anatomy, orientationIdx);
       break;
     case 'walk':
       if (isUpDir || isDownDir) {
-        frames = generateWalkTopDown(base, anatomy);
+        frames = generateWalkTopDown(base, anatomy, orientationIdx);
       } else if (isLeft || anim.endsWith('_right')) {
-        // If explicitly lateral, use the side-view walk cycle
-        frames = generateWalkSide(base, anatomy);
+        frames = generateWalkSide(base, anatomy, orientationIdx);
       } else {
-        // Default to front-view walk
-        frames = generateWalk(base, anatomy);
+        frames = generateWalk(base, anatomy, orientationIdx);
       }
+      break;
+    case 'run':
+      frames = generateRun(base, anatomy, orientationIdx);
       break;
     case 'attack':
       if (isUpDir || isDownDir) {
@@ -339,15 +347,10 @@ function generateFrameSequence(
       frames = generateCast(base, glowColor, anatomy);
       break;
     case 'hurt':
-      frames = generateHurt(base, anatomy);
+      frames = generateHurt(base, anatomy, orientationIdx);
       break;
     case 'die':
-      // Reusing squash or a modified hurt for 'die' until a specific transform is built
-      frames = [
-        base,
-        generateHurt(base, anatomy)[1],
-        squash(base, [Math.floor(base.length * 0.7)]),
-      ];
+      frames = generateDie(base, anatomy, orientationIdx);
       break;
     case 'jump':
       frames = generateJump(base, anatomy);

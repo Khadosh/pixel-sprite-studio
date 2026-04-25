@@ -5,3 +5,4 @@ export * from './sprite/generators/walk';
 export * from './sprite/generators/idle';
 export * from './sprite/generators/combat';
 export * from './sprite/generators/movement';
+export * from './sprite/generators/life';

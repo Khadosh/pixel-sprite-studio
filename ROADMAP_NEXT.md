@@ -8,6 +8,11 @@
 
 ## Fase 8 — Studio Pro (continuación) 🚀
 
+### 8.1 — Anatomy-Driven Animation Suite (Foco Actual)
+- [ ] **Pixel-Perfect Transforms**: Migrar el motor de animación de rectángulos a máscaras de píxeles reales.
+- [ ] **Core 8 Suite**: Set de 8 animaciones base pro (Idle, Walk, Run, Jump, Attack, Hurt, Cast, Die).
+- [ ] **Skeleton & Hierarchies**: Sistema de herencia de movimiento (ej: el brazo sigue al hombro).
+
 ### 8.2 — Tipo de Proyecto (Project Mode)
 *Prerequisito para: Sandbox, perspectivas inteligentes, filtros de animación*
 

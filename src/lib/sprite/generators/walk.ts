@@ -1,40 +1,48 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { cloneFrame, shiftArea, leanBody, stretchBody, squash, findBounds, getCenterOfMass, stretchArea } from '../transforms';
-import { analyzeBodySegments } from '../anatomy';
+import { cloneFrame, shiftPixels, stretchPixels, findBounds, getCenterOfMass, shiftFrame } from '../transforms';
+import { resolveMembers } from '../anatomyResolver';
 
 /** 
- * Front Walk: Dynamic 8-frame cycle with knee flexion and stable torso.
+ * Front Walk: Dynamic 8-frame cycle using Anatomy Engine.
  */
 export function generateWalk(
   base: Frame, 
-  anatomy?: AnatomyConfig
+  anatomy?: AnatomyConfig,
+  orientation: number = 0
 ): Frame[] {
-  const size = base.length;
-  const bounds = findBounds(base);
-  const com = getCenterOfMass(base);
-  if (!bounds || !com) return Array(8).fill(cloneFrame(base));
-
-  const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, kneeRow, leftArmArea, rightArmArea, leftLegArea, rightLegArea } = segments;
+  const members = resolveMembers(base, anatomy, orientation);
+  const { head, torso, arm_left, arm_right, leg_left, leg_right } = members;
   
   const createStep = (isLeftLeading: boolean) => {
     // 1. CONTACT: Both feet down, split distance.
     let fContact = cloneFrame(base);
-    if (leftArmArea) fContact = stretchArea(base, fContact, leftArmArea, isLeftLeading ? 1 : -1, 'top');
-    if (rightArmArea) fContact = stretchArea(base, fContact, rightArmArea, isLeftLeading ? -1 : 1, 'top');
+    if (arm_left) fContact = stretchPixels(base, fContact, arm_left.pixels, isLeftLeading ? 1 : -1);
+    if (arm_right) fContact = stretchPixels(base, fContact, arm_right.pixels, isLeftLeading ? -1 : 1);
     
-    // 2. DOWN: Subtle 1px squash for weight
-    let fDown = squash(base, [waistRow], undefined, neckRow);
-    const headArea = { startR: bounds.top, endR: neckRow, startC: 0, endC: size - 1 };
-    fDown = shiftArea(fDown, headArea, 1, 0);
+    // 2. DOWN: Weight impact (torso sinks 1px)
+    let fDown = cloneFrame(base);
+    if (torso && head) {
+      const upperBody = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
+      fDown = shiftPixels(fDown, upperBody, 1, 0);
+    } else {
+      fDown = shiftFrame(base, 1, 0);
+    }
     
-    // 3. PASSING: Lift one leg
+    // 3. PASSING: Lift passing leg 1px
     let fPass = cloneFrame(base);
-    const passingLeg = isLeftLeading ? rightLegArea : leftLegArea;
-    fPass = shiftArea(fPass, passingLeg, -1, 0); 
+    const passingLeg = isLeftLeading ? leg_right : leg_left;
+    if (passingLeg) {
+      fPass = shiftPixels(fPass, passingLeg.pixels, -1, 0);
+    }
     
-    // 4. UP: High point
-    let fUp = stretchBody(base, neckRow);
+    // 4. UP: High point (Upper body rises 1px)
+    let fUp = cloneFrame(base);
+    if (torso && head) {
+      const upperBody = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
+      fUp = shiftPixels(fUp, upperBody, -1, 0);
+    } else {
+      fUp = shiftFrame(base, -1, 0);
+    }
     
     return [fContact, fDown, fPass, fUp];
   };
@@ -43,38 +51,40 @@ export function generateWalk(
 }
 
 /** 
- * Side Walk: Horizontal scissors pattern with knee lift and flexion.
+ * Side Walk: Horizontal scissors pattern using Anatomy Engine.
  */
 export function generateWalkSide(
   base: Frame, 
-  anatomy?: AnatomyConfig
+  anatomy?: AnatomyConfig,
+  orientation: number = 1
 ): Frame[] {
-  const size = base.length;
-  const bounds = findBounds(base);
-  const com = getCenterOfMass(base);
-  if (!bounds || !com) return Array(8).fill(cloneFrame(base));
-
-  const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, kneeRow, leftLegArea, rightLegArea } = segments;
+  const members = resolveMembers(base, anatomy, orientation);
+  const { head, torso, arm_left, arm_right, leg_left, leg_right } = members;
   
   const createStep = (isLeftForward: boolean) => {
-    const forwardLeg = isLeftForward ? leftLegArea : rightLegArea;
-    const backLeg = isLeftForward ? rightLegArea : leftLegArea;
+    const forwardLeg = isLeftForward ? leg_left : leg_right;
+    const backLeg = isLeftForward ? leg_right : leg_left;
     
-    // 1. CONTACT: Both feet on floor
-    let fContact = shiftArea(base, forwardLeg, 0, 1);
-    fContact = shiftArea(fContact, backLeg, 0, -1);
+    // 1. CONTACT: Both feet on floor (X-offset)
+    let fContact = cloneFrame(base);
+    if (forwardLeg) fContact = shiftPixels(fContact, forwardLeg.pixels, 0, 1);
+    if (backLeg) fContact = shiftPixels(fContact, backLeg.pixels, 0, -1);
     
-    // 2. DOWN: Subtle 1px squash at knee
-    let fDown = squash(fContact, [kneeRow], undefined, waistRow);
+    // 2. DOWN: Weight impact
+    let fDown = cloneFrame(fContact);
+    if (torso && head) {
+      const upperBody = [...torso.pixels, ...head.pixels];
+      fDown = shiftPixels(fDown, upperBody, 1, 0);
+    }
     
     // 3. PASS POS: Legs together, passing leg lifts
     let fPass = cloneFrame(base);
-    fPass = shiftArea(fPass, backLeg, -1, 0); 
+    if (backLeg) fPass = shiftPixels(fPass, backLeg.pixels, -1, 0); 
     
     // 4. UP: Push off
-    let fUp = stretchBody(base, neckRow);
-    fUp = shiftArea(fUp, backLeg, -1, 1); 
+    let fUp = cloneFrame(base);
+    if (torso && head) fUp = shiftPixels(fUp, [...torso.pixels, ...head.pixels], -1, 0);
+    if (backLeg) fUp = shiftPixels(fUp, backLeg.pixels, -1, 1); 
 
     return [fContact, fDown, fPass, fUp];
   };
@@ -87,51 +97,36 @@ export function generateWalkSide(
  */
 export function generateWalkTopDown(
   base: Frame, 
-  anatomy?: AnatomyConfig
+  anatomy?: AnatomyConfig,
+  orientation: number = 0
 ): Frame[] {
-  const size = base.length;
-  const bounds = findBounds(base);
-  if (!bounds) return Array(8).fill(cloneFrame(base));
-
-  const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, kneeRow, torsoCenterCol } = segments;
-  
-  // ARMS: More aggressive fallback if not detected
-  const lArm = segments.leftArmArea || { 
-    startR: neckRow, 
-    endR: waistRow, 
-    startC: bounds.left, 
-    endC: Math.max(bounds.left, torsoCenterCol - 3) 
-  };
-  const rArm = segments.rightArmArea || { 
-    startR: neckRow, 
-    endR: waistRow, 
-    startC: Math.min(bounds.right, torsoCenterCol + 3), 
-    endC: bounds.right 
-  };
+  const members = resolveMembers(base, anatomy, orientation);
+  const { head, torso, arm_left, arm_right, leg_left, leg_right } = members;
 
   const createStep = (isLeftLeading: boolean) => {
-    const leadArm = isLeftLeading ? rArm : lArm;
-    const backArm = isLeftLeading ? lArm : rArm;
-    const leadLeg = isLeftLeading ? segments.leftLegArea : segments.rightLegArea;
-    const backLeg = isLeftLeading ? segments.rightLegArea : segments.leftLegArea;
+    const leadArm = isLeftLeading ? arm_right : arm_left;
+    const backArm = isLeftLeading ? arm_left : arm_right;
+    const leadLeg = isLeftLeading ? leg_left : leg_right;
+    const backLeg = isLeftLeading ? leg_right : leg_left;
 
     // 1. CONTACT: High stride. 2px offset.
     let f1 = cloneFrame(base);
-    f1 = stretchArea(base, f1, leadLeg, 2, 'top'); 
-    f1 = stretchArea(base, f1, backLeg, -1, 'top');
-    f1 = stretchArea(base, f1, leadArm, 1, 'top'); 
-    f1 = stretchArea(base, f1, backArm, -1, 'top');
+    if (leadLeg) f1 = stretchPixels(base, f1, leadLeg.pixels, 2); 
+    if (backLeg) f1 = stretchPixels(base, f1, backLeg.pixels, -1);
+    if (leadArm) f1 = stretchPixels(base, f1, leadArm.pixels, 1); 
+    if (backArm) f1 = stretchPixels(base, f1, backArm.pixels, -1);
     
-    // 2. DOWN: Weight impact. Squash.
-    let f2 = squash(f1, [kneeRow]);
+    // 2. DOWN: Weight impact.
+    let f2 = cloneFrame(f1);
+    if (torso && head) f2 = shiftPixels(f2, [...torso.pixels, ...head.pixels], 1, 0);
     
     // 3. PASSING: Lifting one leg.
     let f3 = cloneFrame(base);
-    f3 = stretchArea(base, f3, backLeg, -2, 'top'); 
+    if (backLeg) f3 = stretchPixels(base, f3, backLeg.pixels, -2); 
     
-    // 4. UP: High point. Stretch torso.
-    let f4 = stretchBody(base, neckRow);
+    // 4. UP: High point.
+    let f4 = cloneFrame(base);
+    if (torso && head) f4 = shiftPixels(f4, [...torso.pixels, ...head.pixels], -1, 0);
     
     return [f1, f2, f3, f4];
   };

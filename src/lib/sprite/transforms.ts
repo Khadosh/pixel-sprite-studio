@@ -298,6 +298,111 @@ export function stretchArea(
   return next;
 }
 
+/** 
+ * Shifts a specific list of pixels by (dr, dc). 
+ * Unlike shiftArea, this works on non-rectangular masks.
+ */
+export function shiftPixels(
+  frame: Frame,
+  pixels: { r: number; c: number }[],
+  dr: number,
+  dc: number
+): Frame {
+  const next = cloneFrame(frame);
+  const size = frame.length;
+  
+  // 1. Clear original pixels
+  pixels.forEach(p => {
+    if (p.r >= 0 && p.r < size && p.c >= 0 && p.c < size) {
+      next[p.r][p.c] = 0;
+    }
+  });
+  
+  // 2. Place in new position
+  pixels.forEach(p => {
+    const nr = p.r + dr;
+    const nc = p.c + dc;
+    if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+      // Get the color from the ORIGINAL frame
+      next[nr][nc] = frame[p.r][p.c];
+    }
+  });
+  
+  return next;
+}
+
+/**
+ * Rotates a specific list of pixels around a pivot.
+ * Uses nearest-neighbor mapping.
+ */
+export function rotatePixels(
+  frame: Frame,
+  pixels: { r: number; c: number }[],
+  pivot: { r: number; c: number },
+  angleDeg: number
+): Frame {
+  const size = frame.length;
+  const next = cloneFrame(frame);
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
+
+  // 1. Clear original pixels
+  pixels.forEach(p => {
+    if (p.r >= 0 && p.r < size && p.c >= 0 && p.c < size) {
+      next[p.r][p.c] = 0;
+    }
+  });
+
+  // 2. Map rotated pixels
+  pixels.forEach(p => {
+    const dr = p.r - pivot.r;
+    const dc = p.c - pivot.c;
+    const nr = Math.round(pivot.r + (dr * cos - dc * sin));
+    const nc = Math.round(pivot.c + (dr * sin + dc * cos));
+    if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+      next[nr][nc] = frame[p.r][p.c];
+    }
+  });
+  
+  return next;
+}
+
+/**
+ * Shifts a pixel list but stretches them to fill the gap.
+ */
+export function stretchPixels(
+  source: Frame,
+  target: Frame,
+  pixels: { r: number; c: number }[],
+  dr: number
+): Frame {
+  const size = source.length;
+  const next = cloneFrame(target);
+  if (dr === 0 || pixels.length === 0) return next;
+
+  // 1. Move pixels
+  pixels.forEach(p => {
+    const nr = p.r + dr;
+    if (nr >= 0 && nr < size) {
+      next[nr][p.c] = source[p.r][p.c];
+    }
+  });
+
+  // 2. Fill gaps (stretch)
+  if (Math.abs(dr) > 1) {
+    pixels.forEach(p => {
+      const step = dr > 0 ? 1 : -1;
+      for (let i = step; Math.abs(i) < Math.abs(dr); i += step) {
+        const nr = p.r + i;
+        if (nr >= 0 && nr < size) next[nr][p.c] = source[p.r][p.c];
+      }
+    });
+  }
+
+  return next;
+}
+
 /** Rotates a frame 90 degrees */
 export function rotate90(frame: Frame): Frame {
   const size = frame.length;

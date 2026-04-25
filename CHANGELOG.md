@@ -7,8 +7,10 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ## 2026-04-25 (Hoy)
 **1 commit realizado**
 
-- **Documentación**: **Reestructuración Triple de Roadmap**. Migrada la planificación a un sistema de tres archivos para mejorar el foco: `ROADMAP_COMPLETED.md` (historial), `ROADMAP_NEXT.md` (visión) y `ROADMAP_IMMEDIATE.md` (ejecución táctica).
-- **Planificación**: **Definición de Sprint de Pulido**. Priorizadas las tareas de herramientas de paleta (Auto-Shade, HSL Picker) y exportación profesional (Texture Packer JSON) como próximos pasos críticos.
+- **Animación**: **Nuevo Motor Basado en Anatomía**. Migradas las animaciones procedurales de un sistema de rectángulos a uno de máscaras de píxeles reales (Dismemberment).
+- **Motores**: Implementado el `AnatomyResolver` para unificar la selección manual de píxeles con la inferencia algorítmica.
+- **Suite Core 8**: Implementados/Mejorados los generadores de `idle`, `walk`, `run`, `jump`, `hurt` y `die` con soporte total de jerarquías anatómicas.
+- **Transformaciones**: Agregadas funciones de `shiftPixels`, `rotatePixels` y `stretchPixels` para deformaciones precisas.
 
 ---
 
