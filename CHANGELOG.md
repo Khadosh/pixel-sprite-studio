@@ -4,7 +4,15 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-24 (Hoy)
+## 2026-04-25 (Hoy)
+**1 commit realizado**
+
+- **Documentación**: **Reestructuración Triple de Roadmap**. Migrada la planificación a un sistema de tres archivos para mejorar el foco: `ROADMAP_COMPLETED.md` (historial), `ROADMAP_NEXT.md` (visión) y `ROADMAP_IMMEDIATE.md` (ejecución táctica).
+- **Planificación**: **Definición de Sprint de Pulido**. Priorizadas las tareas de herramientas de paleta (Auto-Shade, HSL Picker) y exportación profesional (Texture Packer JSON) como próximos pasos críticos.
+
+---
+
+## 2026-04-24
 **9 commits realizados**
 
 - **Workflow**: **Sincronización Total de Perspectivas**. Rediseñado el sistema de navegación para que el canvas, las miniaturas, la previsualización de animación y el panel de anatomía operen sobre una base de datos unificada (Front, Side R/L, Back).

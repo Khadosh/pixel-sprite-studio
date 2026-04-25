@@ -1,38 +1,39 @@
 # ROADMAP INMEDIATO (Táctico) ⚡
 
-> **Foco actual**: Estabilización de IA, Animaciones Direccionales y Evolución del Sistema de Huesos.
+> **Foco actual**: Herramientas de paleta, export profesional y polish de animación.
+> Última actualización: 2026-04-25
 
 ---
 
-## 1. Estabilización: Generar desde Front 🟢
-*Objetivo alcanzado: Diagnóstico mediante Debug Export y mejora de fidelidad con Flux Pro Kontext.*
+## 1. Herramientas de Paleta 🎨
+*Mejorar el control artístico sobre el color — el recurso más usado después del pincel.*
 
-- [x] **Debug Export Button**: Implementado. Permite verificar la calidad de la referencia enviada a la IA.
-- [x] **Upscale de Referencia (16x)**: Implementado. Enviamos imágenes de 512px para evitar borrosidad.
-- [x] **Prompt Fine-tuning**: Refinados los prompts para rotación de 90 grados y anatomía consistente.
-- [x] **Auto-Background Removal**: Implementado motor HSL para detección robusta de chroma green con supresión de spillover en bordes.
+- [ ] **Auto-Shade Generator**: Botón junto a cada color para generar una rampa de 3-5 tonos (highlight → base → shadow) usando HSL shifts. Se integra con `addColorRamp` existente.
+- [ ] **HSL Color Picker Pro**: Reemplazar el `<input type="color">` nativo por un picker custom con sliders de Hue, Saturation, Lightness para mayor precisión artística.
 
-## 2. Animaciones Procedurales Direccionales 🟢
-*Hacer que el sistema de animación entienda la perspectiva.*
+## 2. Export Pipeline Pro 📦
+*Cerrar el loop: lo que se crea en el Studio debe poder usarse directo en un engine.*
 
-- [x] **Templates por Vista**: Implementadas lógicas para vistas laterales (`walk_side`) y frontales/top-down con 8 frames (Richard Williams style).
-- [x] **Inercia Adaptativa**: Implementada flexión de rodillas (`knee flexion`) y estabilidad de torso en todos los generadores.
-- [x] **Refactor Modular**: Migrado todo el motor a `src/lib/sprite/` para escalabilidad futura.
+- [ ] **Export Texture Packer JSON**: Generar JSON companion junto al PNG spritesheet con rect coordinates, nombres canónicos de animación y duración por frame. Importable en Godot, Unity y Defold sin plugins.
+- [ ] **Duración por Frame**: Agregar `frameDurations?: number[]` a `AnimationDef` y renderizar inputs editables sobre cada frame en el timeline. Esencial para anticipation/impact/recovery.
 
-## 3. Evolución del Sistema de Huesos (Limb-based) 🟠
-*Pasar de anatomía global a control por miembros.*
+## 3. Polish de Animación 🎬
+*Detalles que mejoran la calidad percibida de las animaciones generadas.*
 
-- [x] **Control de Miembros**: Implementado manejo independiente de cabeza, torso y extremidades.
-- [x] **Jerarquías de Pivote**: Implementado sistema de pivots para Cabeza y Torso, además de hombros y caderas.
-- [x] **UI de Selección**: Rediseñada la pestaña **BONES** (Anatomy Engine) con modos Auto/Humanoid/Custom y visualización de regiones en el canvas.
-
-## 4. Refinamiento UI/UX Final 🟢
-*Detalles premium y limpieza.*
-
-- [x] **Memoria de Paneles**: Persistencia del estado (Expandido/Mini) del preview de animación via localStorage.
-- [x] **Optimización de Gaps**: Reducidos paddings y gaps del layout principal para maximizar el protagonismo del canvas.
-- [x] **Corrección de Iconos**: Reemplazado ícono Lucide `Bone` con `PxBone` pixel-art; consistencia total en la iconografía del sidebar y paneles.
+- [ ] **FPS por animación editable en la librería**: Permitir ajustar el FPS directamente desde la lista de animaciones guardadas (actualmente solo se ajusta desde el preview panel).
 
 ---
-*Para ver la visión a largo plazo del proyecto, consultar [ROADMAP.md](./ROADMAP.md)*
 
+## ✅ Completados Recientemente
+- [x] **Perspectivas y Grillas Pro**: Auto-Mirror, Rejilla Isométrica, Modo Top-Down
+- [x] **Nombres Canónicos**: Sistema estándar implementado en generación y librería
+- [x] **Pincel de Miembros**: Pintado por arrastre en el motor de anatomía
+- [x] **Jerarquías de Pivote**: Sistema de pivots funcionales
+- [x] **Chroma Key Inteligente (HSL)**: Eliminación de fondos sin halos
+- [x] **Memoria de Paneles**: Persistencia de estado de UI
+- [x] **Iconografía PxBone**: Consistencia visual pixel-art total
+
+---
+
+*Para la visión a largo plazo, ver [ROADMAP_NEXT.md](./ROADMAP_NEXT.md)*
+*Para el historial completo, ver [ROADMAP_COMPLETED.md](./ROADMAP_COMPLETED.md)*

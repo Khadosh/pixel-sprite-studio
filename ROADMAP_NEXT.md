@@ -1,0 +1,106 @@
+# Pixel Sprite Studio — Visión a Futuro 🔮
+
+> Roadmap estratégico con las fases pendientes del proyecto.
+> Para el historial de lo completado, ver [ROADMAP_COMPLETED.md](./ROADMAP_COMPLETED.md)
+> Para el sprint actual, ver [ROADMAP_IMMEDIATE.md](./ROADMAP_IMMEDIATE.md)
+
+---
+
+## Fase 8 — Studio Pro (continuación) 🚀
+
+### 8.2 — Tipo de Proyecto (Project Mode)
+*Prerequisito para: Sandbox, perspectivas inteligentes, filtros de animación*
+
+- [ ] **Definición de modo**: Selector al crear asset/proyecto — `side-scroller`, `top-down`, `isometric`
+- [ ] **Filtro de perspectivas**: Side-scroller solo muestra Side R/L; Top-down muestra Front/Back/Side; Isometric muestra sus ángulos
+- [ ] **Filtro de animaciones**: Platformer sugiere `jump`/`fall`; Top-down sugiere `walk_up`/`walk_down`; Side-scroller sugiere `walk_left`/`walk_right`
+- [ ] **Grilla por defecto**: Isometric activa rejilla de diamante; Top-down activa cuadrada; Side-scroller sin grilla especial
+
+### 8.3 — Galería de Equipamiento (Clothing/Props)
+- [ ] **Ropa Inyectable**: Capas de equipo (cascos, abrigos, armaduras) pre-alineadas a las bases estándar
+- [ ] **Categorización**: Filtros específicos para "HEADWEAR", "CHEST", "ACCESSORY"
+- [ ] **Creación masiva**: Assets por categorías (objetos, consumibles, equipo)
+
+### 8.4 — Wizard de Creación Mejorado
+- [ ] **Flujo Guiado**: Asistente por pasos (Modo → Categoría → Plantilla → Configuración)
+- [ ] **Filtros Inteligentes**: Ocultar animaciones/herramientas no válidas según la categoría y modo del asset
+
+### 8.5 — Motor IA Híbrido (HQ Image-to-Pixel)
+- [ ] **HQ Generation**: Prompt → Imagen RAW de alta calidad (vía Gemini)
+- [ ] **Auto-Import Pipeline**: Puente automático entre la imagen generada y el motor de pixelización/cuantización del Studio
+
+---
+
+## Fase E — Integración y Exportación Pro 💰
+
+### E.1 — Export profesional
+- [ ] **Export Spritesheet JSON (Texture Packer format)** — PNG plano + JSON con nombre de animación, índices de frames, duración por frame y rect coordinates. Importable en Godot, Unity y Defold
+- [ ] **Resize / crop canvas** — Anchor configurable, presets 8×8 / 16×16 / 32×32 / 64×64
+- [ ] **Export a Godot** — Recurso `.tres` con spritesheet embebido
+- [ ] **Export a Unity** — Atlas PNG + JSON con rect coordinates por frame
+- [ ] **Import palette (.pal / .gpl)** — Cargar paletas de herramientas externas
+- [ ] **Sprite sheet import** — Cargar PNG y dividirlo en frames automáticamente
+
+### E.2 — 🧪 Mini Sandbox de Gameplay
+*El loop completo: generás → animás → testeás → exportás.*
+*Prerequisito: Tipo de Proyecto (8.2) debe estar implementado.*
+
+- [ ] **Canvas de prueba interactivo** — Canvas separado del editor, loop con `requestAnimationFrame`
+- [ ] **Character controller** — Movimiento con teclado (WASD / flechas), detección de dirección según modo (side-scroll vs top-down)
+- [ ] **State machine de animación** — Transiciones automáticas: idle ↔ walk → attack, basadas en input del teclado
+- [ ] **Tilemap de fondo seleccionable** — 2-3 tilemaps de ejemplo (interior, exterior, dungeon)
+- [ ] **Driven por el contrato de export** — El sandbox consume el mismo JSON que se exporta a engines
+
+---
+
+## Fase 7 — Expansión de Contenido 🎨
+
+- [ ] **Librería Esencial (16x16)**: Pociones, naturaleza, cofres y items listos para usar
+- [ ] **Tilemap Support**: Generación de tiles de terreno (pasto, agua, muros) compatibles entre sí
+- [ ] **Composición Multicapa**: Herramientas para alinear assets importados rápidamente
+
+---
+
+## Fase B — Monetización y Onboarding 💵
+
+- [ ] **Sistema de créditos IA + Stripe** — Integración de pagos, planes Free/Pro, cobro por generación
+- [ ] **Onboarding interactivo** — Tutorial paso a paso para nuevos usuarios
+- [ ] **Changelog público en la app** — Mostrar últimas updates; builds confianza
+
+---
+
+## Fase C — Plataforma y Comunidad 🌐
+
+- [ ] **Galería pública de sprites** — Feed de creaciones con likes y filtros
+- [ ] **Share link de solo lectura** — URL pública con preview embebible
+- [ ] **Marketplace** — Venta de packs de sprites con revenue share (70/30)
+- [ ] **Colaboración básica** — Compartir proyecto editable con otros usuarios
+- [ ] **API pública** — Docs, autenticación con API keys, rate limits por tier
+
+---
+
+## Fase D — Escala 🚀
+
+- [ ] **Colaboración real-time** — Co-edición con cursors compartidos (Supabase Realtime)
+- [ ] **AI in-painting** — Seleccionar área del canvas y regenerar parcialmente con prompt
+- [ ] **Batch AI generation** — Set completo de animaciones canónicas en un solo click
+- [ ] **Smart Multi-layer AI Splitting** — IA detecta y separa colores/posiciones en capas
+- [ ] **Tilemap editor básico** — Construir niveles con los tiles generados
+- [ ] **Mobile / tablet (PWA)** — Touch events, soporte stylus, layout adaptado
+- [ ] **Plugins / scripting** — API para automatizar workflows
+
+---
+
+## Backlog / Ideas Futuras
+
+| Feature | Complejidad | Impacto |
+|:--------|:-----------|:--------|
+| Bezier curve drawing | 🔵 Alta | Bajo |
+| Gradient tool | 🟡 Media | Bajo |
+| Color modes (Indexed, Grayscale) | 🔵 Alta | Medio |
+| Animation easing curves | 🔵 Alta | Medio |
+| CLI / batch export headless | 🔵 Alta | Medio |
+| Tilemap editor completo | 🔵 Alta | Alto |
+| Sombreado Dinámico Procedural (Fuente de Luz) | 🔵 Alta | 🔥 Muy Alto |
+| Image Overlay Guide (capa fantasma externa) | 🟡 Media | Medio |
+| Exportación de Máscaras por Miembro (Spine/Spriter) | 🟡 Media | Medio |
