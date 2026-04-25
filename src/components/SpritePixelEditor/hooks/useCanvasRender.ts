@@ -228,10 +228,30 @@ export function useCanvasRender({
           ctx.fillStyle = member.type.includes('arm') ? '#38bdf8' : member.type.includes('leg') ? '#fb7185' : member.type === 'head' ? '#fbbf24' : '#fb923c';
           ctx.globalAlpha = isActive ? 0.6 : 0.2;
           member.pixels.forEach(p => {
-            ctx.fillRect(p.c * PIXEL_SCALE, p.r * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+            const px = p.c * PIXEL_SCALE;
+            const py = p.r * PIXEL_SCALE;
+            
+            ctx.fillRect(px, py, PIXEL_SCALE, PIXEL_SCALE);
+            
             if (isEditing) {
-              ctx.strokeStyle = '#ffffff';
-              ctx.strokeRect(p.c * PIXEL_SCALE + 1, p.r * PIXEL_SCALE + 1, PIXEL_SCALE - 2, PIXEL_SCALE - 2);
+              // Draw a small crosshair for better visibility
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+              ctx.lineWidth = 1;
+              
+              // Vertical line
+              ctx.beginPath();
+              ctx.moveTo(px + PIXEL_SCALE / 2, py + 2);
+              ctx.lineTo(px + PIXEL_SCALE / 2, py + PIXEL_SCALE - 2);
+              ctx.stroke();
+              
+              // Horizontal line
+              ctx.beginPath();
+              ctx.moveTo(px + 2, py + PIXEL_SCALE / 2);
+              ctx.lineTo(px + PIXEL_SCALE - 2, py + PIXEL_SCALE / 2);
+              ctx.stroke();
+
+              // Border
+              ctx.strokeRect(px + 0.5, py + 0.5, PIXEL_SCALE - 1, PIXEL_SCALE - 1);
             }
           });
           ctx.globalAlpha = 1.0;

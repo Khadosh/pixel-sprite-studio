@@ -369,7 +369,9 @@ export function rotatePixels(
 }
 
 /**
- * Shifts a pixel list but stretches them to fill the gap.
+ * Shifts a pixel list but stretches them to fill the gap ONLY if they are connected
+ * to static pixels (part of the body that isn't moving). 
+ * This prevents the "smearing" effect on external edges like the top of the head.
  */
 export function stretchPixels(
   source: Frame,
@@ -381,7 +383,10 @@ export function stretchPixels(
   const next = cloneFrame(target);
   if (dr === 0 || pixels.length === 0) return next;
 
-  // 1. Move pixels
+  // Create a quick lookup for moving pixels
+  const movingSet = new Set(pixels.map(p => `${p.r},${p.c}`));
+
+  // 1. Move pixels (Standard shift)
   pixels.forEach(p => {
     const nr = p.r + dr;
     if (nr >= 0 && nr < size) {
@@ -389,16 +394,28 @@ export function stretchPixels(
     }
   });
 
-  // 2. Fill gaps (stretch)
-  if (Math.abs(dr) > 1) {
-    pixels.forEach(p => {
-      const step = dr > 0 ? 1 : -1;
-      for (let i = step; Math.abs(i) < Math.abs(dr); i += step) {
+  // 2. Fill gaps (Smart stretch)
+  pixels.forEach(p => {
+    const step = dr > 0 ? 1 : -1;
+    
+    // Check if this pixel has a static neighbor in the opposite direction of movement
+    // e.g. if moving UP (dr < 0), check if there is a static pixel BELOW (r + 1)
+    const neighborR = p.r - step;
+    const hasStaticNeighbor = 
+      neighborR >= 0 && 
+      neighborR < size && 
+      source[neighborR][p.c] !== 0 && 
+      !movingSet.has(`${neighborR},${p.c}`);
+
+    if (hasStaticNeighbor) {
+      for (let i = step; Math.abs(i) <= Math.abs(dr); i += step) {
         const nr = p.r + i;
-        if (nr >= 0 && nr < size) next[nr][p.c] = source[p.r][p.c];
+        if (nr >= 0 && nr < size) {
+          next[nr][p.c] = source[p.r][p.c];
+        }
       }
-    });
-  }
+    }
+  });
 
   return next;
 }
