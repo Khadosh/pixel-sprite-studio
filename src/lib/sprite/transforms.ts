@@ -299,73 +299,74 @@ export function stretchArea(
 }
 
 /** 
- * Shifts a specific list of pixels by (dr, dc). 
- * Unlike shiftArea, this works on non-rectangular masks.
+ * Clears a specific list of pixels from a frame.
+ */
+export function clearPixels(
+  frame: Frame,
+  pixels: { r: number; c: number }[]
+): Frame {
+  const next = cloneFrame(frame);
+  const size = frame.length;
+  pixels.forEach(p => {
+    if (p.r >= 0 && p.r < size && p.c >= 0 && p.c < size) {
+      next[p.r][p.c] = 0;
+    }
+  });
+  return next;
+}
+
+/** 
+ * Shifts a specific list of pixels from source frame and DRAWs them onto target frame.
+ * Does NOT clear target first.
  */
 export function shiftPixels(
-  frame: Frame,
+  source: Frame,
+  target: Frame,
   pixels: { r: number; c: number }[],
   dr: number,
   dc: number
 ): Frame {
-  const next = cloneFrame(frame);
-  const size = frame.length;
-  
-  // 1. Clear original pixels
-  pixels.forEach(p => {
-    if (p.r >= 0 && p.r < size && p.c >= 0 && p.c < size) {
-      next[p.r][p.c] = 0;
-    }
-  });
-  
-  // 2. Place in new position
+  const size = source.length;
+  // We mutate the target frame (which is already a clone of base or a cleared frame)
   pixels.forEach(p => {
     const nr = p.r + dr;
     const nc = p.c + dc;
     if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-      // Get the color from the ORIGINAL frame
-      next[nr][nc] = frame[p.r][p.c];
+      const color = source[p.r][p.c];
+      if (color !== 0) target[nr][nc] = color;
     }
   });
   
-  return next;
+  return target;
 }
 
 /**
- * Rotates a specific list of pixels around a pivot.
- * Uses nearest-neighbor mapping.
+ * Rotates a specific list of pixels from source frame and DRAWs them onto target frame.
  */
 export function rotatePixels(
-  frame: Frame,
+  source: Frame,
+  target: Frame,
   pixels: { r: number; c: number }[],
   pivot: { r: number; c: number },
   angleDeg: number
 ): Frame {
-  const size = frame.length;
-  const next = cloneFrame(frame);
+  const size = source.length;
   const angleRad = (angleDeg * Math.PI) / 180;
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
 
-  // 1. Clear original pixels
-  pixels.forEach(p => {
-    if (p.r >= 0 && p.r < size && p.c >= 0 && p.c < size) {
-      next[p.r][p.c] = 0;
-    }
-  });
-
-  // 2. Map rotated pixels
   pixels.forEach(p => {
     const dr = p.r - pivot.r;
     const dc = p.c - pivot.c;
     const nr = Math.round(pivot.r + (dr * cos - dc * sin));
     const nc = Math.round(pivot.c + (dr * sin + dc * cos));
     if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-      next[nr][nc] = frame[p.r][p.c];
+      const color = source[p.r][p.c];
+      if (color !== 0) target[nr][nc] = color;
     }
   });
   
-  return next;
+  return target;
 }
 
 /**
@@ -380,8 +381,7 @@ export function stretchPixels(
   dr: number
 ): Frame {
   const size = source.length;
-  const next = cloneFrame(target);
-  if (dr === 0 || pixels.length === 0) return next;
+  if (dr === 0 || pixels.length === 0) return target;
 
   // Create a quick lookup for moving pixels
   const movingSet = new Set(pixels.map(p => `${p.r},${p.c}`));
@@ -390,16 +390,14 @@ export function stretchPixels(
   pixels.forEach(p => {
     const nr = p.r + dr;
     if (nr >= 0 && nr < size) {
-      next[nr][p.c] = source[p.r][p.c];
+      const color = source[p.r][p.c];
+      if (color !== 0) target[nr][p.c] = color;
     }
   });
 
   // 2. Fill gaps (Smart stretch)
   pixels.forEach(p => {
     const step = dr > 0 ? 1 : -1;
-    
-    // Check if this pixel has a static neighbor in the opposite direction of movement
-    // e.g. if moving UP (dr < 0), check if there is a static pixel BELOW (r + 1)
     const neighborR = p.r - step;
     const hasStaticNeighbor = 
       neighborR >= 0 && 
@@ -408,16 +406,21 @@ export function stretchPixels(
       !movingSet.has(`${neighborR},${p.c}`);
 
     if (hasStaticNeighbor) {
-      for (let i = step; Math.abs(i) <= Math.abs(dr); i += step) {
-        const nr = p.r + i;
-        if (nr >= 0 && nr < size) {
-          next[nr][p.c] = source[p.r][p.c];
+      const color = source[p.r][p.c];
+      if (color !== 0) {
+        // Fill from original position up to the new position to bridge the gap
+        // If dr = -1 (UP), we need to fill row r (i=0) because shiftPixels put it at r-1
+        for (let i = 0; Math.abs(i) < Math.abs(dr); i += step) {
+          const nr = p.r + i;
+          if (nr >= 0 && nr < size) {
+            target[nr][p.c] = color;
+          }
         }
       }
     }
   });
 
-  return next;
+  return target;
 }
 
 /** Rotates a frame 90 degrees */
