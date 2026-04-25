@@ -1,0 +1,257 @@
+import { useEffect } from 'react';
+import type { SpriteAsset } from '@/lib/types';
+import { rotateFrameFree, analyzeBodySegments } from '@/lib/spriteTransforms';
+
+interface UseCanvasRenderProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  asset: SpriteAsset;
+  frameIndex: number;
+  activeLayerId: string | null;
+  onionSkinPrevFrame?: number[][];
+  onionSkinNextFrame?: number[][];
+  draftFrame?: number[][] | null;
+  rotationAngle?: number | null;
+  rotationCenter?: { r: number; c: number; activeLayerId?: string | null } | null;
+  zoom: number;
+  selectionRect?: { r: number; c: number; w: number; h: number } | null;
+  movingSelectionPixels?: number[][] | null;
+  canvasBg: 'light' | 'dark';
+  leftSidebarTab?: string | null;
+  showIsometricGrid?: boolean;
+  referenceFrame?: number[][] | null;
+  hoveringBone: string | null;
+  draggingBone: string | null;
+  anatomyActiveMemberId?: string | null;
+  anatomyIsSelectionMode?: boolean;
+  anatomySelectedOrientation?: number;
+}
+
+const BASE_PIXEL_SCALE = 16;
+const GRID_COLOR = 'rgba(255, 255, 255, 0.03)';
+
+export function useCanvasRender({
+  canvasRef,
+  asset,
+  frameIndex,
+  activeLayerId,
+  onionSkinPrevFrame,
+  onionSkinNextFrame,
+  draftFrame,
+  rotationAngle,
+  rotationCenter,
+  zoom,
+  selectionRect,
+  movingSelectionPixels,
+  canvasBg,
+  leftSidebarTab,
+  showIsometricGrid,
+  referenceFrame,
+  hoveringBone,
+  draggingBone,
+  anatomyActiveMemberId,
+  anatomyIsSelectionMode,
+  anatomySelectedOrientation,
+}: UseCanvasRenderProps) {
+  const PIXEL_SCALE = BASE_PIXEL_SCALE * zoom;
+  const canvasSize = asset.size * PIXEL_SCALE;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Checkerboard background
+    const colorA = canvasBg === 'light' ? '#e5e5e5' : '#121212';
+    const colorB = canvasBg === 'light' ? '#f5f5f5' : '#1e1e1e';
+    
+    for (let row = 0; row < asset.size; row++) {
+      for (let col = 0; col < asset.size; col++) {
+        const isEven = (row + col) % 2 === 0;
+        ctx.fillStyle = isEven ? colorA : colorB;
+        ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+      }
+    }
+
+    // Draw ghost frames (Onion skin)
+    const drawGhost = (ghostFrame: number[][], alpha: number, colorOverride?: string) => {
+      ctx.globalAlpha = alpha;
+      for (let row = 0; row < asset.size; row++) {
+        for (let col = 0; col < asset.size; col++) {
+          const val = ghostFrame[row][col];
+          if (val === 0) continue;
+          ctx.fillStyle = colorOverride || asset.palette[val] || 'transparent';
+          ctx.fillRect(col * PIXEL_SCALE, row * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+        }
+      }
+      ctx.globalAlpha = 1.0;
+    };
+
+    if (onionSkinPrevFrame) drawGhost(onionSkinPrevFrame, 0.35, '#ff4a4a');
+    if (onionSkinNextFrame) drawGhost(onionSkinNextFrame, 0.35, '#4aff4a');
+    if (referenceFrame) drawGhost(referenceFrame, 0.25, '#38bdf8');
+
+    // Helper to draw a specific frame matrix
+    const drawFrameData = (data: number[][], treatZeroAsTransparent: boolean, dr = 0, dc = 0) => {
+      const rows = data.length;
+      if (rows === 0) return;
+      const cols = data[0].length;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const val = data[row][col];
+          if (val === -1) continue;
+          if (treatZeroAsTransparent && val === 0) continue;
+
+          if (val === 0) {
+            ctx.fillStyle = '#ff000055';
+          } else {
+            const color = asset.palette[val];
+            if (!color || color === 'transparent') continue;
+            ctx.fillStyle = color;
+          }
+
+          const tr = row + dr;
+          const tc = col + dc;
+          if (tr >= 0 && tr < asset.size && tc >= 0 && tc < asset.size) {
+            ctx.fillRect(tc * PIXEL_SCALE, tr * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+          }
+        }
+      }
+    };
+
+    const dra = rotationAngle || 0;
+    const rCenter = rotationCenter;
+    const previewTargetId = rotationCenter ? rotationCenter.activeLayerId : undefined;
+
+    // Draw layers
+    if (asset.layers && asset.layers.length > 0) {
+      asset.layers.forEach(layer => {
+        if (!layer.isVisible) return;
+        const layerFrame = layer.frames[frameIndex];
+        if (!layerFrame) return;
+
+        const isScopeFrame = previewTargetId === null;
+        const isActive = layer.id === activeLayerId;
+
+        ctx.globalAlpha = (isScopeFrame && (dra !== 0)) ? 1.0 : (isActive ? 1.0 : 0.4);
+        const applyRot = (dra !== 0 && rCenter) && !movingSelectionPixels && (isScopeFrame || previewTargetId === layer.id);
+
+        let frameToDraw = layerFrame;
+        if (applyRot && rCenter) frameToDraw = rotateFrameFree(frameToDraw, dra, rCenter);
+
+        drawFrameData(frameToDraw, true, 0, 0);
+        if (isActive && draftFrame) drawFrameData(draftFrame, true, 0, 0);
+      });
+      ctx.globalAlpha = 1.0;
+    }
+
+    // Grid lines
+    for (let i = 0; i <= asset.size; i++) {
+      const isMajor = i % 8 === 0;
+      ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.08)' : GRID_COLOR;
+      ctx.lineWidth = isMajor ? 1 : 0.5;
+      ctx.beginPath();
+      ctx.moveTo(i * PIXEL_SCALE, 0);
+      ctx.lineTo(i * PIXEL_SCALE, canvasSize);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, i * PIXEL_SCALE);
+      ctx.lineTo(canvasSize, i * PIXEL_SCALE);
+      ctx.stroke();
+    }
+
+    // Isometric Grid
+    if (showIsometricGrid) {
+      ctx.strokeStyle = 'rgba(79, 70, 229, 0.4)';
+      ctx.lineWidth = 1;
+      const step = 8;
+      for (let i = -asset.size; i <= asset.size * 2; i += step) {
+        ctx.beginPath();
+        ctx.moveTo(i * PIXEL_SCALE, 0);
+        ctx.lineTo((i + asset.size * 2) * PIXEL_SCALE, asset.size * PIXEL_SCALE);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(i * PIXEL_SCALE, 0);
+        ctx.lineTo((i - asset.size * 2) * PIXEL_SCALE, asset.size * PIXEL_SCALE);
+        ctx.stroke();
+      }
+    }
+    
+    // Anatomy Guides
+    if (asset.category === 'character' && leftSidebarTab === 'anatomy') {
+      const compositeFrame = Array.from({ length: asset.size }, () => Array(asset.size).fill(0));
+      asset.layers?.forEach(layer => {
+        if (!layer.isVisible) return;
+        const frame = layer.frames[frameIndex];
+        if (!frame) return;
+        for (let r = 0; r < asset.size; r++) {
+          for (let c = 0; c < asset.size; c++) {
+            if (frame[r][c] !== 0) compositeFrame[r][c] = frame[r][c];
+          }
+        }
+      });
+
+      const segments = analyzeBodySegments(compositeFrame, asset.anatomy);
+      const { neckRow, waistRow, torsoLeft, torsoRight, torsoCenterCol, ankleRow, kneeRow } = segments;
+      
+      const drawBone = (type: string, color: string, pos: number, isVertical: boolean, dashed: boolean = false) => {
+        const isSelected = hoveringBone === type || draggingBone === type;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = isSelected ? 1.0 : 0.6;
+        ctx.lineWidth = isSelected ? 2 : 1;
+        if (dashed) ctx.setLineDash([4, 4]); else ctx.setLineDash([]);
+        if (isSelected) { ctx.shadowBlur = 4; ctx.shadowColor = color; }
+        ctx.beginPath();
+        const screenPos = pos * PIXEL_SCALE + PIXEL_SCALE / 2;
+        if (isVertical) { ctx.moveTo(screenPos, 0); ctx.lineTo(screenPos, canvasSize); }
+        else { ctx.moveTo(0, screenPos); ctx.lineTo(canvasSize, screenPos); }
+        ctx.stroke();
+        ctx.shadowBlur = 0; ctx.globalAlpha = 1.0; ctx.setLineDash([]);
+      };
+
+      drawBone('neck', 'rgba(135, 206, 235)', neckRow, false);
+      drawBone('waist', 'rgba(255, 127, 80)', waistRow, false);
+      drawBone('knees', 'rgba(244, 114, 182)', kneeRow, false);
+      drawBone('ankles', 'rgba(163, 230, 53)', ankleRow, false);
+      drawBone('torsoL', 'rgba(168, 85, 247)', torsoLeft, true);
+      drawBone('torsoR', 'rgba(249, 115, 22)', torsoRight, true);
+      drawBone('torsoC', 'rgba(253, 224, 71)', torsoCenterCol, true, true);
+
+      // Dismemberment Pixels
+      const currentOrientation = asset.anatomy?.orientations?.[anatomySelectedOrientation ?? 0];
+      currentOrientation?.members?.forEach(member => {
+        const isActive = member.id === anatomyActiveMemberId;
+        const isEditing = isActive && anatomyIsSelectionMode;
+        if (member.pixels?.length) {
+          ctx.fillStyle = member.type.includes('arm') ? '#38bdf8' : member.type.includes('leg') ? '#fb7185' : member.type === 'head' ? '#fbbf24' : '#fb923c';
+          ctx.globalAlpha = isActive ? 0.6 : 0.2;
+          member.pixels.forEach(p => {
+            ctx.fillRect(p.c * PIXEL_SCALE, p.r * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+            if (isEditing) {
+              ctx.strokeStyle = '#ffffff';
+              ctx.strokeRect(p.c * PIXEL_SCALE + 1, p.r * PIXEL_SCALE + 1, PIXEL_SCALE - 2, PIXEL_SCALE - 2);
+            }
+          });
+          ctx.globalAlpha = 1.0;
+        }
+      });
+    }
+
+    // Selection
+    if (selectionRect) {
+      ctx.fillStyle = 'rgba(79, 70, 229, 0.15)';
+      ctx.fillRect(selectionRect.c * PIXEL_SCALE, selectionRect.r * PIXEL_SCALE, selectionRect.w * PIXEL_SCALE, selectionRect.h * PIXEL_SCALE);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(selectionRect.c * PIXEL_SCALE, selectionRect.r * PIXEL_SCALE, selectionRect.w * PIXEL_SCALE, selectionRect.h * PIXEL_SCALE);
+      ctx.setLineDash([]);
+    }
+  }, [
+    canvasRef, asset, frameIndex, activeLayerId, onionSkinPrevFrame, onionSkinNextFrame, draftFrame,
+    rotationAngle, rotationCenter, zoom, selectionRect, movingSelectionPixels, canvasBg, leftSidebarTab,
+    showIsometricGrid, referenceFrame, hoveringBone, draggingBone, anatomyActiveMemberId, 
+    anatomyIsSelectionMode, anatomySelectedOrientation, PIXEL_SCALE, canvasSize
+  ]);
+}

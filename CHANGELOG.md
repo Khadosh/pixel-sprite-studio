@@ -7,10 +7,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ## 2026-04-25 (Hoy)
 **1 commit realizado**
 
+- **UI**: **Refactor de SpritePixelEditor**. Modularización del editor de píxeles en una arquitectura de hooks (`useCanvasRender`, `usePixelInteraction`) y sub-componentes para mejorar la mantenibilidad.
+- **Fix**: Resuelto conflicto de exportación en `generateHurt` y error de `passive event listener` en el zoom del canvas.
 - **Animación**: **Nuevo Motor Basado en Anatomía**. Migradas las animaciones procedurales de un sistema de rectángulos a uno de máscaras de píxeles reales (Dismemberment).
-- **Motores**: Implementado el `AnatomyResolver` para unificar la selección manual de píxeles con la inferencia algorítmica.
-- **Suite Core 8**: Implementados/Mejorados los generadores de `idle`, `walk`, `run`, `jump`, `hurt` y `die` con soporte total de jerarquías anatómicas.
-- **Transformaciones**: Agregadas funciones de `shiftPixels`, `rotatePixels` y `stretchPixels` para deformaciones precisas.
 
 ---
 

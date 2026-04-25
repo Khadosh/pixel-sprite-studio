@@ -36,25 +36,6 @@ export function generateAttack(
   return [f0, f1, f2, f2];
 }
 
-/** 
- * Hurt: Knockback with knee buckle.
- */
-export function generateHurt(
-  base: Frame, 
-  anatomy?: AnatomyConfig
-): Frame[] {
-  const segments = analyzeBodySegments(base, anatomy);
-  const { neckRow, waistRow, kneeRow } = segments;
-
-  // 1. Impact (Flash/Lean back + Knee buckle)
-  let f0 = leanBody(base, waistRow, neckRow, -3);
-  f0 = squash(f0, [kneeRow], undefined, waistRow); // Knees buckle from impact
-  
-  // 2. Recovery
-  const f1 = cloneFrame(base);
-
-  return [f0, f1, f0, f1];
-}
 
 /** 
  * Cast: Raising arms with steady base and magical glow.
