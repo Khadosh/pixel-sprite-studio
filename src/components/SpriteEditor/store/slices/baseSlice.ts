@@ -214,11 +214,16 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
 
   createCheckpoint: (name?: string) => set(state => {
     const versions = state.editedAsset.versions || [];
+    const assetCopy = JSON.parse(JSON.stringify(state.editedAsset));
+    
+    // CRITICAL: Clear versions in the copy to prevent exponential recursion
+    assetCopy.versions = [];
+    
     const newVersion = {
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       name: name || `Versión ${versions.length + 1}`,
-      asset: JSON.parse(JSON.stringify(state.editedAsset))
+      asset: assetCopy
     };
     
     const updatedVersions = [newVersion, ...versions].slice(0, 10);
@@ -241,8 +246,11 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     };
   }),
 
-  clearHistory: () => set(state => ({
-    editedAsset: { ...state.editedAsset, versions: [] },
-    isDirty: true
-  })),
+  clearHistory: () => set(state => {
+    console.log('[History] Clearing all version checkpoints...');
+    return {
+      editedAsset: { ...state.editedAsset, versions: [] },
+      isDirty: true
+    };
+  }),
 });

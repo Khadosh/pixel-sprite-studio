@@ -14,6 +14,7 @@ export const EditorSidebarNavigator = () => {
     { id: 'anatomy', icon: PxBone, label: 'BONES' },
     { id: 'themes', icon: PxPalette, label: 'THEMES' },
     { id: 'assets', icon: PxSword, label: 'ASSETS' },
+    { id: 'history', icon: PxClock, label: 'HISTORY' },
     { id: 'config', icon: PxSettings, label: 'CONFIG' },
   ] as const;
 

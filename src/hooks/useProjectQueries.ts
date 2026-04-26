@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, Project, ProjectSprite } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { SpriteAsset } from '@/lib/types';
+import { compressAsset, decompressAsset } from '@/lib/spriteDataUtils';
+import { createSpec, parseSpec } from '@/lib/slugUtils';
 
 export const projectKeys = {
   all: ['projects'] as const,
@@ -165,7 +167,10 @@ export function useProjectSprites(projectId?: string) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ProjectSprite[];
+      return (data || []).map(s => ({
+        ...s,
+        asset_data: decompressAsset(s.asset_data)
+      })) as ProjectSprite[];
     },
     enabled: !!projectId,
   });
@@ -191,7 +196,21 @@ export function useSprite(idOrSlug?: string, projectId?: string) {
       
       const { data, error } = await query.single();
       if (error) throw error;
-      return data as ProjectSprite;
+      if (!data) return null;
+
+      let assetData = data.asset_data as any;
+      const rawJson = JSON.stringify(assetData);
+      
+      // AUTO-CLEAN: If the sprite is massive (>1MB), purge history immediately on load
+      if (rawJson.length > 1024 * 1024) {
+        console.warn(`[Auto-Clean] Sprite ${data.id} is massive (${(rawJson.length / 1024 / 1024).toFixed(2)}MB). Purging history...`);
+        assetData.versions = [];
+      }
+
+      return {
+        ...data,
+        asset_data: decompressAsset(assetData)
+      } as ProjectSprite;
     },
     enabled: !!idOrSlug && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug) || !!projectId),
   });
@@ -202,8 +221,6 @@ export function useCreateSprite() {
 
   return useMutation({
     mutationFn: async ({ projectId, asset }: { projectId: string; asset: SpriteAsset }) => {
-      const { createSpec } = await import('@/lib/slugUtils');
-      
       // Generate initial slug for the sprite (scoped to project)
       let baseSlug = createSpec('', asset.name || 'new sprite');
       let slug = baseSlug;
@@ -225,14 +242,23 @@ export function useCreateSprite() {
         }
       }
 
-      const { data, error } = await supabase
+      const rawSize = JSON.stringify(asset).length;
+      let assetToSave = { ...asset };
+      if (rawSize > 500 * 1024) assetToSave.versions = [];
+
+      const compressedAsset = compressAsset(assetToSave);
+
+      const { data, error: insertError } = await supabase
         .from('project_sprites')
-        .insert([{ project_id: projectId, asset_data: asset, slug }])
+        .insert([{ project_id: projectId, asset_data: compressedAsset, slug }])
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ProjectSprite;
+      if (insertError) throw insertError;
+      return {
+        ...data,
+        asset_data: decompressAsset(data.asset_data)
+      } as ProjectSprite;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: spriteKeys.lists(variables.projectId) });
@@ -252,13 +278,29 @@ export function useUpdateSprite() {
         .eq('id', id)
         .single();
       
-      const currentAsset = current?.asset_data as any;
+      const currentAsset = current?.asset_data ? decompressAsset(current.asset_data) : null;
       const nameChanged = currentAsset?.name !== asset.name;
+
+      const rawSize = JSON.stringify(asset).length;
+      console.log(`[Save] Sprite raw size: ${(rawSize / 1024).toFixed(2)}KB`);
+
+      let assetToSave = { ...asset };
       
-      let updateData: any = { asset_data: asset };
+      // SAFETY: If asset is massive (>500KB raw), clear versions forcefully
+      if (rawSize > 500 * 1024) {
+        console.warn('[Save] Sprite too large, clearing history versions to save database health.');
+        assetToSave.versions = [];
+      }
+
+      const compressedAsset = compressAsset(assetToSave);
+      const compressedSize = JSON.stringify(compressedAsset).length;
+      console.log(`[Save] Sprite compressed size: ${(compressedSize / 1024).toFixed(2)}KB`);
+
+      let updateData: any = { 
+        asset_data: compressedAsset 
+      };
       
       if (nameChanged) {
-        const { createSpec } = await import('@/lib/slugUtils');
         let baseSlug = createSpec(id, asset.name);
         let slug = baseSlug;
         let counter = 1;

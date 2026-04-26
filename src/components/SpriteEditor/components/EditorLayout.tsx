@@ -261,6 +261,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                     {leftSidebarTab === 'anatomy' && <AnatomyPanel />}
                     {leftSidebarTab === 'themes' && <PaletteLibrary />}
                     {leftSidebarTab === 'assets' && <AssetLibrary />}
+                    {leftSidebarTab === 'history' && <HistoryPanel />}
                     {leftSidebarTab === 'config' && <MetadataPanel />}
                   </div>
                 )}

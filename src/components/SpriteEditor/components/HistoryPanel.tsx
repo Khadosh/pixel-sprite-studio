@@ -37,10 +37,24 @@ export const HistoryPanel = () => {
   return (
     <div className="flex flex-col h-full gap-4">
       <div className="flex-shrink-0 space-y-3">
-        <h3 className="font-pixel text-[10px] text-primary uppercase tracking-widest flex items-center gap-2">
-          <PxClock size={14} />
-          Historial Cloud
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-pixel text-[10px] text-primary uppercase tracking-widest flex items-center gap-2">
+            <PxClock size={14} />
+            Historial Cloud
+          </h3>
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="h-6 px-2 font-pixel text-[7px]"
+            onClick={() => {
+              if (confirm('¿PURGAR TODO EL HISTORIAL? Esto eliminará todas las versiones para recuperar rendimiento.')) {
+                clearHistory();
+              }
+            }}
+          >
+            <PxTrash size={10} className="mr-1" /> PURGA
+          </Button>
+        </div>
         <p className="text-[9px] text-muted-foreground font-mono uppercase leading-tight">
           Crea puntos de restauración manual antes de cambios críticos.
         </p>
