@@ -10,6 +10,7 @@ interface EditorCanvasProps {
   onPointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onContextMenu: (e: React.MouseEvent) => void;
   onMouseLeave: () => void;
+  cursor?: string;
 }
 
 export function EditorCanvas({
@@ -22,6 +23,7 @@ export function EditorCanvas({
   onPointerUp,
   onContextMenu,
   onMouseLeave,
+  cursor = 'crosshair',
 }: EditorCanvasProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -45,8 +47,8 @@ export function EditorCanvas({
         ref={canvasRef}
         width={width}
         height={height}
-        className="rounded border border-border cursor-crosshair shrink-0 shadow-lg touch-none"
-        style={{ imageRendering: 'pixelated' }}
+        className="rounded border border-border shrink-0 shadow-lg touch-none"
+        style={{ imageRendering: 'pixelated', cursor }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

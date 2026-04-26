@@ -20,7 +20,11 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setEditingFrameIndex: (idx) => set({ editingFrameIndex: idx }),
   setViewingAnimation: (name) => set({ viewingAnimation: name }),
   setIsDirty: (dirty) => set({ isDirty: dirty }),
-  setAssetName: (name) => set({ assetName: name, isDirty: true }),
+  setAssetName: (name) => set(state => ({ 
+    assetName: name, 
+    editedAsset: { ...state.editedAsset, name },
+    isDirty: true 
+  })),
   setIsEditingName: (editing) => set({ isEditingName: editing }),
   setOnionSkin: (onOrFn) => set(s => ({ 
     onionSkin: typeof onOrFn === 'function' ? (onOrFn as Function)(s.onionSkin) : onOrFn 

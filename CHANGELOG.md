@@ -5,14 +5,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-26 (Hoy)
-**6 commits realizados**
+**8 commits realizados**
 
-- **Fix**: **Estabilidad en Caminatas**. Corregido el efecto "zapateo" y "brazos espagueti" en los ciclos de caminata (Front / TopDown) restaurando la física de impacto (weight transfer) y el bombeo vertical de brazos previo a la implementación del motor de desmembramiento anatómico.
-- **Animación**: **Caminata Pro (Richard Williams)**. Restaurado el ciclo de 4 fases con ritmo vertical preciso (Contacto, Down, Pass, Up) y corregida la **coordinación cruzada** (brazo-pierna opuesta) para un movimiento natural.
-- **Metadatos**: **Sincronización de Slugs**. Implementado sistema de actualización automática de URLs (slugs) al renombrar sprites o proyectos, garantizando consistencia entre la UI y la base de datos.
-- **Workflow**: **Navegación Fluida tras Guardado**. Eliminado el cierre automático y el "efecto rebote" al guardar; ahora el editor actualiza su propia URL sin interrumpir la sesión de dibujo.
-- **UI**: **Edición de Proyectos In-place**. Añadida la capacidad de renombrar proyectos directamente desde el Workspace haciendo click en el título, con sincronización inmediata de slugs.
-- **Fix**: **Estabilidad de Tipos en Workspace**. Corregidos errores de importación y chequeos de nulidad de `project` que causaban errores de compilación en TypeScript.
+- **Fix**: **Interacción de Anatomía**. Corregido el bug donde se dibujaban píxeles accidentalmente al arrastrar las líneas guía.
+- **UI**: **Cursores Dinámicos**. Implementado soporte para cursores contextuales (`row-resize`, `col-resize`) al interactuar con el esqueleto anatómico.
+- **Workflow**: **Navegación Sin Parpadeo**. Optimizado el reseteo del store para evitar recargas completas de página (full reload) cuando un asset cambia su slug tras un renombrado.
+- **Consistencia**: **Sincronización de Metadatos en Vivo**. Unificado el estado de `assetName` con el objeto interno del sprite, garantizando que el autoguardado no sobrescriba los cambios de nombre.
+- **IA**: **Nombres de Asset Limpios**. Refinado el motor de generación para eliminar prefijos técnicos de los prompts, resultando en nombres de galería mucho más legibles.
+- **Animación**: **Caminata Pro (Richard Williams)**. Restaurado el ciclo de 4 fases con ritmo vertical preciso (Contacto, Down, Pass, Up) y corregida la **coordinación cruzada** (brazo-pierna opuesta).
+- **Metadatos**: **Sincronización de Slugs**. Implementado sistema de actualización automática de URLs (slugs) al renombrar sprites o proyectos.
+- **UI**: **Edición de Proyectos In-place**. Añadida la capacidad de renombrar proyectos directamente desde el Workspace.
 
 ## 2026-04-25
 **1 commit realizado**

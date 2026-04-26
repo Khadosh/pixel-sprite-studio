@@ -74,9 +74,14 @@ export function useGenerateSpriteFal() {
       // Step 2: Load the image and pixelize it
       const pixelizedData = await pixelizeImageUrl(imageUrl, size, options?.maxColors ?? 24);
 
+      const cleanName = prompt
+        .replace(/front view of a (character|creature|object|environment|effect),\s*/i, '')
+        .split(',')[0]
+        .trim();
+
       const sprite: SpriteAsset = {
         id: crypto.randomUUID(),
-        name: prompt.slice(0, 20) || 'AI Generated',
+        name: cleanName.slice(0, 40) || 'AI Generated',
         description: prompt,
         category: 'character',
         size,

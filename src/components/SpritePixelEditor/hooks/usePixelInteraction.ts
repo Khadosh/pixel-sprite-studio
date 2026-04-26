@@ -96,18 +96,19 @@ export function usePixelInteraction({
         }
       });
       const segments = analyzeBodySegments(compositeFrame, asset.anatomy);
-      
       const checkBone = (val: number, isVertical: boolean) => Math.abs((isVertical ? col : row) - val) < 0.8;
       
-      if (checkBone(segments.neckRow, false)) setDraggingBone('neck');
-      else if (checkBone(segments.waistRow, false)) setDraggingBone('waist');
-      else if (checkBone(segments.torsoLeft, true)) setDraggingBone('torsoL');
-      else if (checkBone(segments.torsoRight, true)) setDraggingBone('torsoR');
-      else if (checkBone(segments.torsoCenterCol, true)) setDraggingBone('torsoC');
-      else if (checkBone(segments.kneeRow, false)) setDraggingBone('knees');
-      else if (checkBone(segments.ankleRow, false)) setDraggingBone('ankles');
+      let boneToDrag: string | null = null;
+      if (checkBone(segments.neckRow, false)) boneToDrag = 'neck';
+      else if (checkBone(segments.waistRow, false)) boneToDrag = 'waist';
+      else if (checkBone(segments.torsoLeft, true)) boneToDrag = 'torsoL';
+      else if (checkBone(segments.torsoRight, true)) boneToDrag = 'torsoR';
+      else if (checkBone(segments.torsoCenterCol, true)) boneToDrag = 'torsoC';
+      else if (checkBone(segments.kneeRow, false)) boneToDrag = 'knees';
+      else if (checkBone(segments.ankleRow, false)) boneToDrag = 'ankles';
       
-      if (draggingBone) {
+      if (boneToDrag) {
+        setDraggingBone(boneToDrag);
         e.currentTarget.setPointerCapture(e.pointerId);
         return;
       }

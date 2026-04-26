@@ -40,10 +40,16 @@ export default function SpriteStudio() {
   // 2. Local State for Store
   const [store, setStore] = useState<any>(null);
 
-  // Reset store if we switch to a different sprite (handles navigation between assets)
+  // Reset store ONLY if we switch to a completely different sprite record
   useEffect(() => {
-    setStore(null);
-  }, [spriteId]);
+    if (sprite && store) {
+      const storeAssetId = store.getState().editedAsset.id;
+      const incomingAssetId = (sprite.asset_data as SpriteAsset).id;
+      if (storeAssetId !== incomingAssetId) {
+        setStore(null);
+      }
+    }
+  }, [sprite?.id]);
 
   // Initialize store once sprite is loaded
   useEffect(() => {

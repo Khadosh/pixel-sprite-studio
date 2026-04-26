@@ -62,6 +62,9 @@ export default function SpritePixelEditor(props: SpritePixelEditorProps) {
     draggingBone,
   });
 
+  const activeBone = draggingBone || hoveringBone;
+  const cursor = activeBone ? (activeBone.includes('L') || activeBone.includes('R') || activeBone.includes('C') ? 'col-resize' : 'row-resize') : 'crosshair';
+
   return (
     <EditorCanvas
       canvasRef={canvasRef}
@@ -73,6 +76,7 @@ export default function SpritePixelEditor(props: SpritePixelEditorProps) {
       onPointerUp={handlePointerUp}
       onContextMenu={(e) => e.preventDefault()}
       onMouseLeave={() => setHoverCell(null)}
+      cursor={cursor}
     />
   );
 }
