@@ -5,8 +5,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-26 (Hoy)
-**5 commits realizados**
+**6 commits realizados**
 
+- **Fix**: **Estabilidad en Caminatas**. Corregido el efecto "zapateo" y "brazos espagueti" en los ciclos de caminata (Front / TopDown) restaurando la física de impacto (weight transfer) y el bombeo vertical de brazos previo a la implementación del motor de desmembramiento anatómico.
 - **Animación**: **Caminata Pro (Richard Williams)**. Restaurado el ciclo de 4 fases con ritmo vertical preciso (Contacto, Down, Pass, Up) y corregida la **coordinación cruzada** (brazo-pierna opuesta) para un movimiento natural.
 - **Metadatos**: **Sincronización de Slugs**. Implementado sistema de actualización automática de URLs (slugs) al renombrar sprites o proyectos, garantizando consistencia entre la UI y la base de datos.
 - **Workflow**: **Navegación Fluida tras Guardado**. Eliminado el cierre automático y el "efecto rebote" al guardar; ahora el editor actualiza su propia URL sin interrumpir la sesión de dibujo.
@@ -19,8 +20,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-24
-**9 commits realizados**
+**10 commits realizados**
 
+- **Estructura**: **Ecosistema de Proyecto**. Agregada al roadmap la Fase 9 que evoluciona la herramienta de un editor de sprites sueltos a una suite completa de Game Assets, incluyendo soporte planeado para tipografía por IA.
 - **Workflow**: **Sincronización Total de Perspectivas**. Rediseñado el sistema de navegación para que el canvas, las miniaturas, la previsualización de animación y el panel de anatomía operen sobre una base de datos unificada (Front, Side R/L, Back).
 - **Animación**: **Asociación Contextual y Auto-Selección**. Implementado filtrado dinámico de la biblioteca de animaciones según la vista activa y sistema de pre-selección automática de `Idle` al cambiar de perspectiva.
 - **Fix**: **Persistencia de Base en Orientación**. Corregido el bug que reseteaba la vista al Frente al interactuar con el botón BASE; ahora respeta el frame base de la orientación actual (Side/Back).

@@ -36,6 +36,21 @@
 
 ---
 
+## Fase 9 — Ecosistema de Proyecto Integral 🌍
+*Prioridad: ALTA — Evolucionar de un editor de sprites sueltos a un creador de recursos de juego (Game Asset Suite), con una UI de proyecto real*
+
+### 9.1 — Sistema de Tipos de Asset
+- [ ] **Categorización Core**: Separar formalmente los recursos en `Characters`, `Assets/Props`, `Tilesets`, `Fonts` (Tipografía) y `UI Elements`.
+- [ ] **Project Dashboard Overhaul**: Rediseñar la vista principal del proyecto con secciones dedicadas para cada categoría, dando una visión real de que se está armando un juego y no solo archivos sueltos.
+- [ ] **Herramientas Especializadas**: Adaptar el "Studio" según el tipo de asset (ej: tilesets no necesitan timeline de animación de personaje, pero sí testing de autotiling).
+
+### 9.2 — AI Font Generator & Tipografía
+- [ ] **Generación de Fuentes vía IA**: Capacidad de generar "spritesheets" de fuentes bitmap completas a partir de un prompt (ej: "fuente gótica medieval 8x8" o "fuente sci-fi neón").
+- [ ] **Mapeo Automático**: Slicear e identificar las letras (A-Z, 0-9) automáticamente para crear una fuente utilizable en motores de juego.
+- [ ] **Text Preview Editor**: Un mini-canvas para probar la fuente en tiempo real escribiendo diálogos de prueba.
+
+---
+
 ## Fase E — Integración y Exportación Pro 💰
 
 ### E.1 — Export profesional
