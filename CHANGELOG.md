@@ -4,12 +4,17 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-25 (Hoy)
-**1 commit realizado**
+## 2026-04-26 (Hoy)
+**5 commits realizados**
 
-- **UI**: **Refactor de SpritePixelEditor**. Modularización del editor de píxeles en una arquitectura de hooks (`useCanvasRender`, `usePixelInteraction`) y sub-componentes para mejorar la mantenibilidad.
-- **Fix**: Resuelto conflicto de exportación en `generateHurt` y error de `passive event listener` en el zoom del canvas.
-- **Animación**: **Nuevo Motor Basado en Anatomía**. Migradas las animaciones procedurales de un sistema de rectángulos a uno de máscaras de píxeles reales (Dismemberment).
+- **Animación**: **Caminata Pro (Richard Williams)**. Restaurado el ciclo de 4 fases con ritmo vertical preciso (Contacto, Down, Pass, Up) y corregida la **coordinación cruzada** (brazo-pierna opuesta) para un movimiento natural.
+- **Metadatos**: **Sincronización de Slugs**. Implementado sistema de actualización automática de URLs (slugs) al renombrar sprites o proyectos, garantizando consistencia entre la UI y la base de datos.
+- **Workflow**: **Navegación Fluida tras Guardado**. Eliminado el cierre automático y el "efecto rebote" al guardar; ahora el editor actualiza su propia URL sin interrumpir la sesión de dibujo.
+- **UI**: **Edición de Proyectos In-place**. Añadida la capacidad de renombrar proyectos directamente desde el Workspace haciendo click en el título, con sincronización inmediata de slugs.
+- **Fix**: **Estabilidad de Tipos en Workspace**. Corregidos errores de importación y chequeos de nulidad de `project` que causaban errores de compilación en TypeScript.
+
+## 2026-04-25
+**1 commit realizado**
 
 ---
 

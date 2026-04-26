@@ -224,6 +224,22 @@ export function AnatomyPanel() {
                   <Slider value={[anatomy.torsoRight ?? asset.size-1]} max={asset.size-1} onValueChange={([v]) => handleUpdate({ torsoRight: v })} />
                </div>
             </div>
+
+            <div className="space-y-3 pt-2">
+              <SliderLabel label="Knee Level" value={anatomy.kneeRow} />
+              <Slider 
+                value={[anatomy.kneeRow ?? Math.floor(asset.size * 0.85)]} 
+                max={asset.size-1} step={1}
+                onValueChange={([v]) => handleUpdate({ kneeRow: v })}
+              />
+
+              <SliderLabel label="Ankle Level" value={anatomy.ankleRow} />
+              <Slider 
+                value={[anatomy.ankleRow ?? Math.floor(asset.size * 0.95)]} 
+                max={asset.size-1} step={1}
+                onValueChange={([v]) => handleUpdate({ ankleRow: v })}
+              />
+            </div>
           </div>
         </div>
       )}

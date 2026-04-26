@@ -182,7 +182,6 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   handleSave: () => {
     const state = get();
     state._onSave({ ...state.editedAsset, name: state.assetName });
-    state._onOpenChange(false);
     set({ isDirty: false });
   },
 

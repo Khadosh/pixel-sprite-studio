@@ -72,11 +72,16 @@ export default function SpriteStudio() {
     if (!realSpriteId || !realProjectId) return;
     
     try {
-      await updateSpriteMutation.mutateAsync({ 
+      const result = await updateSpriteMutation.mutateAsync({ 
         id: realSpriteId, 
         projectId: realProjectId, 
         asset 
       });
+      
+      if (result?.slugChanged && result.newSlug) {
+        navigate(`/project/${projectSlug}/editor/${result.newSlug}`, { replace: true });
+      }
+      
       toast({ title: 'Checkpoint guardado', description: 'Nueva versión creada en la nube.' });
     } catch (err: any) {
       toast({ title: 'Error al guardar', description: err.message, variant: 'destructive' });
@@ -95,16 +100,22 @@ export default function SpriteStudio() {
         const realProjectId = (sprite as any)?.project_id || projectId;
 
         clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          updateSpriteMutation.mutate({ 
-            id: realSpriteId, 
-            projectId: realProjectId, 
-            asset: state.editedAsset 
-          }, {
-            onSuccess: () => {
-              store.getState().setIsDirty(false);
+        timeoutId = setTimeout(async () => {
+          try {
+            const result = await updateSpriteMutation.mutateAsync({ 
+              id: realSpriteId, 
+              projectId: realProjectId, 
+              asset: state.editedAsset 
+            });
+            
+            store.getState().setIsDirty(false);
+            
+            if (result?.slugChanged && result.newSlug) {
+              navigate(`/project/${projectSlug}/editor/${result.newSlug}`, { replace: true });
             }
-          });
+          } catch (err) {
+            console.error('Autosave failed:', err);
+          }
         }, 3000); 
       }
     });

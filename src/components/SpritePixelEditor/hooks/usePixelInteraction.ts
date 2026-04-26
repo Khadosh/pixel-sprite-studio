@@ -55,6 +55,12 @@ export function usePixelInteraction({
     if (!coords) return;
     const { row, col } = coords;
 
+    // Right click erase (button 2)
+    if (e.button === 2) {
+      onPointerDown(row, col, 'eraser');
+      return;
+    }
+
     if (e.button === 1 || tool === 'pan') {
       isPanning.current = true;
       panStart.current = { x: e.clientX, y: e.clientY };
@@ -115,6 +121,12 @@ export function usePixelInteraction({
     if (!coords) return;
     const { row, col } = coords;
     setHoverCell({ r: row, c: col });
+
+    // Right click erase (buttons mask 2)
+    if (e.buttons === 2) {
+      onPointerMove(row, col, 'eraser');
+      return;
+    }
 
     if (isPanning.current && panStart.current && scrollStart.current) {
       const dx = e.clientX - panStart.current.x;

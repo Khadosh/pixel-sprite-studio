@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCopy, PxGrid } from '@/components/icons/PixelIcon';
+import { PxArrowLeft, PxPlus, PxImage, PxTrash, PxSparkles, PxLoader, PxX, PxCopy, PxGrid, PxEdit } from '@/components/icons/PixelIcon';
 import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSpriteFal } from '@/hooks/useGenerateSpriteFal';
 import type { SpriteAsset } from '@/lib/types';
-import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite } from '@/hooks/useProjectQueries';
+import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite, useUpdateProject } from '@/hooks/useProjectQueries';
 import { createSpec, parseSpec } from '@/lib/slugUtils';
 import { AICreatorWizard } from '@/components/AICreatorWizard';
 
@@ -156,6 +156,41 @@ export default function ProjectWorkspace() {
     });
   };
 
+  const updateProjectMutation = useUpdateProject();
+  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
+  const [tempProjectName, setTempProjectName] = useState('');
+
+  // Sync temp name when project loads
+  useEffect(() => {
+    if (project?.name) {
+      setTempProjectName(project.name);
+    }
+  }, [project?.name]);
+
+  const handleSaveProjectName = async () => {
+    if (!project || !tempProjectName.trim() || tempProjectName === project.name) {
+      setIsEditingProjectName(false);
+      return;
+    }
+
+    try {
+      const updated = await updateProjectMutation.mutateAsync({ 
+        id: project.id, 
+        name: tempProjectName.trim() 
+      });
+      setIsEditingProjectName(false);
+      toast({ title: 'Proyecto actualizado' });
+      
+      // If slug changed, we need to navigate to the new project URL
+      if (updated.slug !== projectSlug) {
+        navigate(`/project/${updated.slug}`, { replace: true });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      if (project) setTempProjectName(project.name);
+    }
+  };
+
   if (isProjectLoading || isSpritesLoading) {
     return <div className="min-h-screen bg-background flex flex-col items-center justify-center text-primary font-pixel text-xs">CARGANDO WORKSPACE...</div>;
   }
@@ -176,9 +211,34 @@ export default function ProjectWorkspace() {
               <PxArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
             </button>
-            <h1 className="font-pixel text-foreground text-xl md:text-2xl tracking-wider">
-              {project.name.toUpperCase()}
-            </h1>
+            
+            <div className="flex items-center gap-3">
+              {isEditingProjectName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    autoFocus
+                    value={tempProjectName}
+                    onChange={(e) => setTempProjectName(e.target.value)}
+                    onBlur={handleSaveProjectName}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveProjectName()}
+                    className="font-pixel text-lg h-10 w-64 bg-background border-primary"
+                  />
+                  {updateProjectMutation.isPending && <PxLoader className="animate-spin text-primary" size={16} />}
+                </div>
+              ) : (
+                <h1 
+                  className="font-pixel text-foreground text-xl md:text-2xl tracking-wider cursor-pointer hover:text-primary transition-colors flex items-center gap-2"
+                  onClick={() => {
+                    setTempProjectName(project.name);
+                    setIsEditingProjectName(true);
+                  }}
+                  title="Click para editar nombre del proyecto"
+                >
+                  {project.name.toUpperCase()}
+                  <PxEdit size={16} className="opacity-30 group-hover:opacity-100" />
+                </h1>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button

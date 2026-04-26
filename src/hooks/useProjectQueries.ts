@@ -106,6 +106,51 @@ export function useCreateProject() {
   });
 }
 
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { slugify } = await import('@/lib/slugUtils');
+      let baseSlug = slugify(name) || 'untitled';
+      let slug = baseSlug;
+      let counter = 1;
+      let unique = false;
+
+      // Ensure slug uniqueness
+      while (!unique) {
+        const { data } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('slug', slug)
+          .neq('id', id)
+          .maybeSingle();
+        
+        if (!data) {
+          unique = true;
+        } else {
+          slug = `${baseSlug}-${counter++}`;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ name, slug })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Project;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.slug) });
+    },
+  });
+}
+
 // --- Sprites Hooks ---
 
 export function useProjectSprites(projectId?: string) {
@@ -200,16 +245,61 @@ export function useUpdateSprite() {
 
   return useMutation({
     mutationFn: async ({ id, projectId, asset }: { id: string; projectId: string; asset: SpriteAsset }) => {
+      // 1. Fetch current slug to check if we need to update it
+      const { data: current } = await supabase
+        .from('project_sprites')
+        .select('slug, asset_data')
+        .eq('id', id)
+        .single();
+      
+      const currentAsset = current?.asset_data as any;
+      const nameChanged = currentAsset?.name !== asset.name;
+      
+      let updateData: any = { asset_data: asset };
+      
+      if (nameChanged) {
+        const { createSpec } = await import('@/lib/slugUtils');
+        let baseSlug = createSpec(id, asset.name);
+        let slug = baseSlug;
+        let counter = 1;
+        let unique = false;
+
+        while (!unique) {
+          const { data } = await supabase
+            .from('project_sprites')
+            .select('id')
+            .eq('project_id', projectId)
+            .eq('slug', slug)
+            .neq('id', id)
+            .maybeSingle();
+          
+          if (!data) {
+            unique = true;
+          } else {
+            slug = `${baseSlug}-${counter++}`;
+          }
+        }
+        updateData.slug = slug;
+      }
+
       const { error } = await supabase
         .from('project_sprites')
-        .update({ asset_data: asset })
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
+      return { 
+        slugChanged: nameChanged, 
+        newSlug: updateData.slug,
+        id 
+      };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: spriteKeys.lists(variables.projectId) });
       queryClient.invalidateQueries({ queryKey: spriteKeys.detail(variables.id) });
+      if (data?.slugChanged) {
+        queryClient.invalidateQueries({ queryKey: spriteKeys.detail(data.newSlug) });
+      }
     },
   });
 }
