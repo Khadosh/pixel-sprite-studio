@@ -4,7 +4,14 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-25 (Hoy)
+## 2026-04-26 (Hoy)
+**1 commit realizado**
+
+- **Fix**: **Estabilidad en Caminatas**. Corregido el efecto "zapateo" y "brazos espagueti" en los ciclos de caminata (Front / TopDown) restaurando la física de impacto (weight transfer) y el bombeo vertical de brazos previo a la implementación del motor de desmembramiento anatómico.
+
+---
+
+## 2026-04-25
 **1 commit realizado**
 
 - **UI**: **Refactor de SpritePixelEditor**. Modularización del editor de píxeles en una arquitectura de hooks (`useCanvasRender`, `usePixelInteraction`) y sub-componentes para mejorar la mantenibilidad.

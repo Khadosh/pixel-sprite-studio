@@ -1,3 +1,4 @@
+import type { Frame, AnatomyConfig } from '../../types';
 import { cloneFrame, shiftPixels, stretchPixels, findBounds, getCenterOfMass, shiftFrame, clearPixels } from '../transforms';
 import { resolveMembers } from '../anatomyResolver';
 
@@ -48,13 +49,15 @@ export function generateWalk(
     if (passingLeg) fPass = shiftPixels(base, fPass, passingLeg.pixels, -1, 0);
     if (standingLeg) fPass = shiftPixels(base, fPass, standingLeg.pixels, 0, 0);
     if (torso && head) fPass = shiftPixels(base, fPass, [...torso.pixels, ...head.pixels], 0, 0);
+    if (arm_left) fPass = shiftPixels(base, fPass, arm_left.pixels, 0, 0);
+    if (arm_right) fPass = shiftPixels(base, fPass, arm_right.pixels, 0, 0);
     
     // 4. UP: High point (Upper body rises 1px)
     let fUp = clearPixels(cloneFrame(base), movingParts);
-    if (torso && head) {
-      const upperBody = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
-      fUp = shiftPixels(base, fUp, upperBody, -1, 0);
-    }
+    if (torso && head) fUp = shiftPixels(base, fUp, [...torso.pixels, ...head.pixels], -1, 0);
+    // Arms stay at 0, creating a natural shoulder drop as torso rises
+    if (arm_left) fUp = shiftPixels(base, fUp, arm_left.pixels, 0, 0);
+    if (arm_right) fUp = shiftPixels(base, fUp, arm_right.pixels, 0, 0);
     if (leg_left) fUp = shiftPixels(base, fUp, leg_left.pixels, 0, 0);
     if (leg_right) fUp = shiftPixels(base, fUp, leg_right.pixels, 0, 0);
     
@@ -78,11 +81,16 @@ export function generateWalkSide(
   const createStep = (isLeftForward: boolean) => {
     const forwardLeg = isLeftForward ? leg_left : leg_right;
     const backLeg = isLeftForward ? leg_right : leg_left;
+    const forwardArm = isLeftForward ? arm_right : arm_left;
+    const backArm = isLeftForward ? arm_left : arm_right;
+    
     const movingParts = [
       ...(torso?.pixels || []),
       ...(head?.pixels || []),
       ...(forwardLeg?.pixels || []),
-      ...(backLeg?.pixels || [])
+      ...(backLeg?.pixels || []),
+      ...(forwardArm?.pixels || []),
+      ...(backArm?.pixels || [])
     ];
     
     // 1. CONTACT: Both feet on floor (X-offset)
@@ -90,13 +98,14 @@ export function generateWalkSide(
     if (forwardLeg) fContact = shiftPixels(base, fContact, forwardLeg.pixels, 0, 1);
     if (backLeg) fContact = shiftPixels(base, fContact, backLeg.pixels, 0, -1);
     if (torso && head) fContact = shiftPixels(base, fContact, [...torso.pixels, ...head.pixels], 0, 0);
+    if (forwardArm) fContact = shiftPixels(base, fContact, forwardArm.pixels, 0, 1);
+    if (backArm) fContact = shiftPixels(base, fContact, backArm.pixels, 0, -1);
     
     // 2. DOWN: Weight impact
     let fDown = clearPixels(cloneFrame(base), movingParts);
-    if (torso && head) {
-      const upperBody = [...torso.pixels, ...head.pixels];
-      fDown = shiftPixels(base, fDown, upperBody, 1, 0);
-    }
+    if (torso && head) fDown = shiftPixels(base, fDown, [...torso.pixels, ...head.pixels], 1, 0);
+    if (forwardArm) fDown = shiftPixels(base, fDown, forwardArm.pixels, 1, 1);
+    if (backArm) fDown = shiftPixels(base, fDown, backArm.pixels, 1, -1);
     if (forwardLeg) fDown = shiftPixels(base, fDown, forwardLeg.pixels, 0, 1);
     if (backLeg) fDown = shiftPixels(base, fDown, backLeg.pixels, 0, -1);
     
@@ -105,10 +114,14 @@ export function generateWalkSide(
     if (backLeg) fPass = shiftPixels(base, fPass, backLeg.pixels, -1, 0); 
     if (forwardLeg) fPass = shiftPixels(base, fPass, forwardLeg.pixels, 0, 0);
     if (torso && head) fPass = shiftPixels(base, fPass, [...torso.pixels, ...head.pixels], 0, 0);
+    if (forwardArm) fPass = shiftPixels(base, fPass, forwardArm.pixels, 0, 0);
+    if (backArm) fPass = shiftPixels(base, fPass, backArm.pixels, 0, 0);
     
     // 4. UP: Push off
     let fUp = clearPixels(cloneFrame(base), movingParts);
     if (torso && head) fUp = shiftPixels(base, fUp, [...torso.pixels, ...head.pixels], -1, 0);
+    if (forwardArm) fUp = shiftPixels(base, fUp, forwardArm.pixels, 0, 0);
+    if (backArm) fUp = shiftPixels(base, fUp, backArm.pixels, 0, 0);
     if (backLeg) fUp = shiftPixels(base, fUp, backLeg.pixels, -1, 1); 
     if (forwardLeg) fUp = shiftPixels(base, fUp, forwardLeg.pixels, 0, 0);
 
@@ -152,18 +165,28 @@ export function generateWalkTopDown(
     if (torso && head) f1 = shiftPixels(base, f1, [...torso.pixels, ...head.pixels], 0, 0);
     
     // 2. DOWN: Weight impact.
-    let f2 = clearPixels(cloneFrame(f1), movingParts);
-    if (torso && head) f2 = shiftPixels(base, f2, [...torso.pixels, ...head.pixels], 1, 0);
+    let f2 = clearPixels(cloneFrame(base), movingParts);
+    if (torso && head) {
+      const upperBody = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
+      f2 = shiftPixels(base, f2, upperBody, 1, 0);
+    }
+    // Mantener las piernas plantadas igual que en f1 para evitar el zapateo!
+    if (leadLeg) f2 = stretchPixels(base, f2, leadLeg.pixels, 2);
+    if (backLeg) f2 = stretchPixels(base, f2, backLeg.pixels, -1);
     
     // 3. PASSING: Lifting one leg.
     let f3 = clearPixels(cloneFrame(base), movingParts);
     if (backLeg) f3 = stretchPixels(base, f3, backLeg.pixels, -2); 
     if (leadLeg) f3 = shiftPixels(base, f3, leadLeg.pixels, 0, 0);
     if (torso && head) f3 = shiftPixels(base, f3, [...torso.pixels, ...head.pixels], 0, 0);
+    if (arm_left) f3 = shiftPixels(base, f3, arm_left.pixels, 0, 0);
+    if (arm_right) f3 = shiftPixels(base, f3, arm_right.pixels, 0, 0);
     
     // 4. UP: High point.
     let f4 = clearPixels(cloneFrame(base), movingParts);
     if (torso && head) f4 = shiftPixels(base, f4, [...torso.pixels, ...head.pixels], -1, 0);
+    if (arm_left) f4 = shiftPixels(base, f4, arm_left.pixels, 0, 0);
+    if (arm_right) f4 = shiftPixels(base, f4, arm_right.pixels, 0, 0);
     if (leg_left) f4 = shiftPixels(base, f4, leg_left.pixels, 0, 0);
     if (leg_right) f4 = shiftPixels(base, f4, leg_right.pixels, 0, 0);
     
