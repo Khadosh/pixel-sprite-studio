@@ -24,6 +24,8 @@ import { PxUpload, PxImage } from '@/components/icons/PixelIcon';
 import { imageToPixelData, PixelizeResult } from '@/lib/imageToPixelData';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { PALETTE_LIBRARY } from '@/lib/assets/palettes';
+import { decodeGif, DecodedGif } from '@/lib/gifUtils';
+import { GifImportWizard } from './GifImportWizard';
 
 interface ImportImageModalProps {
   open: boolean;
@@ -68,6 +70,10 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
   // Result
   const [pixelResult, setPixelResult] = useState<PixelizeResult | null>(null);
 
+  // GIF Wizard State
+  const [decodedGif, setDecodedGif] = useState<DecodedGif | null>(null);
+  const [showGifWizard, setShowGifWizard] = useState(false);
+
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const posStart = useRef({ x: 0, y: 0 });
@@ -96,7 +102,17 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
 
   // ─── File Loading ─────────────────────────────────────────────────
 
-  const handleFileSelect = useCallback((file: File) => {
+  const handleFileSelect = useCallback(async (file: File) => {
+    if (file.type === 'image/gif') {
+      const arrayBuffer = await file.arrayBuffer();
+      const decoded = await decodeGif(arrayBuffer);
+      setDecodedGif(decoded);
+      setFileName(file.name.replace(/\.[^/.]+$/, ''));
+      setShowGifWizard(true);
+      onOpenChange(false); // Close the main import modal to show the wizard
+      return;
+    }
+
     if (!file.type.startsWith('image/')) return;
     const img = new Image();
     img.onload = () => {
@@ -111,7 +127,7 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
       });
     };
     img.src = URL.createObjectURL(file);
-  }, []);
+  }, [onOpenChange]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -465,6 +481,15 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
           </div>
         </div>
       </DialogContent>
+
+      {decodedGif && (
+        <GifImportWizard 
+          open={showGifWizard} 
+          onOpenChange={setShowGifWizard} 
+          decodedGif={decodedGif} 
+          fileName={fileName}
+        />
+      )}
     </Dialog>
   );
 };

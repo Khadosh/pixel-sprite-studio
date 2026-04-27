@@ -5,8 +5,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-26 (Hoy)
-**11 commits realizados**
+**12 commits realizados**
 
+- **Novedad**: **GIF Reverse Engineering Wizard**. Implementado motor de ingeniería inversa que permite desglosar archivos GIF, seleccionar rangos de frames y mapearlos automáticamente a orientaciones (Front/Side/Back) y animaciones, reconstruyendo el asset completo en segundos.
 - **Backend**: **Sincronización de Slugs y Base de Datos**. Estabilizada la creación de sprites desde cero mediante el uso de la columna física `slug` en Postgres, eliminando errores de restricción NOT NULL.
 - **UI/UX**: **Previsualización Inteligente**. Refactorizado el panel de animación con 3 tamaños (Small, Medium, Large) y anclaje dinámico `origin-bottom-right` que garantiza visibilidad óptima en todas las resoluciones (16x16 y 32x32).
 - **QA**: **Blindaje de Tests Unitarios**. Implementada limpieza automática de `localStorage` y mock de `crypto.randomUUID` en el entorno de pruebas, estabilizando la suite de 43 tests contra interferencias de estado.
