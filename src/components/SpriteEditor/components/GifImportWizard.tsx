@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -140,9 +140,9 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const pxSize = canvas.width / assetSize;
-    pixelResult.frame.forEach((row, r) => {
-      row.forEach((p, c) => {
-        if (p > 0) {
+    pixelResult.frame.forEach((row: (number | null)[], r: number) => {
+      row.forEach((p: number | null, c: number) => {
+        if (p !== null && p > 0) {
           ctx.fillStyle = pixelResult.palette[p];
           ctx.fillRect(c * pxSize, r * pxSize, pxSize, pxSize);
         }
@@ -218,9 +218,9 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
           });
 
           // Remap frame pixels to global indices
-          const remappedFrame: Frame = result.frame.map(row => 
-            row.map(p => {
-              if (p === 0) return 0;
+          const remappedFrame: Frame = result.frame.map((row: (number | null)[]) => 
+            row.map((p: number | null) => {
+              if (p === null || p === 0) return 0;
               const hex = result.palette[p];
               const globalIdx = Object.entries(globalPalette).find(([_, h]) => h === hex)?.[0];
               return globalIdx ? Number(globalIdx) : 0;

@@ -256,9 +256,9 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const pxSize = canvas.width / assetSize;
-    pixelResult.frame.forEach((row, r) => {
-      row.forEach((p, c) => {
-        if (p > 0) {
+    pixelResult.frame.forEach((row: (number | null)[], r: number) => {
+      row.forEach((p: number | null, c: number) => {
+        if (p !== null && p > 0) {
           ctx.fillStyle = pixelResult.palette[p];
           ctx.fillRect(c * pxSize, r * pxSize, pxSize, pxSize);
         }
