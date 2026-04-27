@@ -50,7 +50,7 @@ describe('SpriteEditorStore - Palette Actions', () => {
   it('adds a new color and adds it to the active layer paletteIds', () => {
     store.getState().addColor();
     const state = store.getState();
-    const newKey = 2;
+    const newKey = 17; // Initial 16 theory colors + this one
     expect(state.editedAsset.palette[newKey]).toBeDefined();
     expect(state.editedAsset.layers[0].paletteIds).toContain(newKey);
   });

@@ -146,4 +146,21 @@ export const createLayerSlice: StoreSlice<Partial<SpriteEditorState>> = (set, ge
       activeLayerId: newLayerId,
     });
   },
+
+  addPropLayer: (propId: string) => {
+    const prop = PROP_LIBRARY.find(p => p.id === propId);
+    if (!prop) return;
+    const state = get();
+    const size = state.editedAsset.size;
+    const frame = size === 32 ? (prop.data32 || prop.data16) : (prop.data16 || prop.data32);
+    
+    if (!frame) return;
+
+    get().importAssetLayer({
+      name: prop.name,
+      frame: frame,
+      palette: prop.palette || {},
+      colorNames: prop.colorNames
+    });
+  },
 });

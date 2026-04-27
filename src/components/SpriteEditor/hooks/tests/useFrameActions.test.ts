@@ -45,28 +45,29 @@ describe('SpriteEditorStore - Frame Actions', () => {
   });
 
   it('duplicates a frame', () => {
+    // Initial state has 4 canonical frames
     store.getState().duplicateFrame(0);
     const state = store.getState();
-    expect(state.editedAsset.layers[0].frames).toHaveLength(2);
+    expect(state.editedAsset.layers[0].frames).toHaveLength(5);
   });
 
   it('inserts an empty frame', () => {
     store.getState().insertEmptyFrame(0);
     const state = store.getState();
-    expect(state.editedAsset.layers[0].frames).toHaveLength(2);
+    expect(state.editedAsset.layers[0].frames).toHaveLength(5);
   });
 
   it('deletes a frame', () => {
-    // Start with 2 frames
+    // Start with 5 frames (4 base + 1 duplicate)
     store.getState().duplicateFrame(0);
-    expect(store.getState().editedAsset.layers[0].frames).toHaveLength(2);
+    expect(store.getState().editedAsset.layers[0].frames).toHaveLength(5);
     
     // Set active frame to 1
     store.getState().setEditingFrameIndex(1);
     
     store.getState().deleteFrame(1);
     const state = store.getState();
-    expect(state.editedAsset.layers[0].frames).toHaveLength(1);
+    expect(state.editedAsset.layers[0].frames).toHaveLength(4);
     expect(state.editingFrameIndex).toBe(0);
   });
 });

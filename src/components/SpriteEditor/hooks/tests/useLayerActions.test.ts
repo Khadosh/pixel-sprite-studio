@@ -32,6 +32,7 @@ vi.mock('@/lib/assets/props', () => ({
       id: 'staff',
       name: 'Staff',
       category: 'weapon',
+      palette: { 4: '#00ff00', 5: '#0000ff' },
       data16: [
         [4, 5, 0],
         [0, 4, 0]

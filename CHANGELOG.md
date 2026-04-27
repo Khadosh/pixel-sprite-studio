@@ -5,8 +5,12 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-26 (Hoy)
-**8 commits realizados**
+**11 commits realizados**
 
+- **Backend**: **Sincronización de Slugs y Base de Datos**. Estabilizada la creación de sprites desde cero mediante el uso de la columna física `slug` en Postgres, eliminando errores de restricción NOT NULL.
+- **UI/UX**: **Previsualización Inteligente**. Refactorizado el panel de animación con 3 tamaños (Small, Medium, Large) y anclaje dinámico `origin-bottom-right` que garantiza visibilidad óptima en todas las resoluciones (16x16 y 32x32).
+- **QA**: **Blindaje de Tests Unitarios**. Implementada limpieza automática de `localStorage` y mock de `crypto.randomUUID` en el entorno de pruebas, estabilizando la suite de 43 tests contra interferencias de estado.
+- **Fix**: **Restauración de Props**. Recuperada la funcionalidad `addPropLayer` y optimizada para soportar assets de 16px y 32px dinámicamente.
 - **Fix**: **Interacción de Anatomía**. Corregido el bug donde se dibujaban píxeles accidentalmente al arrastrar las líneas guía.
 - **UI**: **Cursores Dinámicos**. Implementado soporte para cursores contextuales (`row-resize`, `col-resize`) al interactuar con el esqueleto anatómico.
 - **Workflow**: **Navegación Sin Parpadeo**. Optimizado el reseteo del store para evitar recargas completas de página (full reload) cuando un asset cambia su slug tras un renombrado.
