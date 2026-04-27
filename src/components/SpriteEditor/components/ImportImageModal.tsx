@@ -66,6 +66,7 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
   const [selectedLibraryId, setSelectedLibraryId] = useState<string>(PALETTE_LIBRARY[0].id);
   const [maxColors, setMaxColors] = useState(16);
   const [alphaThreshold, setAlphaThreshold] = useState(128);
+  const [removeBackground, setRemoveBackground] = useState(true);
 
   // Result
   const [pixelResult, setPixelResult] = useState<PixelizeResult | null>(null);
@@ -209,11 +210,11 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
       if (paletteMode === 'sprite') fixedPalette = spritePalette;
       if (paletteMode === 'library') fixedPalette = targetLibraryPalette;
 
-      const result = imageToPixelData(imgData, {
         targetSize: assetSize,
         maxColors,
         alphaThreshold,
-        fixedPalette: fixedPalette as any
+        fixedPalette: fixedPalette as any,
+        removeBackground
       });
 
       setPixelResult(result);
@@ -392,6 +393,17 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
               <div className="space-y-1">
                 <Label className="text-[9px] uppercase text-muted-foreground px-1">Transparencia</Label>
                 <Slider value={[alphaThreshold]} min={0} max={255} onValueChange={([v]) => setAlphaThreshold(v)} />
+              </div>
+              
+              <div className="flex items-center justify-between p-2 bg-background/40 border border-border/40 rounded mt-1">
+                <Label className="text-[9px] uppercase text-muted-foreground cursor-pointer" htmlFor="remove-bg">Eliminar Fondo</Label>
+                <input 
+                  id="remove-bg"
+                  type="checkbox" 
+                  checked={removeBackground} 
+                  onChange={(e) => setRemoveBackground(e.target.checked)}
+                  className="w-3 h-3 accent-primary cursor-pointer"
+                />
               </div>
             </div>
           </div>

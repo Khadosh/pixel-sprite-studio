@@ -74,6 +74,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
   const [selectedLibraryId, setSelectedLibraryId] = useState<string>(PALETTE_LIBRARY[0].id);
   const [maxColors, setMaxColors] = useState(16);
   const [alphaThreshold, setAlphaThreshold] = useState(128);
+  const [removeBackground, setRemoveBackground] = useState(true);
 
   const [previewFrameIdx, setPreviewFrameIdx] = useState(0);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,7 +124,8 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
       targetSize: assetSize,
       maxColors,
       alphaThreshold,
-      fixedPalette: fixedPalette as any
+      fixedPalette: fixedPalette as any,
+      removeBackground
     });
   };
 
@@ -477,6 +479,17 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
                   <span className="text-[9px] font-bold text-primary">{alphaThreshold}</span>
                 </div>
                 <Slider value={[alphaThreshold]} min={0} max={255} onValueChange={([v]) => setAlphaThreshold(v)} className="py-2" />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg mt-2">
+                <Label className="text-[9px] uppercase text-primary/70 font-bold cursor-pointer" htmlFor="gif-remove-bg">Eliminar Fondo</Label>
+                <input 
+                  id="gif-remove-bg"
+                  type="checkbox" 
+                  checked={removeBackground} 
+                  onChange={(e) => setRemoveBackground(e.target.checked)}
+                  className="w-4 h-4 accent-primary cursor-pointer"
+                />
               </div>
             </div>
           </div>

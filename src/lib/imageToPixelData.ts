@@ -18,6 +18,8 @@ export interface PixelizeOptions {
   alphaThreshold?: number;
   /** Optional pre-defined palette to map colors to. If provided, medianCut is skipped. Map index -> hex. */
   fixedPalette?: Record<number, string>;
+  /** Whether to automatically detect and remove the background color. Default: true */
+  removeBackground?: boolean;
 }
 
 export interface PixelizeResult {
@@ -35,7 +37,13 @@ export function imageToPixelData(
   imageData: ImageData,
   options: PixelizeOptions
 ): PixelizeResult {
-  const { targetSize, maxColors = 16, alphaThreshold = 128, fixedPalette } = options;
+  const { 
+    targetSize, 
+    maxColors = 16, 
+    alphaThreshold = 128, 
+    fixedPalette,
+    removeBackground = true
+  } = options;
   const { data, width, height } = imageData;
 
   // --- Step 1: Detect Background Color automatically ---
@@ -148,7 +156,7 @@ export function imageToPixelData(
         const b = Math.round(bSum / count);
 
         // --- DYNAMIC BACKGROUND REMOVAL ---
-        if (isBgMatch(r, g, b)) {
+        if (removeBackground && isBgMatch(r, g, b)) {
           gridRow.push(null);
         } else {
           // Edge spillover suppression: if the pixel has a strong green tint
