@@ -11,8 +11,8 @@ export const PaletteSection = React.memo(() => {
   const setShowAllColors = useSpriteEditorStore(s => s.setShowAllColors);
   const filteredPalette = useSpriteEditorStore(useShallow(selectFilteredPalette));
 
-  const activeColorKey = useSpriteEditorStore(s => s._pixelEditorBridge?.activeColorKey ?? 1);
-  const setActiveColorKey = useSpriteEditorStore(s => s._pixelEditorBridge?.setActiveColorKey);
+  const activeColorKey = useSpriteEditorStore(s => s.activeColorKey);
+  const setActiveColorKey = useSpriteEditorStore(s => s.setActiveColorKey);
   const handleChangeColor = useSpriteEditorStore(s => s.changeColor);
   const handleAddColor = useSpriteEditorStore(s => s.addColor);
   const handleRemoveColor = useSpriteEditorStore(s => s.removeColor);

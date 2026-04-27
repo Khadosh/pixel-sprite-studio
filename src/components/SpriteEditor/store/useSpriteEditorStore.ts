@@ -94,6 +94,10 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         activeSide: 'right',
         showIsometricGrid: false,
         sketchMode: false,
+        tool: 'pencil',
+        activeColorKey: 1,
+        brushSize: 1,
+        mirrorX: false,
         isIconMode: options.isIconMode,
         iconId: options.iconId,
 

@@ -6,20 +6,18 @@ import { shiftFrame, getCenterOfMass, rotateFrameFree, resizeFrameNearest, findB
 import { compositeFrame } from '@/lib/layerUtils';
 
 export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'rotate' | 'select' | 'erase-color';
-export function usePixelEditor(
-  asset: SpriteAsset,
-  frameIndex: number,
-  activeLayerId: string | null,
-  onAssetChange: (a: SpriteAsset) => void,
-  scope: 'layer' | 'frame' = 'layer',
   onPushUndo?: () => void,
   externalUndo?: () => void,
-  externalCanUndo?: boolean
+  externalCanUndo?: boolean,
+  tool: EditorTool = 'pencil',
+  setTool: (t: EditorTool) => void = () => {},
+  activeColorKey: number = 1,
+  setActiveColorKey: (k: number) => void = () => {},
+  brushSize: BrushSize = 1,
+  setBrushSize: (s: BrushSize) => void = () => {},
+  mirrorX: boolean = false,
+  setMirrorX: (on: boolean | ((p: boolean) => boolean)) => void = () => {}
 ) {
-  const [tool, setTool] = useState<EditorTool>('pencil');
-  const [activeColorKey, setActiveColorKey] = useState(1);
-  const [brushSize, setBrushSize] = useState<BrushSize>(1);
-  const [mirrorX, setMirrorX] = useState(false);
   const [draftFrame, setDraftFrame] = useState<Frame | null>(null);
 
   const [rotationAngle, setRotationAngle] = useState<number | null>(null);

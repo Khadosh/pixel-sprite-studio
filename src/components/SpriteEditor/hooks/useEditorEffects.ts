@@ -38,28 +38,28 @@ export function useEditorEffects(store: SpriteEditorStore) {
       if (!bridge) return;
 
       switch (e.key.toLowerCase()) {
-        case 'b': bridge.setTool('pencil'); break;
-        case 'e': bridge.setTool('eraser'); break;
-        case 'i': bridge.setTool('picker'); break;
-        case 'g': bridge.setTool('fill'); break;
+        case 'b': state.setTool('pencil'); break;
+        case 'e': state.setTool('eraser'); break;
+        case 'i': state.setTool('picker'); break;
+        case 'g': state.setTool('fill'); break;
         case 'v':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             state.handlePaste();
           } else {
-            bridge.setTool('select');
+            state.setTool('select');
           }
           break;
-        case 'r': bridge.setTool('rotate'); break;
+        case 'r': state.setTool('rotate'); break;
         case 's':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
             state.handleSave();
           } else {
-            bridge.setTool('select');
+            state.setTool('select');
           }
           break;
-        case 'm': bridge.setMirrorX((prev: boolean) => !prev); break;
+        case 'm': state.setMirrorX((prev: boolean) => !prev); break;
         case 'z':
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
@@ -133,11 +133,11 @@ export function useEditorEffects(store: SpriteEditorStore) {
           break;
         case '[':
           e.preventDefault();
-          bridge.setBrushSize(Math.max(1, bridge.brushSize - 1) as any);
+          state.setBrushSize(state.brushSize === 16 ? 4 : 1);
           break;
         case ']':
           e.preventDefault();
-          bridge.setBrushSize(Math.min(5, bridge.brushSize + 1) as any);
+          state.setBrushSize(state.brushSize === 1 ? 4 : 16);
           break;
       }
     };

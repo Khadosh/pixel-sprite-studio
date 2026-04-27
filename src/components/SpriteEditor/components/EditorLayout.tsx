@@ -61,19 +61,41 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     store.getState().setEditedAsset(updated);
   }, [store]);
 
+  const tool = useSpriteEditorStore(s => s.tool);
+  const setTool = useSpriteEditorStore(s => s.setTool);
+  const activeColorKey = useSpriteEditorStore(s => s.activeColorKey);
+  const setActiveColorKey = useSpriteEditorStore(s => s.setActiveColorKey);
+  const brushSize = useSpriteEditorStore(s => s.brushSize);
+  const setBrushSize = useSpriteEditorStore(s => s.setBrushSize);
+  const mirrorX = useSpriteEditorStore(s => s.mirrorX);
+  const setMirrorX = useSpriteEditorStore(s => s.setMirrorX);
+
   // Pixel editor hook (local drawing state with refs)
-  const pixelEditor = usePixelEditor(editedAsset, editingFrameIndex, activeLayerId, handleAssetChange, scope, pushUndo, undo, canUndo);
+  const pixelEditor = usePixelEditor(
+    editedAsset, 
+    editingFrameIndex, 
+    activeLayerId, 
+    handleAssetChange, 
+    scope, 
+    pushUndo, 
+    undo, 
+    canUndo,
+    tool,
+    setTool,
+    activeColorKey,
+    setActiveColorKey,
+    brushSize,
+    setBrushSize,
+    mirrorX,
+    setMirrorX
+  );
 
   // Sync pixel editor bridge to store
   const bridge = useMemo(() => ({
-    tool: pixelEditor.tool,
-    setTool: pixelEditor.setTool,
-    activeColorKey: pixelEditor.activeColorKey,
-    setActiveColorKey: pixelEditor.setActiveColorKey,
-    brushSize: pixelEditor.brushSize,
-    setBrushSize: pixelEditor.setBrushSize,
-    mirrorX: pixelEditor.mirrorX,
-    setMirrorX: pixelEditor.setMirrorX,
+    setTool: setTool,
+    setActiveColorKey: setActiveColorKey,
+    setBrushSize: setBrushSize,
+    setMirrorX: setMirrorX,
     draftFrame: pixelEditor.draftFrame,
     handlePointerDown: pixelEditor.handlePointerDown,
     handlePointerMove: pixelEditor.handlePointerMove,
@@ -94,13 +116,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     _handleGeneratePerspectiveAI: handleGeneratePerspectiveAI,
     _handleDownloadReferenceImage: handleDownloadReferenceImage,
   }), [
-    pixelEditor.tool, pixelEditor.setTool,
-    pixelEditor.activeColorKey, pixelEditor.setActiveColorKey,
-    pixelEditor.brushSize, pixelEditor.setBrushSize,
-    pixelEditor.mirrorX, pixelEditor.setMirrorX,
+    tool, setTool,
+    activeColorKey, setActiveColorKey,
+    brushSize, setBrushSize,
+    mirrorX, setMirrorX,
     pixelEditor.draftFrame,
     pixelEditor.handlePointerDown, pixelEditor.handlePointerMove, pixelEditor.handlePointerUp,
-    pixelEditor.undo, pixelEditor.canUndo,
+    undo, redo, canUndo, canRedo,
     pixelEditor.overwriteLayerFrame,
     pixelEditor.rotationAngle,
     pixelEditor.rotationCenter,
@@ -114,12 +136,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     handleDownloadReferenceImage
   ]);
 
-  // Sync pixel editor bridge to store SILENTLY to avoid infinite loops
+  // Sync pixel editor bridge to store
   useEffect(() => {
-    // We update the store's state object directly without calling 'set' 
-    // to avoid triggering re-renders of subscribers (like EditorLayout itself).
-    // The bridge is mostly functions, so reactive updates aren't strictly needed for consumers.
-    (store.getState() as any)._pixelEditorBridge = bridge;
+    store.getState().setPixelEditorBridge(bridge);
   }, [bridge, store]);
 
   // Store-derived state for render

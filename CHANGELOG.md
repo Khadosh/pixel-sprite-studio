@@ -22,6 +22,14 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Metadatos**: **Sincronización de Slugs**. Implementado sistema de actualización automática de URLs (slugs) al renombrar sprites o proyectos.
 - **UI**: **Edición de Proyectos In-place**. Añadida la capacidad de renombrar proyectos directamente desde el Workspace.
 
+### [2026-04-27] - Fix Reactividad Paleta
+- **Fix**: Promocionado el estado de `activeColorKey`, `tool`, `brushSize` y `mirrorX` del puente local al store global de Zustand. Esto soluciona el problema de falta de respuesta al primer clic en la paleta de colores.
+- **Refactor**: Convertido `usePixelEditor` en un hook controlado para garantizar sincronización perfecta con la UI.
+- **Mejora**: Atajos de teclado ahora actúan directamente sobre el store global.
+**1 commit realizado**
+
+---
+
 ## 2026-04-25
 **1 commit realizado**
 

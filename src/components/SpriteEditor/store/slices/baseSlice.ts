@@ -146,6 +146,12 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setSketchMode: (onOrFn) => set(s => ({ 
     sketchMode: typeof onOrFn === 'function' ? (onOrFn as Function)(s.sketchMode) : onOrFn 
   })),
+  setMirrorX: (onOrFn) => set(s => ({ 
+    mirrorX: typeof onOrFn === 'function' ? (onOrFn as Function)(s.mirrorX) : onOrFn 
+  })),
+  setBrushSize: (size) => set({ brushSize: size }),
+  setTool: (tool) => set({ tool }),
+  setActiveColorKey: (key) => set({ activeColorKey: key }),
 
   setCategory: (category) => set(state => ({
     editedAsset: { ...state.editedAsset, category },

@@ -18,6 +18,10 @@ export interface SpriteEditorState {
   scope: EditorScope;
   castSettings: AdvancedCastSettings;
   zoom: number;
+  tool: EditorTool;
+  activeColorKey: number;
+  brushSize: BrushSize;
+  mirrorX: boolean;
   layerClipboard: number[][] | null;
   frameClipboard: Record<string, number[][]> | null;
   leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null;
@@ -46,13 +50,9 @@ export interface SpriteEditorState {
 
   // Pixel editor bridge
   _pixelEditorBridge: {
-    tool: EditorTool;
     setTool: (t: EditorTool) => void;
-    activeColorKey: number;
     setActiveColorKey: (k: number) => void;
-    brushSize: BrushSize;
     setBrushSize: (s: BrushSize) => void;
-    mirrorX: boolean;
     setMirrorX: (on: boolean | ((p: boolean) => boolean)) => void;
     draftFrame: Frame | null;
     handlePointerDown: (r: number, c: number, forceTool?: EditorTool) => void;
@@ -103,7 +103,10 @@ export interface SpriteEditorState {
   setActivePerspective: (perspective: 'front' | 'side' | 'back') => void;
   setActiveSide: (side: 'left' | 'right') => void;
   setShowIsometricGrid: (show: boolean | ((prev: boolean) => boolean)) => void;
-  setSketchMode: (on: boolean | ((prev: boolean) => boolean)) => void;
+  setMirrorX: (on: boolean | ((prev: boolean) => boolean)) => void;
+  setBrushSize: (size: BrushSize) => void;
+  setTool: (tool: EditorTool) => void;
+  setActiveColorKey: (key: number) => void;
   setCategory: (cat: SpriteAsset['category']) => void;
   setDescription: (desc: string) => void;
   setTags: (tags: string[]) => void;
