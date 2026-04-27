@@ -53,6 +53,8 @@ export function useProject(idOrSlug?: string) {
       if (isUUID) {
         query.eq('id', idOrSlug);
       } else {
+        // We suspect projects MIGHT have a slug column even if types are missing it,
+        // but let's try a safer approach if it fails. For now, keep as slug.
         query.eq('slug', idOrSlug);
       }
       
@@ -167,10 +169,15 @@ export function useProjectSprites(projectId?: string) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map(s => ({
-        ...s,
-        asset_data: decompressAsset(s.asset_data)
-      })) as ProjectSprite[];
+      return (data || []).map(s => {
+        const asset = decompressAsset(s.asset_data);
+        return {
+          ...s,
+          asset_data: asset,
+          slug: asset.slug || s.id, // Fallback to ID if no slug
+          name: asset.name || 'Sin nombre'
+        };
+      }) as ProjectSprite[];
     },
     enabled: !!projectId,
   });
@@ -188,7 +195,8 @@ export function useSprite(idOrSlug?: string, projectId?: string) {
       if (isUUID) {
         query.eq('id', idOrSlug);
       } else {
-        query.eq('slug', idOrSlug);
+        // Search inside JSONB asset_data
+        query.filter('asset_data->>slug', 'eq', idOrSlug);
         if (projectId) {
           query.eq('project_id', projectId);
         }
@@ -207,9 +215,12 @@ export function useSprite(idOrSlug?: string, projectId?: string) {
         assetData.versions = [];
       }
 
+      const asset = decompressAsset(assetData);
       return {
         ...data,
-        asset_data: decompressAsset(assetData)
+        asset_data: asset,
+        slug: asset.slug || data.id,
+        name: asset.name || 'Sin nombre'
       } as ProjectSprite;
     },
     enabled: !!idOrSlug && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug) || !!projectId),
@@ -232,7 +243,7 @@ export function useCreateSprite() {
           .from('project_sprites')
           .select('id')
           .eq('project_id', projectId)
-          .eq('slug', slug)
+          .filter('asset_data->>slug', 'eq', slug)
           .maybeSingle();
         
         if (!data) {
@@ -243,14 +254,17 @@ export function useCreateSprite() {
       }
 
       const rawSize = JSON.stringify(asset).length;
-      let assetToSave = { ...asset };
+      let assetToSave = { 
+        ...asset,
+        slug: slug // Ensure slug is in the JSON
+      };
       if (rawSize > 500 * 1024) assetToSave.versions = [];
 
       const compressedAsset = compressAsset(assetToSave);
 
       const { data, error: insertError } = await supabase
         .from('project_sprites')
-        .insert([{ project_id: projectId, asset_data: compressedAsset, slug }])
+        .insert([{ project_id: projectId, asset_data: compressedAsset }])
         .select()
         .single();
 
@@ -271,38 +285,22 @@ export function useUpdateSprite() {
 
   return useMutation({
     mutationFn: async ({ id, projectId, asset }: { id: string; projectId: string; asset: SpriteAsset }) => {
-      // 1. Fetch current slug to check if we need to update it
+      // 1. Fetch current state to check if we need to update slug
       const { data: current } = await supabase
         .from('project_sprites')
-        .select('slug, asset_data')
+        .select('asset_data')
         .eq('id', id)
         .single();
       
       const currentAsset = current?.asset_data ? decompressAsset(current.asset_data) : null;
       const nameChanged = currentAsset?.name !== asset.name;
-
-      const rawSize = JSON.stringify(asset).length;
-      console.log(`[Save] Sprite raw size: ${(rawSize / 1024).toFixed(2)}KB`);
-
-      let assetToSave = { ...asset };
       
-      // SAFETY: If asset is massive (>500KB raw), clear versions forcefully
-      if (rawSize > 500 * 1024) {
-        console.warn('[Save] Sprite too large, clearing history versions to save database health.');
-        assetToSave.versions = [];
-      }
-
-      const compressedAsset = compressAsset(assetToSave);
-      const compressedSize = JSON.stringify(compressedAsset).length;
-      console.log(`[Save] Sprite compressed size: ${(compressedSize / 1024).toFixed(2)}KB`);
-
-      let updateData: any = { 
-        asset_data: compressedAsset 
-      };
+      // Determine the slug
+      let slug = currentAsset?.slug || id;
       
       if (nameChanged) {
         let baseSlug = createSpec(id, asset.name);
-        let slug = baseSlug;
+        slug = baseSlug;
         let counter = 1;
         let unique = false;
 
@@ -311,7 +309,7 @@ export function useUpdateSprite() {
             .from('project_sprites')
             .select('id')
             .eq('project_id', projectId)
-            .eq('slug', slug)
+            .filter('asset_data->>slug', 'eq', slug)
             .neq('id', id)
             .maybeSingle();
           
@@ -321,18 +319,37 @@ export function useUpdateSprite() {
             slug = `${baseSlug}-${counter++}`;
           }
         }
-        updateData.slug = slug;
       }
 
+      // 2. Prepare asset to save with the correct slug and size safety
+      let assetToSave = { 
+        ...asset,
+        slug: slug // Sync the slug into the JSON
+      };
+      
+      const rawSize = JSON.stringify(assetToSave).length;
+      console.log(`[Save] Sprite raw size: ${(rawSize / 1024).toFixed(2)}KB`);
+
+      if (rawSize > 500 * 1024) {
+        console.warn('[Save] Sprite too large, clearing history versions.');
+        assetToSave.versions = [];
+      }
+
+      const compressedAsset = compressAsset(assetToSave);
+      const compressedSize = JSON.stringify(compressedAsset).length;
+      console.log(`[Save] Sprite compressed size: ${(compressedSize / 1024).toFixed(2)}KB`);
+
+      // 3. Perform the update
       const { error } = await supabase
         .from('project_sprites')
-        .update(updateData)
+        .update({ asset_data: compressedAsset })
         .eq('id', id);
 
       if (error) throw error;
+      
       return { 
         slugChanged: nameChanged, 
-        newSlug: updateData.slug,
+        newSlug: slug,
         id 
       };
     },

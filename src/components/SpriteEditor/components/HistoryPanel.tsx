@@ -21,8 +21,9 @@ import {
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
 
+const EMPTY_VERSIONS: any[] = [];
 export const HistoryPanel = () => {
-  const versions = useSpriteEditorStore(s => s.editedAsset.versions || []);
+  const versions = useSpriteEditorStore(s => s.editedAsset.versions || EMPTY_VERSIONS);
   const createCheckpoint = useSpriteEditorStore(s => s.createCheckpoint);
   const restoreCheckpoint = useSpriteEditorStore(s => s.restoreCheckpoint);
   const clearHistory = useSpriteEditorStore(s => s.clearHistory);

@@ -23,7 +23,12 @@ export function PaletteProvider({ defaultPalette, children }: PaletteProviderPro
   const [palette, setPalette] = useState<Palette>({ ...defaultPalette });
 
   useEffect(() => {
-    setPalette({ ...defaultPalette });
+    // Only update if the actual content of defaultPalette changed to avoid loops
+    const currentStr = JSON.stringify(palette);
+    const nextStr = JSON.stringify(defaultPalette);
+    if (currentStr !== nextStr) {
+      setPalette({ ...defaultPalette });
+    }
   }, [defaultPalette]);
 
   const setPaletteColor = useCallback((key: number, color: string) => {

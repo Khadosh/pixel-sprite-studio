@@ -51,13 +51,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
   const editingFrameIndex = useSpriteEditorStore(s => s.editingFrameIndex);
   const activeLayerId = useSpriteEditorStore(s => s.activeLayerId);
   const scope = useSpriteEditorStore(s => s.scope);
-  const { pushUndo, undo, redo, canUndo, canRedo } = useSpriteEditorStore(useShallow(s => ({
-    pushUndo: s.pushUndo,
-    undo: s.undo,
-    redo: s.redo,
-    canUndo: s.canUndo,
-    canRedo: s.canRedo
-  })));
+  const pushUndo = useSpriteEditorStore(s => s.pushUndo);
+  const undo = useSpriteEditorStore(s => s.undo);
+  const redo = useSpriteEditorStore(s => s.redo);
+  const canUndo = useSpriteEditorStore(s => s.canUndo);
+  const canRedo = useSpriteEditorStore(s => s.canRedo);
 
   const handleAssetChange = React.useCallback((updated: SpriteAsset) => {
     store.getState().setEditedAsset(updated);
@@ -116,14 +114,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
     handleDownloadReferenceImage
   ]);
 
-  const lastBridgeRef = useRef<any>(null);
+  // Sync pixel editor bridge to store SILENTLY to avoid infinite loops
   useEffect(() => {
-    if (bridge !== lastBridgeRef.current) {
-      lastBridgeRef.current = bridge;
-      // Use setInternalState style update to avoid triggering more re-renders if the bridge is shallow-equal
-      store.getState().setPixelEditorBridge(bridge);
-    }
-  }, [store, bridge]);
+    // We update the store's state object directly without calling 'set' 
+    // to avoid triggering re-renders of subscribers (like EditorLayout itself).
+    // The bridge is mostly functions, so reactive updates aren't strictly needed for consumers.
+    (store.getState() as any)._pixelEditorBridge = bridge;
+  }, [bridge, store]);
 
   // Store-derived state for render
   const zoom = useSpriteEditorStore(s => s.zoom);

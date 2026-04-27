@@ -102,8 +102,13 @@ export default function SpriteStudio() {
 
     const unsub = store.subscribe((state: any, prevState: any) => {
       if (state.editedAsset !== prevState.editedAsset && state.isDirty) {
-        const realSpriteId = sprite?.id || spriteId;
-        const realProjectId = (sprite as any)?.project_id || projectId;
+        const realSpriteId = sprite?.id;
+        const realProjectId = sprite?.project_id || projectId;
+
+        if (!realSpriteId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realSpriteId)) {
+          console.warn('[Autosave] Skipping save, no valid UUID yet');
+          return;
+        }
 
         clearTimeout(timeoutId);
         timeoutId = setTimeout(async () => {
