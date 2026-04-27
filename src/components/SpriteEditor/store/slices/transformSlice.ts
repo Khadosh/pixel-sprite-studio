@@ -11,11 +11,16 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
       const frame = state.editedAsset.layers!.find(l => l.id === state.activeLayerId)?.frames[state.editingFrameIndex];
       if (frame) {
         if (selectionRect) {
-          const clip: number[][] = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-          for (let ir = 0; ir < selectionRect.h; ir++) {
-            for (let ic = 0; ic < selectionRect.w; ic++) {
-              const r = selectionRect.r + ir;
-              const c = selectionRect.c + ic;
+          const rectH = Math.round(selectionRect.h);
+          const rectW = Math.round(selectionRect.w);
+          const rectR = Math.round(selectionRect.r);
+          const rectC = Math.round(selectionRect.c);
+          
+          const clip: number[][] = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+          for (let ir = 0; ir < rectH; ir++) {
+            for (let ic = 0; ic < rectW; ic++) {
+              const r = rectR + ir;
+              const c = rectC + ic;
               if (r >= 0 && r < state.editedAsset.size && c >= 0 && c < state.editedAsset.size) {
                 clip[ir][ic] = frame[r][c];
               }
@@ -31,11 +36,16 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
       state.editedAsset.layers!.forEach(l => {
         const f = l.frames[state.editingFrameIndex];
         if (selectionRect) {
-          const clip: number[][] = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-          for (let ir = 0; ir < selectionRect.h; ir++) {
-            for (let ic = 0; ic < selectionRect.w; ic++) {
-              const r = selectionRect.r + ir;
-              const c = selectionRect.c + ic;
+          const rectH = Math.round(selectionRect.h);
+          const rectW = Math.round(selectionRect.w);
+          const rectR = Math.round(selectionRect.r);
+          const rectC = Math.round(selectionRect.c);
+
+          const clip: number[][] = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+          for (let ir = 0; ir < rectH; ir++) {
+            for (let ic = 0; ic < rectW; ic++) {
+              const r = rectR + ir;
+              const c = rectC + ic;
               if (r >= 0 && r < state.editedAsset.size && c >= 0 && c < state.editedAsset.size) {
                 clip[ir][ic] = f[r][c];
               }
@@ -55,8 +65,8 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
     const bridge = state._pixelEditorBridge;
     const selectionRect = bridge?.selectionRect || null;
     const size = state.editedAsset.size;
-    const destR = selectionRect?.r || 0;
-    const destC = selectionRect?.c || 0;
+    const destR = Math.round(selectionRect?.r || 0);
+    const destC = Math.round(selectionRect?.c || 0);
 
     if (state.scope === 'layer') {
       if (state.layerClipboard) {
@@ -122,14 +132,19 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
       if (!frame || !bridge) return;
 
       if (selectionRect) {
+        const rectH = Math.round(selectionRect.h);
+        const rectW = Math.round(selectionRect.w);
+        const rectR = Math.round(selectionRect.r);
+        const rectC = Math.round(selectionRect.c);
+
         const newFrame = frame.map(row => [...row]);
-        const snippet: number[][] = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-        for (let r = 0; r < selectionRect.h; r++) {
-          for (let c = 0; c < selectionRect.w; c++) snippet[r][c] = frame[selectionRect.r + r][selectionRect.c + c];
+        const snippet: number[][] = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+        for (let r = 0; r < rectH; r++) {
+          for (let c = 0; c < rectW; c++) snippet[r][c] = frame[rectR + r][rectC + c];
         }
         const flipped = snippet.map(row => [...row].reverse());
-        for (let r = 0; r < selectionRect.h; r++) {
-          for (let c = 0; c < selectionRect.w; c++) newFrame[selectionRect.r + r][selectionRect.c + c] = flipped[r][c];
+        for (let r = 0; r < rectH; r++) {
+          for (let c = 0; c < rectW; c++) newFrame[rectR + r][rectC + c] = flipped[r][c];
         }
         bridge.overwriteLayerFrame(newFrame);
       } else {
@@ -143,14 +158,19 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
             const frame = l.frames[s.editingFrameIndex];
             const newFrames = [...l.frames];
             if (selectionRect) {
+              const rectH = Math.round(selectionRect.h);
+              const rectW = Math.round(selectionRect.w);
+              const rectR = Math.round(selectionRect.r);
+              const rectC = Math.round(selectionRect.c);
+
               const newF = frame.map(row => [...row]);
-              const snippet = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-              for (let r = 0; r < selectionRect.h; r++) {
-                for (let c = 0; c < selectionRect.w; c++) snippet[r][c] = frame[selectionRect.r + r][selectionRect.c + c];
+              const snippet = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+              for (let r = 0; r < rectH; r++) {
+                for (let c = 0; c < rectW; c++) snippet[r][c] = frame[rectR + r][rectC + c];
               }
               const flipped = snippet.map(row => [...row].reverse());
-              for (let r = 0; r < selectionRect.h; r++) {
-                for (let c = 0; c < selectionRect.w; c++) newF[selectionRect.r + r][selectionRect.c + c] = flipped[r][c];
+              for (let r = 0; r < rectH; r++) {
+                for (let c = 0; c < rectW; c++) newF[rectR + r][rectC + c] = flipped[r][c];
               }
               newFrames[s.editingFrameIndex] = newF;
             } else {
@@ -194,14 +214,19 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
             const frame = l.frames[s.editingFrameIndex];
             const newFrames = [...l.frames];
             if (selectionRect) {
+              const rectH = Math.round(selectionRect.h);
+              const rectW = Math.round(selectionRect.w);
+              const rectR = Math.round(selectionRect.r);
+              const rectC = Math.round(selectionRect.c);
+
               const newF = frame.map(row => [...row]);
-              const snippet = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-              for (let r = 0; r < selectionRect.h; r++) {
-                for (let c = 0; c < selectionRect.w; c++) snippet[r][c] = frame[selectionRect.r + r][selectionRect.c + c];
+              const snippet = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+              for (let r = 0; r < rectH; r++) {
+                for (let c = 0; c < rectW; c++) snippet[r][c] = frame[rectR + r][rectC + c];
               }
               const flipped = [...snippet].reverse();
-              for (let r = 0; r < selectionRect.h; r++) {
-                for (let c = 0; c < selectionRect.w; c++) newF[selectionRect.r + r][selectionRect.c + c] = flipped[r][c];
+              for (let r = 0; r < rectH; r++) {
+                for (let c = 0; c < rectW; c++) newF[rectR + r][rectC + c] = flipped[r][c];
               }
               newFrames[s.editingFrameIndex] = newF;
             } else {
@@ -224,21 +249,26 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
       if (!frame || !bridge) return;
 
       if (selectionRect) {
-        const snippet: number[][] = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-        for (let r = 0; r < selectionRect.h; r++) {
-          for (let c = 0; c < selectionRect.w; c++) snippet[r][c] = frame[selectionRect.r + r][selectionRect.c + c];
+        const rectH = Math.round(selectionRect.h);
+        const rectW = Math.round(selectionRect.w);
+        const rectR = Math.round(selectionRect.r);
+        const rectC = Math.round(selectionRect.c);
+
+        const snippet: number[][] = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+        for (let r = 0; r < rectH; r++) {
+          for (let c = 0; c < rectW; c++) snippet[r][c] = frame[rectR + r][rectC + c];
         }
         const rotated = rotate90(snippet);
         const newFrame = frame.map(row => [...row]);
-        for (let r = 0; r < selectionRect.h; r++) {
-          for (let c = 0; c < selectionRect.w; c++) newFrame[selectionRect.r + r][selectionRect.c + c] = 0;
+        for (let r = 0; r < rectH; r++) {
+          for (let c = 0; c < rectW; c++) newFrame[rectR + r][rectC + c] = 0;
         }
         const newH = rotated.length;
         const newW = rotated[0].length;
         for (let r = 0; r < newH; r++) {
           for (let c = 0; c < newW; c++) {
-            const tr = selectionRect.r + r;
-            const tc = selectionRect.c + c;
+            const tr = rectR + r;
+            const tc = rectC + c;
             if (tr >= 0 && tr < state.editedAsset.size && tc >= 0 && tc < state.editedAsset.size) newFrame[tr][tc] = rotated[r][c];
           }
         }
@@ -254,21 +284,26 @@ export const createTransformSlice: StoreSlice<Partial<SpriteEditorState>> = (set
             const frame = l.frames[s.editingFrameIndex];
             const newFrames = [...l.frames];
             if (selectionRect) {
+              const rectH = Math.round(selectionRect.h);
+              const rectW = Math.round(selectionRect.w);
+              const rectR = Math.round(selectionRect.r);
+              const rectC = Math.round(selectionRect.c);
+
               const newF = frame.map(row => [...row]);
-              const snippet = Array.from({ length: selectionRect.h }, () => Array(selectionRect.w).fill(0));
-              for (let r = 0; r < selectionRect.h; r++) {
-                for (let c = 0; c < selectionRect.w; c++) snippet[r][c] = frame[selectionRect.r + r][selectionRect.c + c];
+              const snippet = Array.from({ length: rectH }, () => Array(rectW).fill(0));
+              for (let r = 0; r < rectH; r++) {
+                for (let c = 0; c < rectW; c++) snippet[r][c] = frame[rectR + r][rectC + c];
               }
               const rotated = rotate90(snippet);
-              for (let r = 0; r < selectionRect.h; r++) {
-                for (let c = 0; c < selectionRect.w; c++) newF[selectionRect.r + r][selectionRect.c + c] = 0;
+              for (let r = 0; r < rectH; r++) {
+                for (let c = 0; c < rectW; c++) newF[rectR + r][rectC + c] = 0;
               }
               const newH = rotated.length;
               const newW = rotated[0].length;
               for (let r = 0; r < newH; r++) {
                 for (let c = 0; c < newW; c++) {
-                  const tr = selectionRect.r + r;
-                  const tc = selectionRect.c + c;
+                  const tr = rectR + r;
+                  const tc = rectC + c;
                   if (tr >= 0 && tr < s.editedAsset.size && tc >= 0 && tc < s.editedAsset.size) newF[tr][tc] = rotated[r][c];
                 }
               }

@@ -548,7 +548,7 @@ export function usePixelEditor(
     }
 
     if (tool === 'select') {
-      if (!movingSelectionPixels && !draggingHandle && selectionRect && selectionRect.w < 0.5 && selectionRect.h < 0.5) {
+      if (!movingSelectionPixels && !draggingHandle && selectionRect && selectionRect.w < 0.1 && selectionRect.h < 0.1) {
         // Just a click outside? Deselect.
         setSelectionRect(null);
       }
@@ -556,6 +556,7 @@ export function usePixelEditor(
       originalMovingPixels.current = null;
       originalSelectionRect.current = null;
       isDrawing.current = false;
+      strokeStart.current = null; // CRITICAL FIX
       return;
     }
 

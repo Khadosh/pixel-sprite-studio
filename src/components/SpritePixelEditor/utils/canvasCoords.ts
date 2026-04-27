@@ -13,6 +13,8 @@ export function getPixelCoords(
 
   return {
     row: Math.floor(y / pixelScale),
-    col: Math.floor(x / pixelScale)
+    col: Math.floor(x / pixelScale),
+    floatR: y / pixelScale,
+    floatC: x / pixelScale
   };
 }

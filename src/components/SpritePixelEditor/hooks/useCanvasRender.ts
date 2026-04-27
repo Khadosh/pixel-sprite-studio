@@ -147,6 +147,11 @@ export function useCanvasRender({
       ctx.globalAlpha = 1.0;
     }
 
+    // Draw moving selection pixels if any
+    if (movingSelectionPixels) {
+      drawFrameData(movingSelectionPixels, true, 0, 0);
+    }
+
     // Grid lines
     for (let i = 0; i <= asset.size; i++) {
       const isMajor = i % 8 === 0;

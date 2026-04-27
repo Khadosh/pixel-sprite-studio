@@ -53,11 +53,11 @@ export function usePixelInteraction({
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const coords = getPixelCoords(e.clientX, e.clientY, e.currentTarget, PIXEL_SCALE);
     if (!coords) return;
-    const { row, col } = coords;
+    const { row, col, floatR, floatC } = coords;
 
     // Right click erase (button 2)
     if (e.button === 2) {
-      onPointerDown(row, col, 'eraser');
+      onPointerDown(floatR, floatC, 'eraser');
       return;
     }
 
@@ -114,18 +114,18 @@ export function usePixelInteraction({
       }
     }
 
-    onPointerDown(row, col);
+    onPointerDown(floatR, floatC);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const coords = getPixelCoords(e.clientX, e.clientY, e.currentTarget, PIXEL_SCALE);
     if (!coords) return;
-    const { row, col } = coords;
+    const { row, col, floatR, floatC } = coords;
     setHoverCell({ r: row, c: col });
 
     // Right click erase (buttons mask 2)
     if (e.buttons === 2) {
-      onPointerMove(row, col, 'eraser');
+      onPointerMove(floatR, floatC, 'eraser');
       return;
     }
 
@@ -172,7 +172,7 @@ export function usePixelInteraction({
       else setHoveringBone(null);
     }
 
-    onPointerMove(row, col);
+    onPointerMove(floatR, floatC);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
