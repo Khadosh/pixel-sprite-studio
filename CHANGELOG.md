@@ -5,7 +5,7 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-26 (Hoy)
-**13 commits realizados**
+**17 commits realizados**
 
 - **Novedad**: **GIF Reverse Engineering Wizard**. Implementado motor de ingeniería inversa que permite desglosar archivos GIF, seleccionar rangos de frames y mapearlos automáticamente a orientaciones (Front/Side/Back) y animaciones.
 - **Fidelidad**: **Control de Fondo en Importación**. Añadido toggle para desactivar la eliminación automática de fondo, evitando la pérdida de píxeles en assets con colores similares al fondo.
@@ -19,10 +19,12 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
----
-
 ## 2026-04-25
-**1 commit realizado**
+**5 commits realizados**
+
+- **Animación**: **Sistema basado en Máscaras de Anatomía**. Migrado el motor de animación para utilizar un sistema de máscaras aditivas, corrigiendo errores de piezas desaparecidas y eliminando el efecto de "smearing" en los bordes durante las transformaciones.
+- **Refactor**: **Modularización de UI**. Desglosado el componente monolítico `SpritePixelEditor` en hooks y sub-componentes especializados, facilitando la escalabilidad del lienzo de dibujo.
+- **Roadmap**: **Reestructuración Estratégica**. Dividido el roadmap oficial en tres archivos (`ROADMAP_COMPLETED.md`, `ROADMAP_NEXT.md`, `ROADMAP_IMMEDIATE.md`) para separar historial, visión a futuro y ejecución inmediata.
 
 ---
 
