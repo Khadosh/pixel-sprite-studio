@@ -272,8 +272,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
         <div className="flex flex-row items-center justify-between pt-2 border-t border-border gap-3 flex-shrink-0 relative">
           <TimelineStrip sensors={sensors} />
 
-          {/* FLOATING PREVIEW BOX - Positioned bottom-right but clearing the navigator icons */}
-          <div className="absolute right-[90px] bottom-[0] z-50 pointer-events-auto">
+          {/* FLOATING PREVIEW BOX - Fixed to bottom-right, grows top-left */}
+          <div className="absolute right-[60px] bottom-[10px] z-50 pointer-events-auto flex flex-col items-end">
             <AnimationPreviewPanel ref={previewPanelRef} />
           </div>
         </div>
