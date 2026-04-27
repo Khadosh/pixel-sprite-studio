@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, Project, ProjectSprite } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { SpriteAsset } from '@/lib/types';
-import { compressAsset, decompressAsset } from '@/lib/spriteDataUtils';
+import { serializeAsset, deserializeAsset } from '@/lib/spriteDto';
 import { createSpec, parseSpec } from '@/lib/slugUtils';
 
 export const projectKeys = {
@@ -170,11 +170,11 @@ export function useProjectSprites(projectId?: string) {
 
       if (error) throw error;
       return (data || []).map(s => {
-        const asset = decompressAsset(s.asset_data);
+        const asset = deserializeAsset(s.asset_data);
         return {
           ...s,
           asset_data: asset,
-          slug: asset.slug || s.id, // Fallback to ID if no slug
+          slug: asset.slug || s.id,
           name: asset.name || 'Sin nombre'
         };
       }) as ProjectSprite[];
@@ -212,14 +212,14 @@ export function useSprite(idOrSlug?: string, projectId?: string) {
 
       let assetData = data.asset_data as any;
       const rawJson = JSON.stringify(assetData);
-      
+
       // AUTO-CLEAN: If the sprite is massive (>1MB), purge history immediately on load
       if (rawJson.length > 1024 * 1024) {
         console.warn(`[Auto-Clean] Sprite ${data.id} is massive (${(rawJson.length / 1024 / 1024).toFixed(2)}MB). Purging history...`);
         assetData.versions = [];
       }
 
-      const asset = decompressAsset(assetData);
+      const asset = deserializeAsset(assetData);
       return {
         ...data,
         asset_data: asset,
@@ -264,7 +264,7 @@ export function useCreateSprite() {
       };
       if (rawSize > 500 * 1024) assetToSave.versions = [];
 
-      const compressedAsset = compressAsset(assetToSave);
+      const compressedAsset = serializeAsset(assetToSave);
 
       const { data, error: insertError } = await supabase
         .from('project_sprites')
@@ -278,7 +278,7 @@ export function useCreateSprite() {
 
       if (insertError) throw insertError;
       
-      const decompressedAsset = decompressAsset(data.asset_data);
+      const decompressedAsset = deserializeAsset(data.asset_data);
       return {
         ...data,
         asset_data: decompressedAsset,
@@ -304,7 +304,7 @@ export function useUpdateSprite() {
         .eq('id', id)
         .single();
       
-      const currentAsset = current?.asset_data ? decompressAsset(current.asset_data) : null;
+      const currentAsset = current?.asset_data ? deserializeAsset(current.asset_data) : null;
       const nameChanged = currentAsset?.name !== asset.name;
       
       // Determine the slug
@@ -347,9 +347,9 @@ export function useUpdateSprite() {
         assetToSave.versions = [];
       }
 
-      const compressedAsset = compressAsset(assetToSave);
+      const compressedAsset = serializeAsset(assetToSave);
       const compressedSize = JSON.stringify(compressedAsset).length;
-      console.log(`[Save] Sprite compressed size: ${(compressedSize / 1024).toFixed(2)}KB`);
+      console.log(`[Save] Sprite serialized size: ${(compressedSize / 1024).toFixed(2)}KB`);
 
       // 3. Perform the update
       const { error } = await supabase

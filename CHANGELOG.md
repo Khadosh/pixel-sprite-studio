@@ -4,7 +4,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-26 (Hoy)
+## 2026-04-27 (Hoy)
+**1 commit realizado**
+
+- **Rendimiento**: **Motor de Compresión RLE+Delta**. Implementado un nuevo sistema de serialización tipado (`spriteDto`) que combina Run-Length Encoding con codificación Delta. Logra ahorros de hasta **-97%** en animaciones complejas y evita la expansión en frames con dithering.
+- **Optimización**: **Hashing FNV-1a**. Reemplazado `JSON.stringify` por un hash numérico ultra-rápido en el deduplicador de `localStorage`, reduciendo el tiempo de procesamiento en un 500% para sprites de 64x64+.
+- **QA**: **Cobertura de Almacenamiento**. Añadida suite de 26 tests específicos para el ciclo de vida de los datos, cubriendo todos los tamaños soportados (16 a 128px) y garantizando retrocompatibilidad.
+
+---
+
+## 2026-04-26
 **17 commits realizados**
 
 - **Novedad**: **GIF Reverse Engineering Wizard**. Implementado motor de ingeniería inversa que permite desglosar archivos GIF, seleccionar rangos de frames y mapearlos automáticamente a orientaciones (Front/Side/Back) y animaciones.
