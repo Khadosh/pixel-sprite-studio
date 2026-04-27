@@ -44,22 +44,28 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
 
     // Calculate scaling based on size
     const getScale = () => {
-      // Significantly more generous scaling to avoid tiny sprites
-      if (size === 'small') return Math.max(2, Math.floor(80 / editedAsset.size)); 
-      if (size === 'medium') return Math.max(4, Math.floor(180 / editedAsset.size)); 
-      return Math.max(8, Math.floor(320 / editedAsset.size));
+      // Use target visual sizes (80, 180, 320) but ensure integer scaling
+      // and at least 1x to avoid 0 scale on large assets.
+      const targetWidth = size === 'small' ? 80 : size === 'medium' ? 180 : 320;
+      return Math.max(1, Math.floor(targetWidth / editedAsset.size));
     };
 
     const scale = getScale();
+    const canvasSize = editedAsset.size * scale;
     const isSmall = size === 'small';
     const isLarge = size === 'large';
+
+    // Calculate container dimensions to fit the canvas + padding exactly (hug content)
+    const padding = isSmall ? 4 : 16;
+    const panelWidth = canvasSize + padding;
 
     return (
       <div
         className={`flex flex-col transition-all duration-300 bg-black/90 backdrop-blur-xl rounded-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden pointer-events-auto origin-bottom-right ${isSmall ? 'p-0.5 gap-0' : 'p-2 gap-2'
           }`}
         style={{
-          width: isSmall ? '100px' : isLarge ? '340px' : '200px'
+          width: `${panelWidth}px`,
+          minWidth: isSmall ? '80px' : isLarge ? '280px' : '160px'
         }}
       >
         {/* PREVIEW AREA */}

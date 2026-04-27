@@ -1,5 +1,5 @@
 import { Frame } from './types';
-import { getColorName } from './colorUtils';
+import { getColorName, generateUniqueNames } from './colorUtils';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -232,10 +232,12 @@ export function imageToPixelData(
     finalPalette = { 0: 'transparent' };
     finalColorNames = { 0: 'Transparent' };
 
-    paletteRgbList.forEach((color, i) => {
-      const hex = rgbToHex(color.r, color.g, color.b);
-      finalPalette[i + 1] = hex;
-      finalColorNames[i + 1] = getColorName(hex);
+    const hexes = paletteRgbList.map(c => rgbToHex(c.r, c.g, c.b));
+    const uniqueNames = generateUniqueNames(hexes);
+
+    paletteRgbList.forEach((_, i) => {
+      finalPalette[i + 1] = hexes[i];
+      finalColorNames[i + 1] = uniqueNames[i];
     });
   }
 

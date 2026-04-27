@@ -1,5 +1,5 @@
 import { SpriteEditorState, StoreSlice } from '../types';
-import { getColorName } from '@/lib/colorUtils';
+import { getColorName, generateUniqueNames } from '@/lib/colorUtils';
 
 export const createPaletteSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
   changeColor: (key, color) => set(state => ({
@@ -78,10 +78,12 @@ export const createPaletteSlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
     const newPalette: Record<number, string> = { 0: 'transparent' };
     const newColorNames: Record<number, string> = { 0: 'Transparent' };
     
+    const uniqueNames = generateUniqueNames(colors);
+    
     colors.forEach((color, i) => {
       const key = i + 1;
       newPalette[key] = color;
-      newColorNames[key] = getColorName(color);
+      newColorNames[key] = uniqueNames[i];
     });
 
     set({
@@ -108,9 +110,11 @@ export const createPaletteSlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
     const updatedColorNames = { ...state.editedAsset.colorNames };
     const addedKeys: number[] = [];
 
-    colors.forEach(color => {
+    const uniqueNames = generateUniqueNames(colors);
+
+    colors.forEach((color, i) => {
       updatedPalette[nextKey] = color;
-      updatedColorNames[nextKey] = getColorName(color);
+      updatedColorNames[nextKey] = uniqueNames[i];
       addedKeys.push(nextKey);
       nextKey++;
     });

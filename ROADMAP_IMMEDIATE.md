@@ -38,6 +38,7 @@
 - [x] **Perspectivas y Grillas Pro**: Auto-Mirror, Rejilla Isométrica, Modo Top-Down
 - [x] **Nombres Canónicos**: Sistema estándar implementado
 - [x] **Dismemberment Tool (UI)**: Capacidad de marcar píxeles por miembro
+- [x] **Previsualización Dinámica**: Soporte auto-escalable para 64x64 y 128x128 sin overflow.
 
 ---
 

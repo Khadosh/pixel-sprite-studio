@@ -5,8 +5,11 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-27 (Hoy)
-**1 commit realizado**
+**2 commits realizados**
 
+- **UI/UX**: **Previsualización Dinámica Pro**. Rediseñado el panel de previsualización de animaciones para soportar dinámicamente assets de 64x64 y 128x128. Las escalas ahora se ajustan automáticamente y el panel utiliza un sistema de "hug content" para eliminar espacios vacíos alrededor del sprite.
+- **Mejora**: **Nombrado Inteligente de Colores**. Implementado un sistema de resolución de nombres que añade automáticamente matices (shades) estilo Tailwind (50-950) cuando hay duplicados en la paleta. Ahora las importaciones y rampas de color son mucho más fáciles de navegar (ej. "Charcoal Gray 600", "Charcoal Gray 700").
+- **Fix**: **Blindaje de Persistencia (QuotaExceededError)**. Migrado el sistema de caché local (localStorage) al motor de serialización RLE+Delta. Esto reduce el uso de disco hasta en un 97% para assets de 128px. Además, se ha implementado una estrategia de "Auto-Purge" que libera espacio de otros proyectos antiguos si el almacenamiento del navegador está al límite, priorizando siempre el trabajo actual.
 - **Rendimiento**: **Motor de Compresión RLE+Delta**. Implementado un nuevo sistema de serialización tipado (`spriteDto`) que combina Run-Length Encoding con codificación Delta. Logra ahorros de hasta **-97%** en animaciones complejas y evita la expansión en frames con dithering.
 - **Optimización**: **Hashing FNV-1a**. Reemplazado `JSON.stringify` por un hash numérico ultra-rápido en el deduplicador de `localStorage`, reduciendo el tiempo de procesamiento en un 500% para sprites de 64x64+.
 - **QA**: **Cobertura de Almacenamiento**. Añadida suite de 26 tests específicos para el ciclo de vida de los datos, cubriendo todos los tamaños soportados (16 a 128px) y garantizando retrocompatibilidad.

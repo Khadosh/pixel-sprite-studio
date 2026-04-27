@@ -215,7 +215,6 @@ export function useSprite(idOrSlug?: string, projectId?: string) {
 
       // AUTO-CLEAN: If the sprite is massive (>1MB), purge history immediately on load
       if (rawJson.length > 1024 * 1024) {
-        console.warn(`[Auto-Clean] Sprite ${data.id} is massive (${(rawJson.length / 1024 / 1024).toFixed(2)}MB). Purging history...`);
         assetData.versions = [];
       }
 
@@ -340,16 +339,12 @@ export function useUpdateSprite() {
       };
       
       const rawSize = JSON.stringify(assetToSave).length;
-      console.log(`[Save] Sprite raw size: ${(rawSize / 1024).toFixed(2)}KB`);
 
       if (rawSize > 500 * 1024) {
-        console.warn('[Save] Sprite too large, clearing history versions.');
         assetToSave.versions = [];
       }
 
       const compressedAsset = serializeAsset(assetToSave);
-      const compressedSize = JSON.stringify(compressedAsset).length;
-      console.log(`[Save] Sprite serialized size: ${(compressedSize / 1024).toFixed(2)}KB`);
 
       // 3. Perform the update
       const { error } = await supabase

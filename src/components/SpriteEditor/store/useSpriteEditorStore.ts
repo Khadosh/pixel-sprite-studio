@@ -15,7 +15,8 @@ import { createAnimationSlice } from './slices/animationSlice';
 import { createTransformSlice } from './slices/transformSlice';
 import { createExportSlice } from './slices/exportSlice';
 import { createAnatomySlice } from './slices/anatomySlice';
-import { compressState, decompressState } from '@/lib/storageCompression';
+import { serializeAsset, deserializeAsset } from '@/lib/spriteDto';
+import { decompressState } from '@/lib/storageCompression';
 
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -123,6 +124,10 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
               const data = JSON.parse(raw);
               if (data.version === 'dedupe-v1') {
                 data.state = decompressState(data.state);
+              } else if (data.version === 'dto-v2') {
+                if (data.state?.editedAsset) {
+                  data.state.editedAsset = deserializeAsset(data.state.editedAsset);
+                }
               }
               return data;
             } catch (e) {
@@ -130,26 +135,42 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
             }
           },
           setItem: (name: string, value: any) => {
-            try {
-              const compressed = compressState(value.state);
+            const saveToStorage = (val: any) => {
+              const stateToSave = { ...val.state };
+              if (stateToSave.editedAsset) {
+                stateToSave.editedAsset = serializeAsset(stateToSave.editedAsset);
+              }
               localStorage.setItem(name, JSON.stringify({
-                version: 'dedupe-v1',
-                state: compressed
+                version: 'dto-v2', // Upgraded from dedupe-v1
+                state: stateToSave
               }));
+            };
+
+            try {
+              saveToStorage(value);
             } catch (e) {
-              // If still too large, try one more time without versions as fallback
+              console.warn("[Storage] LocalStorage full, attempting aggressive cleanup...", e);
+              
+              // Fallback 1: Clear other editor entries to make space
               try {
-                const fallbackValue = JSON.parse(JSON.stringify(value));
-                if (fallbackValue.state?.editedAsset) {
-                  fallbackValue.state.editedAsset.versions = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                  const key = localStorage.key(i);
+                  if (key && key.startsWith('pps-editor-') && key !== name) {
+                    localStorage.removeItem(key);
+                  }
                 }
-                const compressed = compressState(fallbackValue.state);
-                localStorage.setItem(name, JSON.stringify({
-                  version: 'dedupe-v1',
-                  state: compressed
-                }));
+                saveToStorage(value);
               } catch (e2) {
-                console.warn("Storage totally full", e2);
+                // Fallback 2: Clear history versions of CURRENT asset
+                try {
+                  const desperateValue = JSON.parse(JSON.stringify(value));
+                  if (desperateValue.state?.editedAsset) {
+                    desperateValue.state.editedAsset.versions = [];
+                  }
+                  saveToStorage(desperateValue);
+                } catch (e3) {
+                  // Silent fail if disk is completely full
+                }
               }
             }
           },
