@@ -210,10 +210,11 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
       if (paletteMode === 'sprite') fixedPalette = spritePalette;
       if (paletteMode === 'library') fixedPalette = targetLibraryPalette;
 
+      const result = imageToPixelData(imgData, {
         targetSize: assetSize,
         maxColors,
         alphaThreshold,
-        fixedPalette: fixedPalette as any,
+        fixedPalette: fixedPalette as Record<number, string>,
         removeBackground
       });
 
@@ -221,7 +222,7 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [sourceImage, position, assetSize, maxColors, alphaThreshold, paletteMode, spritePalette, targetLibraryPalette]);
+  }, [sourceImage, position, assetSize, maxColors, alphaThreshold, paletteMode, spritePalette, targetLibraryPalette, removeBackground]);
 
   // ─── Canvas Rendering ─────────────────────────────────────────────
 
@@ -279,19 +280,6 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
       });
     } else if (mode === 'overwrite' && overwriteLayerFrame) {
       pushUndo();
-      // Note: We'd need a way to merge palettes here if we aren't creating a layer
-      // but overwriteLayerFrame assumes pixels map to EXISTING sprite palette.
-      // If we are in 'auto' or 'library' mode, this implies we might need to 
-      // add colors to the main palette first.
-      
-      // For simplicity in this PR, 'overwrite' will mainly be useful with 'sprite' mode
-      // or we just call importAssetLayer and later merge. 
-      // Actually, let's just use importAssetLayer and if the user wants to merge, they can.
-      // BUT, to satisfy "Reemplazar el actual", let's handle the palette addition then overwrite.
-      
-      // I'll stick to 'New Layer' by default as it's safer, 
-      // but I'll implement the 'Overwrite' by creating a layer and immediately merging down if possible.
-      // Or just implement the logic to inject colors and set pixels.
       importAssetLayer({
         name: fileName || 'Imported',
         frame: pixelResult.frame,
@@ -316,7 +304,6 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
         </DialogHeader>
 
         <div className="absolute inset-0 bg-pixel-grid opacity-10 pointer-events-none" />
-
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Side: Preview & Controls */}
@@ -354,11 +341,6 @@ export const ImportImageModal: React.FC<ImportImageModalProps> = ({ open, onOpen
                 <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-primary/30" />
                 <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-primary/30" />
                 <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-primary/30" />
-
-                {/* Scanline effect when dragging */}
-                {isDragOver && (
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-primary/50 shadow-[0_0_10px_rgba(34,197,94,0.5)] animate-scanline pointer-events-none" />
-                )}
               </div>
             ) : (
               <div 

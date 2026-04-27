@@ -93,7 +93,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
 
   // ─── Frame Processing ─────────────────────────────────────────────
 
-  const pixelizeFrame = (imageData: ImageData): PixelizeResult => {
+  const pixelizeFrame = useCallback((imageData: ImageData): PixelizeResult => {
     // We need to resize to assetSize first
     const canvas = document.createElement('canvas');
     canvas.width = assetSize;
@@ -124,10 +124,10 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
       targetSize: assetSize,
       maxColors,
       alphaThreshold,
-      fixedPalette: fixedPalette as any,
+      fixedPalette: fixedPalette as Record<number, string>,
       removeBackground
     });
-  };
+  }, [assetSize, paletteMode, spritePalette, targetLibraryPalette, maxColors, alphaThreshold, removeBackground]);
 
   // ─── Rendering ────────────────────────────────────────────────────
 
@@ -148,7 +148,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
         }
       });
     });
-  }, [previewFrameIdx, decodedGif, assetSize, paletteMode, spritePalette, targetLibraryPalette, maxColors, alphaThreshold]);
+  }, [previewFrameIdx, decodedGif, assetSize, paletteMode, spritePalette, targetLibraryPalette, maxColors, alphaThreshold, pixelizeFrame]);
 
   // ─── Actions ──────────────────────────────────────────────────────
 
@@ -191,7 +191,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
         isVisible: true,
         isLocked: false,
         opacity: 1,
-        frames: Array.from({ length: prevAsset.layers[0].frames.length }, () => 
+        frames: Array.from({ length: prevAsset.layers?.[0]?.frames.length ?? 0 }, () => 
           Array.from({ length: assetSize }, () => Array(assetSize).fill(0))
         ),
         paletteIds: []
@@ -253,7 +253,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
           fps: 10
         };
 
-        const existingAnimIdx = newAsset.animations.findIndex((a: any) => a.name === animDef.name);
+        const existingAnimIdx = newAsset.animations.findIndex((a: AnimationDef) => a.name === animDef.name);
         if (existingAnimIdx >= 0) {
           newAsset.animations[existingAnimIdx] = animDef;
         } else {
