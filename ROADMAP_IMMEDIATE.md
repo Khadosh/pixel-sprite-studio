@@ -9,13 +9,13 @@
 ## 🦴 1. Core Anatomy Engine (Cimientos)
 *Hacer que el motor "entienda" los píxeles seleccionados por el usuario.*
 
-- [ ] **Unificador de Miembros**: Crear un "Resolver" que entregue un mapa de píxeles para cada parte del cuerpo, usando la selección manual si existe o infiriendo el área si no (Fallback Inteligente).
-- [ ] **Transformaciones por Máscara**: Implementar `shiftPixels` y `rotatePixels` que operen sobre los `MemberConfig.pixels` para permitir movimientos sin distorsionar el resto del cuerpo.
+- [x] **Unificador de Miembros**: Crear un "Resolver" que entregue un mapa de píxeles para cada parte del cuerpo, usando la selección manual si existe o infiriendo el área si no (Fallback Inteligente).
+- [x] **Transformaciones por Máscara**: Implementar `shiftPixels` y `rotatePixels` que operen sobre los `MemberConfig.pixels` para permitir movimientos sin distorsionar el resto del cuerpo.
 
 ## 🎬 2. The Core 8 Suite (Fase 1)
 *Implementar las 8 animaciones base con soporte total de anatomía y direcciones.*
 
-- [ ] **1. IDLE & BREATH**: Animación sutil usando squash/stretch basado en el pivot de la cintura.
+- [x] **1. IDLE & BREATH**: Animación sutil usando squash/stretch basado en el pivot de la cintura.
 - [ ] **2. WALK (Front/Side/Back)**: Ciclo de 8 frames con flexión de rodillas real (usando píxeles de piernas).
 - [ ] **3. RUN**: Variación del walk con mayor inclinación de torso y zancada más larga.
 - [ ] **4. JUMP**: Anticipación (squash), salto (stretch + lift) y caída.

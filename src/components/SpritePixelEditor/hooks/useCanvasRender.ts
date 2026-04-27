@@ -24,6 +24,7 @@ interface UseCanvasRenderProps {
   anatomyActiveMemberId?: string | null;
   anatomyIsSelectionMode?: boolean;
   anatomySelectedOrientation?: number;
+  anatomyShowAllMasks?: boolean;
 }
 
 const BASE_PIXEL_SCALE = 16;
@@ -51,6 +52,7 @@ export function useCanvasRender({
   anatomyActiveMemberId,
   anatomyIsSelectionMode,
   anatomySelectedOrientation,
+  anatomyShowAllMasks,
 }: UseCanvasRenderProps) {
   const PIXEL_SCALE = BASE_PIXEL_SCALE * zoom;
   const canvasSize = asset.size * PIXEL_SCALE;
@@ -226,42 +228,51 @@ export function useCanvasRender({
 
       // Dismemberment Pixels
       const currentOrientation = asset.anatomy?.orientations?.[anatomySelectedOrientation ?? 0];
-      currentOrientation?.members?.forEach(member => {
-        const isActive = member.id === anatomyActiveMemberId;
-        const isEditing = isActive && anatomyIsSelectionMode;
-        if (member.pixels?.length) {
+      const showAll = anatomyShowAllMasks ?? true;
+
+      if (currentOrientation?.members) {
+        // 1. Draw all Fills first
+        currentOrientation.members.forEach(member => {
+          if (!member.pixels?.length) return;
+          const isActive = member.id === anatomyActiveMemberId;
           ctx.fillStyle = member.type.includes('arm') ? '#38bdf8' : member.type.includes('leg') ? '#fb7185' : member.type === 'head' ? '#fbbf24' : '#fb923c';
-          ctx.globalAlpha = isActive ? 0.6 : 0.2;
+          ctx.globalAlpha = isActive ? 0.6 : (showAll ? 0.3 : 0.05);
+          
           member.pixels.forEach(p => {
-            const px = p.c * PIXEL_SCALE;
-            const py = p.r * PIXEL_SCALE;
+            ctx.fillRect(p.c * PIXEL_SCALE, p.r * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+          });
+        });
+
+        // 2. Draw Crosshairs (+) on top for active member ONLY if in selection mode
+        if (anatomyIsSelectionMode && anatomyActiveMemberId) {
+          const activeMember = currentOrientation.members.find(m => m.id === anatomyActiveMemberId);
+          if (activeMember?.pixels?.length) {
+            ctx.globalAlpha = 1.0;
+            ctx.lineWidth = 1;
             
-            ctx.fillRect(px, py, PIXEL_SCALE, PIXEL_SCALE);
-            
-            if (isEditing) {
-              // Draw a small crosshair for better visibility
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-              ctx.lineWidth = 1;
+            activeMember.pixels.forEach(p => {
+              const px = p.c * PIXEL_SCALE;
+              const py = p.r * PIXEL_SCALE;
               
-              // Vertical line
+              // Draw white crosshair with subtle alpha
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
               ctx.beginPath();
+              // Vertical
               ctx.moveTo(px + PIXEL_SCALE / 2, py + 2);
               ctx.lineTo(px + PIXEL_SCALE / 2, py + PIXEL_SCALE - 2);
-              ctx.stroke();
-              
-              // Horizontal line
-              ctx.beginPath();
+              // Horizontal
               ctx.moveTo(px + 2, py + PIXEL_SCALE / 2);
               ctx.lineTo(px + PIXEL_SCALE - 2, py + PIXEL_SCALE / 2);
               ctx.stroke();
 
-              // Border
+              // Very subtle border
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
               ctx.strokeRect(px + 0.5, py + 0.5, PIXEL_SCALE - 1, PIXEL_SCALE - 1);
-            }
-          });
-          ctx.globalAlpha = 1.0;
+            });
+          }
         }
-      });
+        ctx.globalAlpha = 1.0;
+      }
     }
 
     // Selection

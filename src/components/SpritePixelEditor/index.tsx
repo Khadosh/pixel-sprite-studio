@@ -33,6 +33,7 @@ interface SpritePixelEditorProps {
   anatomyIsSelectionMode?: boolean;
   onToggleMemberPixel?: (r: number, c: number, force?: boolean) => void;
   anatomySelectedOrientation?: number;
+  anatomyShowAllMasks?: boolean;
 }
 
 export default function SpritePixelEditor(props: SpritePixelEditorProps) {

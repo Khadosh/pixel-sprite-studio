@@ -5,8 +5,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-27 (Hoy)
-**2 commits realizados**
+**3 commits realizados**
 
+- **Animación**: **IDLE & BREATH (Anatomy Engine)**. Implementado el ciclo completo de animación IDLE con sistema de respiración y flexión de rodillas basado en anatomía. Se actualizaron las funciones de transformación para soportar desplazamientos con rotación y se solucionaron errores de ghosting y desconexiones de cintura.
 - **UI/UX**: **Previsualización Dinámica Pro**. Rediseñado el panel de previsualización de animaciones para soportar dinámicamente assets de 64x64 y 128x128. Las escalas ahora se ajustan automáticamente y el panel utiliza un sistema de "hug content" para eliminar espacios vacíos alrededor del sprite.
 - **Mejora**: **Nombrado Inteligente de Colores**. Implementado un sistema de resolución de nombres que añade automáticamente matices (shades) estilo Tailwind (50-950) cuando hay duplicados en la paleta. Ahora las importaciones y rampas de color son mucho más fáciles de navegar (ej. "Charcoal Gray 600", "Charcoal Gray 700").
 - **Fix**: **Blindaje de Persistencia (QuotaExceededError)**. Migrado el sistema de caché local (localStorage) al motor de serialización RLE+Delta. Esto reduce el uso de disco hasta en un 97% para assets de 128px. Además, se ha implementado una estrategia de "Auto-Purge" que libera espacio de otros proyectos antiguos si el almacenamiento del navegador está al límite, priorizando siempre el trabajo actual.

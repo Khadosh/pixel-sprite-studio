@@ -1,60 +1,104 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { cloneFrame, shiftPixels, shiftFrame, stretchPixels, clearPixels } from '../transforms';
+import { 
+  clonarFrame, 
+  desplazarPixels, 
+  expandirPixels, 
+  colapsarPixels, 
+  rotarPixels, 
+  limpiarPixels 
+} from '../anatomyTransforms';
 import { resolveMembers } from '../anatomyResolver';
 
 /** 
- * Idle: Breathing cycle with chest expansion and subtle hierarchy.
- * Now uses the anatomy engine to ensure body parts move correctly.
+ * Idle: Ciclo de respiración mejorado con movimiento de rodillas y extremidades.
+ * Utiliza la API Humana para facilitar la comprensión de los movimientos.
  */
 export function generateIdle(
   base: Frame, 
   anatomy?: AnatomyConfig,
   orientation: number = 0
 ): Frame[] {
-  // 1. Resolve members
   const members = resolveMembers(base, anatomy, orientation);
-  const head = members.head;
-  const torso = members.torso;
-  const arms = [members.arm_left, members.arm_right].filter(Boolean);
+  const { head, torso, arm_left, arm_right, leg_left, leg_right } = members;
 
-  // Unified list of all upper-body parts that move during breathing
-  const upperBodyPixels = [
+  // Definimos los grupos que se mueven juntos
+  const extremidadesSuperiores = [
     ...(head?.pixels || []),
-    ...arms.flatMap(a => a.pixels || [])
+    ...(arm_left?.pixels || []),
+    ...(arm_right?.pixels || [])
   ];
   
   const torsoPixels = torso?.pixels || [];
-  
-  // Total set of pixels that will be cleared from the static shell
-  const allMovingPixels = [
-    ...torsoPixels,
-    ...upperBodyPixels
+  const piernas = [
+    ...(leg_left?.pixels || []),
+    ...(leg_right?.pixels || [])
   ];
 
-  // 1. Neutral (Base)
-  const f0 = cloneFrame(base);
+  const todosLosPixelesMoviles = [
+    ...torsoPixels,
+    ...extremidadesSuperiores,
+    ...piernas
+  ];
 
-  // 2. Inhale (Upper body rises)
-  let f1 = cloneFrame(base);
-  if (allMovingPixels.length > 0) {
-    f1 = clearPixels(f1, allMovingPixels);
-    // Draw all parts shifted UP (Atomic move)
-    f1 = shiftPixels(base, f1, allMovingPixels, -1, 0); 
-    // Re-draw torso with STRETCH to close the waist gap
-    f1 = stretchPixels(base, f1, torsoPixels, -1);
-  } else {
-    f1 = shiftFrame(base, -1, 0);
+  // --- FRAME 0: Neutral ---
+  const f0 = clonarFrame(base);
+
+  // --- FRAME 1: Inhalación (Pecho sube, cabeza sube, hombros rotan) ---
+  let f1 = limpiarPixels(clonarFrame(base), todosLosPixelesMoviles);
+  
+  // 1. Piernas se mantienen firmes en la inhalación
+  if (piernas.length > 0) {
+    f1 = desplazarPixels(base, f1, piernas, 0, 0);
+  }
+  
+  // 2. El torso se expande hacia arriba (pecho inflado)
+  if (torsoPixels.length > 0) {
+    f1 = expandirPixels(base, f1, torsoPixels, -1);
+  }
+  
+  // 3. Cabeza sube con el pecho
+  if (head?.pixels?.length) {
+    f1 = desplazarPixels(base, f1, head.pixels, -1, 0);
+  }
+  
+  // 4. Brazos suben Y rotan hacia afuera
+  if (arm_left?.pixels?.length) {
+    // f1 = desplazarPixels(base, f1, arm_right.pixels, -1, 0)
+    f1 = colapsarPixels(base, f1, arm_right.pixels, 2, 'top')
+  }
+  if (arm_right?.pixels?.length) {
+    // f1 = desplazarPixels(base, f1, arm_left.pixels, -1, 0)
+    f1 = colapsarPixels(base, f1, arm_left.pixels, 2, 'top')
   }
 
-  // 3. Exhale (Settle / Slight sink)
-  let f2 = cloneFrame(base);
-  if (allMovingPixels.length > 0) {
-    f2 = clearPixels(f2, allMovingPixels);
-    f2 = shiftPixels(base, f2, allMovingPixels, 1, 0);
-  } else {
-    f2 = shiftFrame(base, 1, 0);
+  // --- FRAME 2: Exhalación y flexión (Settle) ---
+  let f2 = limpiarPixels(clonarFrame(base), todosLosPixelesMoviles);
+  
+  // 1. Las piernas se colapsan (flexión de rodillas, la cintura baja 1px)
+  if (piernas.length > 0) {
+    f2 = colapsarPixels(base, f2, piernas, 1, 'bottom');
+  }
+  
+  // 2. Torso baja 1px para seguir a la cintura (acompaña la flexión)
+  if (torsoPixels.length > 0) {
+    f2 = desplazarPixels(base, f2, torsoPixels, 1, 0);
+  }
+  
+  // 3. Cabeza baja acompañando al torso
+  if (head?.pixels?.length) {
+    f2 = desplazarPixels(base, f2, head.pixels, 1, 0);
+  }
+  
+  // 4. Brazos bajan
+  if (arm_left?.pixels?.length) {
+    f2 = desplazarPixels(base, f2, arm_left.pixels, 1, 0);
+    f2 = expandirPixels(base, f2, arm_left.pixels, 1);
+  }
+  if (arm_right?.pixels?.length) {
+    f2 = desplazarPixels(base, f2, arm_right.pixels, 1, 0);
+    f2 = expandirPixels(base, f2, arm_right.pixels, 1);
   }
 
-  // Sequence: Neutral -> Inhale -> Neutral -> Exhale
+  // Secuencia: Neutral -> Inhala -> Neutral -> Exhala
   return [f0, f1, f0, f2];
 }

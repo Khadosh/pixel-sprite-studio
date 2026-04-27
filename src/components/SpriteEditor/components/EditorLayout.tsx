@@ -259,6 +259,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                     anatomyIsSelectionMode={useSpriteEditorStore(s => s.anatomyIsSelectionMode)}
                     onToggleMemberPixel={store.getState().toggleMemberPixel}
                     anatomySelectedOrientation={useSpriteEditorStore(s => s.anatomySelectedOrientation)}
+                    anatomyShowAllMasks={useSpriteEditorStore(s => s.anatomyShowAllMasks)}
                   />
                 </div>
               </div>

@@ -26,6 +26,12 @@ import {
   flipHorizontal,
   generateWalkTopDown,
   generateAttackTopDown,
+  resolveMembers,
+  clearPixels,
+  cloneFrame,
+  shiftPixels,
+  stretchPixels,
+  rotatePixels,
 } from '@/lib/spriteTransforms';
 
 /**
@@ -163,18 +169,44 @@ export function generateAdvancedCastSequence(
       let nextFrame: Frame;
       
       if (isBase) {
-        // Character recoil logic using anatomical segments
-        const { neckRow, waistRow } = segments;
+        // Character recoil logic using anatomical segments and PIXEL transforms
+        const members = resolveMembers(baseFrame, asset.anatomy, options?.baseIndex ?? 0);
+        const { head, torso, arm_left, arm_right, leg_left, leg_right } = members;
         
-        if (i < 2) { // Buildup: anticipation lean
-           nextFrame = leanBody(baseFrame, waistRow, neckRow, -1);
-        } else if (i < 4) { // Impact: lunge & thrust
-           let f = leanBody(baseFrame, waistRow, neckRow, 2);
-           f = shiftDown(f, -1); // slight lift
-           nextFrame = f;
-        } else { // Recovery: return/settle
-           nextFrame = squash(baseFrame, [waistRow], undefined, neckRow);
+        const movingParts = [
+          ...(torso?.pixels || []),
+          ...(head?.pixels || []),
+          ...(arm_left?.pixels || []),
+          ...(arm_right?.pixels || []),
+          ...(leg_left?.pixels || []),
+          ...(leg_right?.pixels || [])
+        ];
+
+        let f = clearPixels(cloneFrame(baseFrame), movingParts);
+        
+        if (i < 2) { // Buildup: anticipation lean back
+           if (torso && head) {
+             const upper = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
+             f = shiftPixels(baseFrame, f, upper, 0, -1);
+           }
+           if (leg_left) f = shiftPixels(baseFrame, f, leg_left.pixels, 0, 0);
+           if (leg_right) f = shiftPixels(baseFrame, f, leg_right.pixels, 0, 0);
+        } else if (i < 4) { // Impact: lunge & thrust forward
+           if (torso && head) {
+             const upper = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
+             f = shiftPixels(baseFrame, f, upper, -1, 2); // Rise and lunge
+           }
+           if (leg_left) f = shiftPixels(baseFrame, f, leg_left.pixels, 0, 1);
+           if (leg_right) f = stretchPixels(baseFrame, f, leg_right.pixels, 1);
+        } else { // Recovery: settle
+           if (torso && head) {
+             const upper = [...torso.pixels, ...head.pixels, ...(arm_left?.pixels || []), ...(arm_right?.pixels || [])];
+             f = shiftPixels(baseFrame, f, upper, 1, 1);
+           }
+           if (leg_left) f = shiftPixels(baseFrame, f, leg_left.pixels, 0, 0);
+           if (leg_right) f = shiftPixels(baseFrame, f, leg_right.pixels, 0, 0);
         }
+        nextFrame = f;
       } else if (isEffect) {
         // Spell effect logic
         nextFrame = Array.from({ length: size }, () => Array(size).fill(0));
@@ -338,13 +370,13 @@ function generateFrameSequence(
       break;
     case 'attack':
       if (isUpDir || isDownDir) {
-        frames = generateAttackTopDown(base, anatomy, isUpDir);
+        frames = generateAttackTopDown(base, anatomy, orientationIdx);
       } else {
-        frames = generateAttack(base, anatomy);
+        frames = generateAttack(base, anatomy, orientationIdx);
       }
       break;
     case 'cast':
-      frames = generateCast(base, glowColor, anatomy);
+      frames = generateCast(base, glowColor, anatomy, orientationIdx);
       break;
     case 'hurt':
       frames = generateHurt(base, anatomy, orientationIdx);
@@ -353,7 +385,7 @@ function generateFrameSequence(
       frames = generateDie(base, anatomy, orientationIdx);
       break;
     case 'jump':
-      frames = generateJump(base, anatomy);
+      frames = generateJump(base, anatomy, orientationIdx);
       break;
     default:
       frames = [generateIdle(base, anatomy)[0]];

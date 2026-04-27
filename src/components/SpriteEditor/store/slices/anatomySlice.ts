@@ -5,9 +5,11 @@ export const createAnatomySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
   anatomyActiveMemberId: null,
   anatomySelectedOrientation: 0,
   anatomyIsSelectionMode: false,
+  anatomyShowAllMasks: true,
 
   setAnatomyActiveMemberId: (id) => set({ anatomyActiveMemberId: id }),
   setAnatomyIsSelectionMode: (on) => set({ anatomyIsSelectionMode: on }),
+  setAnatomyShowAllMasks: (on) => set({ anatomyShowAllMasks: on }),
 
   toggleMemberPixel: (r, c, force) => set(state => {
     const { anatomyActiveMemberId, anatomySelectedOrientation, editedAsset } = state;
@@ -39,6 +41,125 @@ export const createAnatomySlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
 
     const updatedMembers = [...orientation.members];
     updatedMembers[memberIdx] = { ...member, pixels };
+
+    const updatedOrientations = {
+      ...orientations,
+      [anatomySelectedOrientation]: { ...orientation, members: updatedMembers }
+    };
+
+    return {
+      editedAsset: {
+        ...editedAsset,
+        anatomy: { ...anatomy, orientations: updatedOrientations }
+      },
+      isDirty: true
+    };
+  }),
+  
+  fillMemberGaps: () => set(state => {
+    const { anatomyActiveMemberId, anatomySelectedOrientation, editedAsset } = state;
+    if (!anatomyActiveMemberId) return state;
+
+    state.pushUndo();
+
+    const anatomy = editedAsset.anatomy || {};
+    const orientations = anatomy.orientations || {};
+    const orientation = orientations[anatomySelectedOrientation] || { members: [] };
+    
+    const memberIdx = orientation.members.findIndex(m => m.id === anatomyActiveMemberId);
+    if (memberIdx === -1) return state;
+
+    const member = orientation.members[memberIdx];
+    const pixels = member.pixels || [];
+    if (pixels.length < 3) return state; // Need at least a triangle/loop
+
+    const size = editedAsset.size;
+    
+    // 1. Create a grid representing current selection
+    const grid = Array.from({ length: size }, () => Array(size).fill(false));
+    pixels.forEach(p => {
+      if (p.r >= 0 && p.r < size && p.c >= 0 && p.c < size) {
+        grid[p.r][p.c] = true;
+      }
+    });
+
+    // 2. Flood fill from the edges to find "outside"
+    const outside = Array.from({ length: size }, () => Array(size).fill(false));
+    const stack: {r: number, c: number}[] = [];
+
+    // Push all edge pixels that are NOT selected
+    for (let i = 0; i < size; i++) {
+      if (!grid[0][i]) stack.push({ r: 0, c: i });
+      if (!grid[size-1][i]) stack.push({ r: size-1, c: i });
+      if (!grid[i][0]) stack.push({ r: i, c: 0 });
+      if (!grid[i][size-1]) stack.push({ r: i, c: size-1 });
+    }
+
+    while (stack.length > 0) {
+      const { r, c } = stack.pop()!;
+      if (r < 0 || r >= size || c < 0 || c >= size || grid[r][c] || outside[r][c]) continue;
+      
+      outside[r][c] = true;
+      
+      // Standard 4-connectivity moves
+      const neighbors = [
+        { nr: r + 1, nc: c },
+        { nr: r - 1, nc: c },
+        { nr: r, nc: c + 1 },
+        { nr: r, nc: c - 1 }
+      ];
+
+      for (const { nr, nc } of neighbors) {
+        if (nr < 0 || nr >= size || nc < 0 || nc >= size || outside[nr][nc] || grid[nr][nc]) continue;
+        
+        // Diagonal Leak Prevention:
+        // If we move from (r,c) to (r+1, c), it's a 4-connected move.
+        // It's never a "diagonal leak" by itself.
+        // The leak happens when the ONLY connection between internal and external
+        // is a diagonal gap in the grid.
+        // Example of diagonal boundary:
+        // (r,c)   (r, c+1) [Grid]
+        // (r+1,c) [Grid]  (r+1, c+1)
+        // A move from (r,c) to (r+1, c+1) is blocked if (r, c+1) and (r+1, c) are grid.
+        
+        // But we only move 4-connected. So from (r,c) we can go to (r+1, c) or (r, c+1).
+        // If (r+1, c) is grid, we can't go there.
+        // If (r, c+1) is grid, we can't go there.
+        // So a 4-connected flood fill CANNOT pass through an 8-connected boundary.
+        // Wait... actually, it CANNOT. 
+        // If the boundary is:
+        // X .
+        // . X
+        // From (0,1) [.] I can only go to (0,0) [X] or (1,1) [X] or (0,2) or (1,1)...
+        // All paths to the other side (1,0) are blocked by X.
+        
+        // My previous thought was wrong. 4-connected flood fill is NATURALLY 
+        // blocked by 8-connected boundaries.
+        // So if it "did nothing", it's probably because the boundary was OPEN
+        // (missing a pixel even in 8-connectivity).
+        
+        stack.push({ r: nr, c: nc });
+      }
+      
+      // If we want to support 8-connectivity boundaries, we must block 4-connectivity moves
+      // that "squeeze" through a diagonal.
+      // Example: If grid[r+1][c+1] and grid[r][c] are TRUE, then (r+1, c) cannot reach (r, c+1).
+    }
+
+    // 3. Any pixel that is NOT member AND NOT outside is an internal hole
+    const newPixels: { r: number, c: number }[] = [];
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        if (!outside[r][c]) {
+          newPixels.push({ r, c });
+        }
+      }
+    }
+
+    if (newPixels.length === pixels.length) return state;
+
+    const updatedMembers = [...orientation.members];
+    updatedMembers[memberIdx] = { ...member, pixels: newPixels };
 
     const updatedOrientations = {
       ...orientations,

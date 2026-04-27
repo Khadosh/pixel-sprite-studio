@@ -3,9 +3,9 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
-import { RefreshCcw, User, Settings2, Boxes, MousePointer2, Eraser, Move } from 'lucide-react';
+import { RefreshCcw, User, Settings2, Boxes, MousePointer2 } from 'lucide-react';
 import { PxBone } from '@/components/icons/PixelIcon';
-import type { AnatomyConfig, MemberConfig, MemberType } from '@/lib/types';
+import type { AnatomyConfig, MemberType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const DEFAULT_MEMBERS: { type: MemberType, label: string }[] = [
@@ -26,7 +26,8 @@ export function AnatomyPanel() {
   const setActiveMemberId = useSpriteEditorStore(s => s.setAnatomyActiveMemberId);
   const isSelectionMode = useSpriteEditorStore(s => s.anatomyIsSelectionMode);
   const setIsSelectionMode = useSpriteEditorStore(s => s.setAnatomyIsSelectionMode);
-  
+  const fillMemberGaps = useSpriteEditorStore(s => s.fillMemberGaps);
+
   if (!asset) return null;
 
   const anatomy = asset.anatomy || { mode: 'auto' };
@@ -66,10 +67,10 @@ export function AnatomyPanel() {
           <PxBone className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold uppercase tracking-wider">Anatomy Engine</h3>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6" 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
           onClick={() => handleUpdate(null)}
           title="Reset to Defaults"
         >
@@ -77,19 +78,19 @@ export function AnatomyPanel() {
         </Button>
       </div>
 
-      <div className="flex p-1 bg-background/50 rounded-md gap-1">
+      <div className="grid grid-cols-3 p-1 bg-background/50 rounded-md gap-1">
         {(['auto', 'humanoid', 'custom'] as const).map(m => (
-          <Button 
+          <Button
             key={m}
-            variant={mode === m ? 'secondary' : 'ghost'} 
-            size="sm" 
-            className="flex-1 h-7 text-[10px] gap-1 capitalize"
+            variant={mode === m ? 'secondary' : 'ghost'}
+            size="sm"
+            className="h-7 text-[10px] gap-1 capitalize px-1"
             onClick={() => setMode(m)}
           >
-            {m === 'auto' && <Settings2 className="w-3 h-3" />}
-            {m === 'humanoid' && <User className="w-3 h-3" />}
-            {m === 'custom' && <Boxes className="w-3 h-3" />}
-            {m}
+            {m === 'auto' && <Settings2 className="w-3 h-3 flex-shrink-0" />}
+            {m === 'humanoid' && <User className="w-3 h-3 flex-shrink-0" />}
+            {m === 'custom' && <Boxes className="w-3 h-3 flex-shrink-0" />}
+            <span className="truncate">{m}</span>
           </Button>
         ))}
       </div>
@@ -101,8 +102,8 @@ export function AnatomyPanel() {
             key={idx}
             className={cn(
               "pb-1 text-[10px] font-bold uppercase transition-colors border-b-2",
-              selectedOrientation === idx 
-                ? "text-primary border-primary" 
+              selectedOrientation === idx
+                ? "text-primary border-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
             )}
             onClick={() => setSelectedOrientation(idx)}
@@ -122,30 +123,45 @@ export function AnatomyPanel() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Limbs & Segments</span>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Limbs & Segments</span>
                 {activeMemberId && (
-                  <Button 
-                    size="sm" 
-                    variant={isSelectionMode ? "default" : "outline"}
-                    className={cn("h-6 text-[9px] gap-1 px-2", isSelectionMode && "bg-sky-500 hover:bg-sky-600")}
-                    onClick={() => setIsSelectionMode(!isSelectionMode)}
-                  >
-                    <MousePointer2 className="w-2.5 h-2.5" />
-                    {isSelectionMode ? "Editing Pixels..." : "Select Pixels"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 flex-1 text-[10px] gap-1.5 border-sky-500/30 text-sky-400 hover:bg-sky-500/10"
+                      onClick={() => fillMemberGaps()}
+                      title="Fill enclosed area"
+                    >
+                      <RefreshCcw className="w-3 h-3" />
+                      Fill Mask
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={isSelectionMode ? "default" : "outline"}
+                      className={cn(
+                        "h-7 flex-1 text-[10px] gap-1.5",
+                        isSelectionMode ? "bg-sky-500 hover:bg-sky-600 border-transparent text-white" : "text-muted-foreground"
+                      )}
+                      onClick={() => setIsSelectionMode(!isSelectionMode)}
+                    >
+                      <MousePointer2 className="w-3 h-3" />
+                      {isSelectionMode ? "Painting..." : "Select Pixels"}
+                    </Button>
+                  </div>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 gap-1">
                 {members.map(member => (
-                  <div 
+                  <div
                     key={member.id}
                     className={cn(
                       "flex items-center justify-between p-1.5 rounded-md border transition-all cursor-pointer",
-                      activeMemberId === member.id 
-                        ? "bg-primary/10 border-primary/40" 
+                      activeMemberId === member.id
+                        ? "bg-primary/10 border-primary/40"
                         : "bg-background/40 border-transparent hover:border-border/50"
                     )}
                     onClick={() => {
@@ -157,8 +173,8 @@ export function AnatomyPanel() {
                       <div className={cn(
                         "w-2 h-2 rounded-full",
                         member.type.includes('arm') ? "bg-sky-400" :
-                        member.type.includes('leg') ? "bg-pink-400" :
-                        member.type === 'head' ? "bg-yellow-400" : "bg-orange-400"
+                          member.type.includes('leg') ? "bg-pink-400" :
+                            member.type === 'head' ? "bg-yellow-400" : "bg-orange-400"
                       )} />
                       <span className="text-[11px] font-medium">{member.label}</span>
                     </div>
@@ -166,9 +182,6 @@ export function AnatomyPanel() {
                       <span className="text-[9px] text-muted-foreground bg-muted px-1 rounded">
                         {member.pixels?.length || 0} px
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-50 hover:opacity-100">
-                        <Move className="w-2.5 h-2.5" />
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -191,19 +204,19 @@ export function AnatomyPanel() {
               <div className="w-1.5 h-1.5 rounded-full bg-sky-400" />
               <span>Core Hierarchy</span>
             </div>
-            
+
             <div className="space-y-3">
               <SliderLabel label="Head Base (Neck)" value={anatomy.neckRow} />
-              <Slider 
-                value={[anatomy.neckRow ?? Math.floor(asset.size * 0.35)]} 
-                max={asset.size-1} step={1}
+              <Slider
+                value={[anatomy.neckRow ?? Math.floor(asset.size * 0.35)]}
+                max={asset.size - 1} step={1}
                 onValueChange={([v]) => handleUpdate({ neckRow: v })}
               />
 
               <SliderLabel label="Torso Base (Waist)" value={anatomy.waistRow} />
-              <Slider 
-                value={[anatomy.waistRow ?? Math.floor(asset.size * 0.7)]} 
-                max={asset.size-1} step={1}
+              <Slider
+                value={[anatomy.waistRow ?? Math.floor(asset.size * 0.7)]}
+                max={asset.size - 1} step={1}
                 onValueChange={([v]) => handleUpdate({ waistRow: v })}
               />
             </div>
@@ -215,28 +228,28 @@ export function AnatomyPanel() {
               <span>Limb Constraints</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-2">
-                  <Label className="text-[10px] text-purple-400">Torso L</Label>
-                  <Slider value={[anatomy.torsoLeft ?? 0]} max={asset.size-1} onValueChange={([v]) => handleUpdate({ torsoLeft: v })} />
-               </div>
-               <div className="space-y-2">
-                  <Label className="text-[10px] text-orange-400">Torso R</Label>
-                  <Slider value={[anatomy.torsoRight ?? asset.size-1]} max={asset.size-1} onValueChange={([v]) => handleUpdate({ torsoRight: v })} />
-               </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] text-purple-400">Torso L</Label>
+                <Slider value={[anatomy.torsoLeft ?? 0]} max={asset.size - 1} onValueChange={([v]) => handleUpdate({ torsoLeft: v })} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] text-orange-400">Torso R</Label>
+                <Slider value={[anatomy.torsoRight ?? asset.size - 1]} max={asset.size - 1} onValueChange={([v]) => handleUpdate({ torsoRight: v })} />
+              </div>
             </div>
 
             <div className="space-y-3 pt-2">
               <SliderLabel label="Knee Level" value={anatomy.kneeRow} />
-              <Slider 
-                value={[anatomy.kneeRow ?? Math.floor(asset.size * 0.85)]} 
-                max={asset.size-1} step={1}
+              <Slider
+                value={[anatomy.kneeRow ?? Math.floor(asset.size * 0.85)]}
+                max={asset.size - 1} step={1}
                 onValueChange={([v]) => handleUpdate({ kneeRow: v })}
               />
 
               <SliderLabel label="Ankle Level" value={anatomy.ankleRow} />
-              <Slider 
-                value={[anatomy.ankleRow ?? Math.floor(asset.size * 0.95)]} 
-                max={asset.size-1} step={1}
+              <Slider
+                value={[anatomy.ankleRow ?? Math.floor(asset.size * 0.95)]}
+                max={asset.size - 1} step={1}
                 onValueChange={([v]) => handleUpdate({ ankleRow: v })}
               />
             </div>

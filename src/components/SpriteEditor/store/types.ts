@@ -78,6 +78,7 @@ export interface SpriteEditorState {
   anatomyActiveMemberId: string | null;
   anatomySelectedOrientation: number; // 0, 1, 2
   anatomyIsSelectionMode: boolean;
+  anatomyShowAllMasks: boolean;
 
   // actions
   setEditedAsset: (asset: SpriteAsset | ((prev: SpriteAsset) => SpriteAsset)) => void;
@@ -117,7 +118,9 @@ export interface SpriteEditorState {
   setAnatomyActiveMemberId: (id: string | null) => void;
   setAnatomySelectedOrientation: (idx: number) => void;
   setAnatomyIsSelectionMode: (on: boolean) => void;
+  setAnatomyShowAllMasks: (on: boolean) => void;
   toggleMemberPixel: (r: number, c: number, force?: boolean) => void;
+  fillMemberGaps: () => void;
 
   duplicateFrame: (idx: number) => void;
   deleteFrame: (idx: number) => void;

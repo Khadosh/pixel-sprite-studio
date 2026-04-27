@@ -348,7 +348,9 @@ export function rotatePixels(
   target: Frame,
   pixels: { r: number; c: number }[],
   pivot: { r: number; c: number },
-  angleDeg: number
+  angleDeg: number,
+  drOffset: number = 0,
+  dcOffset: number = 0
 ): Frame {
   const size = source.length;
   const angleRad = (angleDeg * Math.PI) / 180;
@@ -358,8 +360,8 @@ export function rotatePixels(
   pixels.forEach(p => {
     const dr = p.r - pivot.r;
     const dc = p.c - pivot.c;
-    const nr = Math.round(pivot.r + (dr * cos - dc * sin));
-    const nc = Math.round(pivot.c + (dr * sin + dc * cos));
+    const nr = Math.round(pivot.r + (dr * cos - dc * sin)) + drOffset;
+    const nc = Math.round(pivot.c + (dr * sin + dc * cos)) + dcOffset;
     if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
       const color = source[p.r][p.c];
       if (color !== 0) target[nr][nc] = color;
