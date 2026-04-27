@@ -43,7 +43,7 @@ interface GifImportWizardProps {
 
 interface Mapping {
   id: string;
-  range: [number, number];
+  indices: number[];
   animValue: string;
   orientation: number; // 0: Front, 1: Side, 2: Back
 }
@@ -62,12 +62,21 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
   const pushUndo = useSpriteEditorStore(s => s.pushUndo);
 
   // Selection state
-  const [selectedRange, setSelectedRange] = useState<[number, number] | null>(null);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [mappings, setMappings] = useState<Mapping[]>([]);
   
   // Assignment form
-  const [targetAnim, setTargetAnim] = useState<string>(AVAILABLE_ANIMS[0].value);
   const [targetOrientation, setTargetOrientation] = useState<string>("0");
+  const [targetAnim, setTargetAnim] = useState<string>('');
+
+  // Auto-select first valid animation when orientation changes
+  useEffect(() => {
+    const suffix = targetOrientation === "0" ? "_down" : targetOrientation === "1" ? "_right" : "_up";
+    const filtered = AVAILABLE_ANIMS.filter(a => a.value.endsWith(suffix) || a.value === 'hurt' || a.value === 'die');
+    if (filtered.length > 0 && !filtered.some(f => f.value === targetAnim)) {
+      setTargetAnim(filtered[0].value);
+    }
+  }, [targetOrientation, targetAnim]);
 
   // Pixelization settings
   const [paletteMode, setPaletteMode] = useState<PaletteMode>('auto');
@@ -152,27 +161,37 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
 
   // ─── Actions ──────────────────────────────────────────────────────
 
-  const handleFrameClick = (idx: number, isShift: boolean) => {
+  const handleFrameClick = (idx: number, e: React.MouseEvent) => {
     setPreviewFrameIdx(idx);
-    if (!isShift || selectedRange === null) {
-      setSelectedRange([idx, idx]);
+    
+    if (e.shiftKey && selectedIndices.length > 0) {
+      const lastSelected = selectedIndices[selectedIndices.length - 1];
+      const start = Math.min(lastSelected, idx);
+      const end = Math.max(lastSelected, idx);
+      const range: number[] = [];
+      for (let i = start; i <= end; i++) {
+        if (!selectedIndices.includes(i)) range.push(i);
+      }
+      setSelectedIndices(prev => [...prev, ...range].sort((a, b) => a - b));
+    } else if (e.metaKey || e.ctrlKey) {
+      setSelectedIndices(prev => 
+        prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx].sort((a, b) => a - b)
+      );
     } else {
-      const start = Math.min(selectedRange[0], idx);
-      const end = Math.max(selectedRange[0], idx);
-      setSelectedRange([start, end]);
+      setSelectedIndices([idx]);
     }
   };
 
   const addMapping = () => {
-    if (!selectedRange) return;
+    if (selectedIndices.length === 0) return;
     const newMapping: Mapping = {
       id: crypto.randomUUID(),
-      range: [...selectedRange] as [number, number],
+      indices: [...selectedIndices],
       animValue: targetAnim,
       orientation: parseInt(targetOrientation)
     };
     setMappings([...mappings, newMapping]);
-    setSelectedRange(null);
+    setSelectedIndices([]);
   };
 
   const removeMapping = (id: string) => {
@@ -203,7 +222,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
 
       const processedMappings = mappings.map(mapping => {
         const frames: Frame[] = [];
-        for (let i = mapping.range[0]; i <= mapping.range[1]; i++) {
+        for (const i of mapping.indices) {
           const result = pixelizeFrame(decodedGif.frames[i].imageData);
           
           // Merge palettes
@@ -273,8 +292,8 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] bg-card border-border font-pixel">
-        <DialogHeader className="border-b border-white/5 pb-4 mb-4 relative z-10">
+      <DialogContent className="sm:max-w-[950px] max-h-[90vh] overflow-hidden flex flex-col bg-card border-border font-pixel p-0">
+        <DialogHeader className="px-6 pt-6 border-b border-white/5 pb-4 relative z-10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/20 rounded-lg">
               <PxLayers className="text-primary" size={24} />
@@ -290,21 +309,21 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 flex-1 overflow-hidden">
           {/* Left: GIF Timeline & Mapping List */}
-          <div className="md:col-span-2 flex flex-col gap-4">
-            <div className="bg-background/50 border border-border/50 rounded-lg p-3">
+          <div className="md:col-span-2 flex flex-col gap-4 p-6 overflow-hidden">
+            <div className="bg-background/50 border border-border/50 rounded-lg p-3 shrink-0">
               <Label className="text-[9px] uppercase text-muted-foreground mb-2 block">Línea de Tiempo del GIF ({decodedGif.frames.length} frames)</Label>
               <ScrollArea className="w-full whitespace-nowrap rounded-md border border-white/5 bg-black/20">
                 <div className="flex p-2 gap-2">
                   {decodedGif.frames.map((frame, idx) => {
-                    const isSelected = selectedRange && idx >= selectedRange[0] && idx <= selectedRange[1];
-                    const isMapped = mappings.some(m => idx >= m.range[0] && idx <= m.range[1]);
+                    const isSelected = selectedIndices.includes(idx);
+                    const isMapped = mappings.some(m => m.indices.includes(idx));
                     
                     return (
                       <div 
                         key={idx}
-                        onClick={(e) => handleFrameClick(idx, e.shiftKey)}
+                        onClick={(e) => handleFrameClick(idx, e)}
                         className={`relative w-16 h-16 rounded cursor-pointer transition-all duration-200 border-2 shrink-0 overflow-hidden ${
                           isSelected ? 'border-primary scale-105 z-10 shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 
                           isMapped ? 'border-amber-500/50 opacity-80' : 'border-transparent hover:border-white/20'
@@ -349,19 +368,6 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
 
             <div className="flex gap-4 items-end bg-primary/5 border border-primary/10 p-4 rounded-lg shadow-inner">
               <div className="flex-1 space-y-2">
-                <Label className="text-[9px] uppercase text-primary/70">Animación Destino</Label>
-                <Select value={targetAnim} onValueChange={setTargetAnim}>
-                  <SelectTrigger className="h-8 text-[9px] font-pixel uppercase bg-background/50 border-primary/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border font-pixel">
-                    {AVAILABLE_ANIMS.map(a => (
-                      <SelectItem key={a.value} value={a.value} className="text-[9px] uppercase">{a.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 space-y-2">
                 <Label className="text-[9px] uppercase text-primary/70">Orientación</Label>
                 <Select value={targetOrientation} onValueChange={setTargetOrientation}>
                   <SelectTrigger className="h-8 text-[9px] font-pixel uppercase bg-background/50 border-primary/20">
@@ -374,8 +380,26 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex-1 space-y-2">
+                <Label className="text-[9px] uppercase text-primary/70">Animación Destino</Label>
+                <Select value={targetAnim} onValueChange={setTargetAnim}>
+                  <SelectTrigger className="h-8 text-[9px] font-pixel uppercase bg-background/50 border-primary/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border font-pixel">
+                    {(() => {
+                      const suffix = targetOrientation === "0" ? "_down" : targetOrientation === "1" ? "_right" : "_up";
+                      return AVAILABLE_ANIMS
+                        .filter(a => a.value.endsWith(suffix) || a.value === 'hurt' || a.value === 'die')
+                        .map(a => (
+                          <SelectItem key={a.value} value={a.value} className="text-[9px] uppercase">{a.label}</SelectItem>
+                        ));
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button 
-                disabled={!selectedRange}
+                disabled={selectedIndices.length === 0}
                 onClick={addMapping}
                 className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground text-[9px] uppercase font-pixel px-4 gap-2"
               >
@@ -384,12 +408,12 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
               </Button>
             </div>
 
-            <div className="flex-1 border border-border/40 rounded-lg overflow-hidden flex flex-col">
-              <div className="bg-muted/30 px-3 py-2 border-b border-border/40 flex justify-between items-center">
+            <div className="flex-1 border border-border/40 rounded-lg overflow-hidden flex flex-col min-h-0 bg-black/10">
+              <div className="bg-muted/30 px-3 py-2 border-b border-border/40 flex justify-between items-center shrink-0">
                 <span className="text-[9px] uppercase font-bold text-muted-foreground">Mapeos Actuales</span>
                 <Badge variant="outline" className="text-[8px] font-pixel uppercase">{mappings.length} asignaciones</Badge>
               </div>
-              <ScrollArea className="flex-1 h-[150px] bg-black/10">
+              <ScrollArea className="flex-1">
                 <div className="p-2 space-y-2">
                   {mappings.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center py-8 opacity-30">
@@ -405,7 +429,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <span className="text-[10px] font-bold uppercase text-primary leading-tight">{animLabel}</span>
-                            <span className="text-[8px] text-muted-foreground uppercase">{orientLabel} • Frames {m.range[0]}-{m.range[1]}</span>
+                            <span className="text-[8px] text-muted-foreground uppercase">{orientLabel} • {m.indices.length} frames ({m.indices.join(',')})</span>
                           </div>
                         </div>
                         <Button 
@@ -425,7 +449,7 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
           </div>
 
           {/* Right: Pixel Preview & Final Settings */}
-          <div className="flex flex-col gap-4 border-l border-white/5 pl-6">
+          <div className="flex flex-col gap-4 border-l border-white/5 p-6 bg-black/5 overflow-y-auto">
             <div className="flex flex-col gap-2 items-center justify-center p-4 border border-primary/20 bg-primary/5 rounded-lg">
               <span className="text-[8px] uppercase text-primary/70 font-bold tracking-widest italic">Previsualización Px</span>
               <div className="border-4 border-black bg-black/40 p-1 rounded-sm shadow-2xl relative">
@@ -495,10 +519,10 @@ export const GifImportWizard: React.FC<GifImportWizardProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="mt-6 pt-4 border-t border-white/5 relative z-10 sm:justify-between items-center">
+        <DialogFooter className="px-6 py-4 border-t border-white/5 relative z-10 sm:justify-between items-center shrink-0 bg-card">
           <div className="flex items-center gap-2 text-[8px] font-pixel text-muted-foreground/40 uppercase">
              <PxChevronRight size={12} className="text-primary/40" />
-             Asegurate de que las dimensiones del GIF coincidan con el canvas ({assetSize}x{assetSize})
+             Asegurate de que las dimensiones coincidan con el canvas ({assetSize}x{assetSize})
           </div>
           <div className="flex gap-3">
             <Button variant="ghost" className="h-8 px-4 text-[9px] font-pixel uppercase hover:bg-white/5" onClick={() => onOpenChange(false)}>
