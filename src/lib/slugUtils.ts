@@ -10,7 +10,8 @@ export function slugify(text: string): string {
     .trim()
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-');
+    .replace(/--+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 /**
@@ -19,7 +20,8 @@ export function slugify(text: string): string {
  */
 export function createSpec(id: string, name: string): string {
   if (!name || name.trim() === '' || name.toLowerCase() === 'new sprite') {
-    return `temp-${id.substring(0, 8)}`;
+    const suffix = id ? id.substring(0, 8) : Math.random().toString(36).substring(2, 10);
+    return `temp-${suffix}`;
   }
   return slugify(name);
 }

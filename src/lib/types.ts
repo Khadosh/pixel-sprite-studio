@@ -85,6 +85,8 @@ export interface SpriteAsset {
   
   /** Grid size in pixels (width = height). Typically 16 or 32. */
   size: number;
+  /** Unique URL-friendly identifier */
+  slug?: string;
   /** Color palette: number → hex color string. 0 is always transparent. */
   palette: Record<number, string>;
   /** Human-readable names for each palette color (for the palette editor) */

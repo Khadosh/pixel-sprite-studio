@@ -183,21 +183,25 @@ export function useProjectSprites(projectId?: string) {
   });
 }
 
+const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 export function useSprite(idOrSlug?: string, projectId?: string) {
   return useQuery({
     queryKey: [...spriteKeys.detail(idOrSlug || ''), projectId],
     queryFn: async () => {
       if (!idOrSlug) throw new Error('Sprite ID or Slug is required');
       
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-      
+      const isIdUUID = isUUID(idOrSlug);
       const query = supabase.from('project_sprites').select('*');
-      if (isUUID) {
+      
+      if (isIdUUID) {
         query.eq('id', idOrSlug);
       } else {
-        // Search inside JSONB asset_data
-        query.filter('asset_data->>slug', 'eq', idOrSlug);
-        if (projectId) {
+        // Search using the dedicated slug column (now confirmed to exist)
+        query.eq('slug', idOrSlug);
+        
+        // ONLY filter by project_id if it's a valid UUID to avoid Postgres errors
+        if (projectId && isUUID(projectId)) {
           query.eq('project_id', projectId);
         }
       }
@@ -223,7 +227,7 @@ export function useSprite(idOrSlug?: string, projectId?: string) {
         name: asset.name || 'Sin nombre'
       } as ProjectSprite;
     },
-    enabled: !!idOrSlug && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug) || !!projectId),
+    enabled: !!idOrSlug && (isUUID(idOrSlug) || (!!projectId && isUUID(projectId))),
   });
 }
 
@@ -243,7 +247,7 @@ export function useCreateSprite() {
           .from('project_sprites')
           .select('id')
           .eq('project_id', projectId)
-          .filter('asset_data->>slug', 'eq', slug)
+          .eq('slug', slug)
           .maybeSingle();
         
         if (!data) {
@@ -264,14 +268,22 @@ export function useCreateSprite() {
 
       const { data, error: insertError } = await supabase
         .from('project_sprites')
-        .insert([{ project_id: projectId, asset_data: compressedAsset }])
+        .insert([{ 
+          project_id: projectId, 
+          asset_data: compressedAsset,
+          slug: slug // CRITICAL: Include the physical column
+        }])
         .select()
         .single();
 
       if (insertError) throw insertError;
+      
+      const decompressedAsset = decompressAsset(data.asset_data);
       return {
         ...data,
-        asset_data: decompressAsset(data.asset_data)
+        asset_data: decompressedAsset,
+        slug: decompressedAsset.slug || data.id,
+        name: decompressedAsset.name || 'Sin nombre'
       } as ProjectSprite;
     },
     onSuccess: (_, variables) => {
@@ -309,7 +321,7 @@ export function useUpdateSprite() {
             .from('project_sprites')
             .select('id')
             .eq('project_id', projectId)
-            .filter('asset_data->>slug', 'eq', slug)
+            .eq('slug', slug)
             .neq('id', id)
             .maybeSingle();
           
@@ -342,7 +354,10 @@ export function useUpdateSprite() {
       // 3. Perform the update
       const { error } = await supabase
         .from('project_sprites')
-        .update({ asset_data: compressedAsset })
+        .update({ 
+          asset_data: compressedAsset,
+          slug: slug // CRITICAL: Sync the physical column
+        })
         .eq('id', id);
 
       if (error) throw error;
