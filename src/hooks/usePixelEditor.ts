@@ -6,6 +6,12 @@ import { shiftFrame, getCenterOfMass, rotateFrameFree, resizeFrameNearest, findB
 import { compositeFrame } from '@/lib/layerUtils';
 
 export type EditorTool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'circle' | 'rotate' | 'select' | 'erase-color';
+export function usePixelEditor(
+  asset: SpriteAsset,
+  frameIndex: number,
+  activeLayerId: string | null,
+  onAssetChange: (a: SpriteAsset) => void,
+  scope: 'layer' | 'frame' = 'layer',
   onPushUndo?: () => void,
   externalUndo?: () => void,
   externalCanUndo?: boolean,

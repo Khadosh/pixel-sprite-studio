@@ -5,28 +5,19 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-26 (Hoy)
-**12 commits realizados**
+**13 commits realizados**
 
-- **Novedad**: **GIF Reverse Engineering Wizard**. Implementado motor de ingeniería inversa que permite desglosar archivos GIF, seleccionar rangos de frames y mapearlos automáticamente a orientaciones (Front/Side/Back) y animaciones, reconstruyendo el asset completo en segundos.
-- **Fidelidad**: **Control de Fondo en Importación**. Añadido toggle para desactivar la eliminación automática de fondo, evitando la pérdida de píxeles en assets donde el sujeto comparte colores con el fondo (ej: armaduras grises).
-- **Backend**: **Sincronización de Slugs y Base de Datos**. Estabilizada la creación de sprites desde cero mediante el uso de la columna física `slug` en Postgres, eliminando errores de restricción NOT NULL.
-- **UI/UX**: **Previsualización Inteligente**. Refactorizado el panel de animación con 3 tamaños (Small, Medium, Large) y anclaje dinámico `origin-bottom-right` que garantiza visibilidad óptima en todas las resoluciones (16x16 y 32x32).
-- **QA**: **Blindaje de Tests Unitarios**. Implementada limpieza automática de `localStorage` y mock de `crypto.randomUUID` en el entorno de pruebas, estabilizando la suite de 43 tests contra interferencias de estado.
-- **Fix**: **Restauración de Props**. Recuperada la funcionalidad `addPropLayer` y optimizada para soportar assets de 16px y 32px dinámicamente.
-- **Fix**: **Interacción de Anatomía**. Corregido el bug donde se dibujaban píxeles accidentalmente al arrastrar las líneas guía.
+- **Novedad**: **GIF Reverse Engineering Wizard**. Implementado motor de ingeniería inversa que permite desglosar archivos GIF, seleccionar rangos de frames y mapearlos automáticamente a orientaciones (Front/Side/Back) y animaciones.
+- **Fidelidad**: **Control de Fondo en Importación**. Añadido toggle para desactivar la eliminación automática de fondo, evitando la pérdida de píxeles en assets con colores similares al fondo.
+- **Backend**: **Sincronización de Slugs**. Estabilizada la creación de sprites desde cero mediante el uso de la columna física `slug` en Postgres, eliminando errores de restricción NOT NULL.
+- **UI/UX**: **Reactividad de Paleta**. Promocionado el estado de `activeColorKey`, `tool`, `brushSize` y `mirrorX` al store global. **Solucionado el problema del primer clic en la paleta**.
+- **Refactor**: **usePixelEditor Controlado**. Convertido el motor de dibujo en un hook controlado para garantizar sincronización perfecta con la UI y atajos de teclado.
+- **QA**: **Blindaje de Tests Unitarios**. Implementada limpieza automática de `localStorage` y mock de `crypto.randomUUID`, estabilizando la suite de 43 tests.
+- **Animación**: **Caminata Pro (Richard Williams)**. Restaurado el ciclo de 4 fases con ritmo vertical preciso y corregida la coordinación cruzada brazo-pierna.
 - **UI**: **Cursores Dinámicos**. Implementado soporte para cursores contextuales (`row-resize`, `col-resize`) al interactuar con el esqueleto anatómico.
-- **Workflow**: **Navegación Sin Parpadeo**. Optimizado el reseteo del store para evitar recargas completas de página (full reload) cuando un asset cambia su slug tras un renombrado.
-- **Consistencia**: **Sincronización de Metadatos en Vivo**. Unificado el estado de `assetName` con el objeto interno del sprite, garantizando que el autoguardado no sobrescriba los cambios de nombre.
-- **IA**: **Nombres de Asset Limpios**. Refinado el motor de generación para eliminar prefijos técnicos de los prompts, resultando en nombres de galería mucho más legibles.
-- **Animación**: **Caminata Pro (Richard Williams)**. Restaurado el ciclo de 4 fases con ritmo vertical preciso (Contacto, Down, Pass, Up) y corregida la **coordinación cruzada** (brazo-pierna opuesta).
-- **Metadatos**: **Sincronización de Slugs**. Implementado sistema de actualización automática de URLs (slugs) al renombrar sprites o proyectos.
-- **UI**: **Edición de Proyectos In-place**. Añadida la capacidad de renombrar proyectos directamente desde el Workspace.
+- **Fix**: **Interacción de Anatomía**. Corregido el bug donde se dibujaban píxeles accidentalmente al arrastrar las líneas guía.
 
-### [2026-04-27] - Fix Reactividad Paleta
-- **Fix**: Promocionado el estado de `activeColorKey`, `tool`, `brushSize` y `mirrorX` del puente local al store global de Zustand. Esto soluciona el problema de falta de respuesta al primer clic en la paleta de colores.
-- **Refactor**: Convertido `usePixelEditor` en un hook controlado para garantizar sincronización perfecta con la UI.
-- **Mejora**: Atajos de teclado ahora actúan directamente sobre el store global.
-**1 commit realizado**
+---
 
 ---
 

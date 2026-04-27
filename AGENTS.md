@@ -165,3 +165,4 @@ No usar descripciones largas, no listar archivos modificados, no usar bullet poi
 - Call Gemini or other AI APIs directly from the client — all AI calls must go through Supabase Edge Functions
 - Use `var` — always `const` or `let`
 - Add inline `style` tags or `<style>` blocks — use Tailwind classes
+- **NUNCA realizar commits o push de forma automática**. Siempre solicitar verificación del usuario y esperar a que pida explícitamente el commit.

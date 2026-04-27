@@ -140,13 +140,13 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
       isDirty: dirty
     };
   }),
-  setShowIsometricGrid: (onOrFn) => set(s => ({ 
+  setShowIsometricGrid: (onOrFn: boolean | ((prev: boolean) => boolean)) => set(s => ({ 
     showIsometricGrid: typeof onOrFn === 'function' ? (onOrFn as Function)(s.showIsometricGrid) : onOrFn 
   })),
-  setSketchMode: (onOrFn) => set(s => ({ 
+  setSketchMode: (onOrFn: boolean | ((prev: boolean) => boolean)) => set(s => ({ 
     sketchMode: typeof onOrFn === 'function' ? (onOrFn as Function)(s.sketchMode) : onOrFn 
   })),
-  setMirrorX: (onOrFn) => set(s => ({ 
+  setMirrorX: (onOrFn: boolean | ((prev: boolean) => boolean)) => set(s => ({ 
     mirrorX: typeof onOrFn === 'function' ? (onOrFn as Function)(s.mirrorX) : onOrFn 
   })),
   setBrushSize: (size) => set({ brushSize: size }),

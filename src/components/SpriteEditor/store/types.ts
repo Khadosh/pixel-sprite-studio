@@ -103,6 +103,7 @@ export interface SpriteEditorState {
   setActivePerspective: (perspective: 'front' | 'side' | 'back') => void;
   setActiveSide: (side: 'left' | 'right') => void;
   setShowIsometricGrid: (show: boolean | ((prev: boolean) => boolean)) => void;
+  setSketchMode: (on: boolean | ((prev: boolean) => boolean)) => void;
   setMirrorX: (on: boolean | ((prev: boolean) => boolean)) => void;
   setBrushSize: (size: BrushSize) => void;
   setTool: (tool: EditorTool) => void;

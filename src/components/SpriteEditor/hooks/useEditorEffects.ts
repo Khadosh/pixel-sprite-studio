@@ -90,7 +90,7 @@ export function useEditorEffects(store: SpriteEditorStore) {
           break;
         case 'backspace':
         case 'delete':
-          if (bridge.tool === 'select' && bridge.selectionRect) {
+          if (state.tool === 'select' && bridge.selectionRect) {
             e.preventDefault();
             if (bridge.movingSelectionPixels) {
               bridge.clearFloatingPixels();
