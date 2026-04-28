@@ -16,9 +16,9 @@
 *Implementar las 8 animaciones base con soporte total de anatomía y direcciones.*
 
 - [x] **1. IDLE & BREATH**: Animación sutil usando squash/stretch basado en el pivot de la cintura.
-- [ ] **2. WALK (Front/Side/Back)**: Ciclo de 8 frames con flexión de rodillas real (usando píxeles de piernas).
-- [ ] **3. RUN**: Variación del walk con mayor inclinación de torso y zancada más larga.
-- [ ] **4. JUMP**: Anticipación (squash), salto (stretch + lift) y caída.
+- [x] **2. WALK (Front/Side/Back)**: Ciclo de 8 frames con flexión de rodillas real (usando píxeles de piernas).
+- [x] **3. RUN**: Variación del walk con mayor inclinación de torso y zancada más larga.
+- [x] **4. JUMP**: Anticipación (squash), salto (stretch + lift) y caída.
 - [ ] **5. ATTACK**: Thrust/Slash usando el pivot del hombro detectado/marcado.
 - [ ] **6. HURT**: Recoil físico con rotación de cabeza y torso.
 - [ ] **7. CAST (Advanced)**: El sistema actual mejorado para usar los brazos marcados.

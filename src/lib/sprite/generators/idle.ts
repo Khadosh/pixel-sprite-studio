@@ -1,103 +1,32 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { 
-  clonarFrame, 
-  desplazarPixels, 
-  expandirPixels, 
-  colapsarPixels, 
-  rotarPixels, 
-  limpiarPixels 
-} from '../anatomyTransforms';
-import { resolveMembers } from '../anatomyResolver';
+import { animate_body } from './animate_body';
 
 /** 
  * Idle: Ciclo de respiración mejorado con movimiento de rodillas y extremidades.
- * Utiliza la API Humana para facilitar la comprensión de los movimientos.
+ * Utiliza la API Humana Builder para un código limpio y conciso.
  */
 export function generateIdle(
   base: Frame, 
   anatomy?: AnatomyConfig,
   orientation: number = 0
 ): Frame[] {
-  const members = resolveMembers(base, anatomy, orientation);
-  const { head, torso, arm_left, arm_right, leg_left, leg_right } = members;
-
-  // Definimos los grupos que se mueven juntos
-  const extremidadesSuperiores = [
-    ...(head?.pixels || []),
-    ...(arm_left?.pixels || []),
-    ...(arm_right?.pixels || [])
-  ];
-  
-  const torsoPixels = torso?.pixels || [];
-  const piernas = [
-    ...(leg_left?.pixels || []),
-    ...(leg_right?.pixels || [])
-  ];
-
-  const todosLosPixelesMoviles = [
-    ...torsoPixels,
-    ...extremidadesSuperiores,
-    ...piernas
-  ];
-
   // --- FRAME 0: Neutral ---
-  const f0 = clonarFrame(base);
+  // Un build sin transformaciones dibujará todo en su posición original
+  const f0 = animate_body(base, anatomy, orientation).build();
 
-  // --- FRAME 1: Inhalación (Pecho sube, cabeza sube, hombros rotan) ---
-  let f1 = limpiarPixels(clonarFrame(base), todosLosPixelesMoviles);
-  
-  // 1. Piernas se mantienen firmes en la inhalación
-  if (piernas.length > 0) {
-    f1 = desplazarPixels(base, f1, piernas, 0, 0);
-  }
-  
-  // 2. El torso se expande hacia arriba (pecho inflado)
-  if (torsoPixels.length > 0) {
-    f1 = expandirPixels(base, f1, torsoPixels, -1);
-  }
-  
-  // 3. Cabeza sube con el pecho
-  if (head?.pixels?.length) {
-    f1 = desplazarPixels(base, f1, head.pixels, -1, 0);
-  }
-  
-  // 4. Brazos suben Y rotan hacia afuera
-  if (arm_left?.pixels?.length) {
-    // f1 = desplazarPixels(base, f1, arm_right.pixels, -1, 0)
-    f1 = colapsarPixels(base, f1, arm_right.pixels, 2, 'top')
-  }
-  if (arm_right?.pixels?.length) {
-    // f1 = desplazarPixels(base, f1, arm_left.pixels, -1, 0)
-    f1 = colapsarPixels(base, f1, arm_left.pixels, 2, 'top')
-  }
+  // --- FRAME 1: Inhalación (Pecho sube, cabeza sube, brazos se encogen) ---
+  const f1 = animate_body(base, anatomy, orientation)
+    .expandir('torso', -1) // Pecho se infla hacia arriba
+    .desplazar('head', -1, 0) // Cabeza acompaña al pecho
+    .colapsar(['arm_left', 'arm_right'], 2, 'top') // Brazos se encogen desde el hombro
+    .build();
 
-  // --- FRAME 2: Exhalación y flexión (Settle) ---
-  let f2 = limpiarPixels(clonarFrame(base), todosLosPixelesMoviles);
-  
-  // 1. Las piernas se colapsan (flexión de rodillas, la cintura baja 1px)
-  if (piernas.length > 0) {
-    f2 = colapsarPixels(base, f2, piernas, 1, 'bottom');
-  }
-  
-  // 2. Torso baja 1px para seguir a la cintura (acompaña la flexión)
-  if (torsoPixels.length > 0) {
-    f2 = desplazarPixels(base, f2, torsoPixels, 1, 0);
-  }
-  
-  // 3. Cabeza baja acompañando al torso
-  if (head?.pixels?.length) {
-    f2 = desplazarPixels(base, f2, head.pixels, 1, 0);
-  }
-  
-  // 4. Brazos bajan
-  if (arm_left?.pixels?.length) {
-    f2 = desplazarPixels(base, f2, arm_left.pixels, 1, 0);
-    f2 = expandirPixels(base, f2, arm_left.pixels, 1);
-  }
-  if (arm_right?.pixels?.length) {
-    f2 = desplazarPixels(base, f2, arm_right.pixels, 1, 0);
-    f2 = expandirPixels(base, f2, arm_right.pixels, 1);
-  }
+  // --- FRAME 2: Exhalación y flexión (Settle / Squash) ---
+  const f2 = animate_body(base, anatomy, orientation)
+    .colapsar(['leg_left', 'leg_right'], 1, 'bottom') // Flexión de rodillas (squash)
+    .desplazar(['torso', 'head', 'arm_left', 'arm_right'], 1, 0) // Todo el tren superior baja con la cintura
+    .expandir(['arm_left', 'arm_right'], 1) // Brazos se relajan/estiran hacia el piso
+    .build();
 
   // Secuencia: Neutral -> Inhala -> Neutral -> Exhala
   return [f0, f1, f0, f2];

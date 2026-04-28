@@ -5,8 +5,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-04-27 (Hoy)
-**3 commits realizados**
+**4 commits realizados**
 
+- **Animación**: **Anatomy Builder API (Walk, Run, Jump)**. Refactorización masiva del motor de animaciones procedimentales mediante un patrón Fluent Builder (`animate_body`). Se reescribieron los ciclos completos de Walk (8 frames), Run (con suspensión aérea) y Jump. El código es ahora 100% declarativo, reduciendo drásticamente el boilerplate y garantizando una sincronización perfecta (squash/stretch) entre todas las extremidades y el torso.
 - **Animación**: **IDLE & BREATH (Anatomy Engine)**. Implementado el ciclo completo de animación IDLE con sistema de respiración y flexión de rodillas basado en anatomía. Se actualizaron las funciones de transformación para soportar desplazamientos con rotación y se solucionaron errores de ghosting y desconexiones de cintura.
 - **UI/UX**: **Previsualización Dinámica Pro**. Rediseñado el panel de previsualización de animaciones para soportar dinámicamente assets de 64x64 y 128x128. Las escalas ahora se ajustan automáticamente y el panel utiliza un sistema de "hug content" para eliminar espacios vacíos alrededor del sprite.
 - **Mejora**: **Nombrado Inteligente de Colores**. Implementado un sistema de resolución de nombres que añade automáticamente matices (shades) estilo Tailwind (50-950) cuando hay duplicados en la paleta. Ahora las importaciones y rampas de color son mucho más fáciles de navegar (ej. "Charcoal Gray 600", "Charcoal Gray 700").
