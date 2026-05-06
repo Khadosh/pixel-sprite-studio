@@ -2,7 +2,7 @@
 
 > **Foco actual**: 🦴 **Anatomy-Driven Animation Engine**. 
 > Integrar el sistema de desmembramiento para que las animaciones entiendan píxeles reales, no solo rectángulos.
-> Última actualización: 2026-04-25
+> Última actualización: 2026-05-06
 
 ---
 
@@ -39,6 +39,8 @@
 - [x] **Nombres Canónicos**: Sistema estándar implementado
 - [x] **Dismemberment Tool (UI)**: Capacidad de marcar píxeles por miembro
 - [x] **Previsualización Dinámica**: Soporte auto-escalable para 64x64 y 128x128 sin overflow.
+- [x] **Procedural FX Tool**: Panel de manipulación de miembros basado en anatomía (FX tab).
+- [x] **Custom Creation Flow**: Modo de creación de animaciones manuales desde el frame base.
 
 ---
 

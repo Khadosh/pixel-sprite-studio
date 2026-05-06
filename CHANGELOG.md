@@ -4,7 +4,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-04-27 (Hoy)
+## 2026-05-06 (Hoy)
+**3 commits realizados**
+
+- **Animación**: **Procedural FX Panel**. Implementado un nuevo panel de control para aplicar transformaciones procedurales (mover, rotar, expandir, colapsar) a miembros específicos basados en el motor de anatomía. Permite manipular directamente píxeles de cabeza, torso, brazos y piernas con parámetros de offset y ángulo.
+- **Animación**: **Custom Animation Flow**. Añadida la posibilidad de crear animaciones personalizadas ("Custom") desde cero. El flujo permite definir un nombre y clona automáticamente el frame actual para inicializar la secuencia, facilitando la creación manual asistida por FX.
+- **UI/UX**: **Navegación FX y Tooltips**. Integrada una nueva pestaña en el sidebar con el icono `PxSparkles` etiquetada como "FX" para el acceso rápido a herramientas procedurales. Se mejoraron los tooltips de navegación para mayor claridad.
+
+---
+
+## 2026-04-27
 **4 commits realizados**
 
 - **Animación**: **Anatomy Builder API (Walk, Run, Jump)**. Refactorización masiva del motor de animaciones procedimentales mediante un patrón Fluent Builder (`animate_body`). Se reescribieron los ciclos completos de Walk (8 frames), Run (con suspensión aérea) y Jump. El código es ahora 100% declarativo, reduciendo drásticamente el boilerplate y garantizando una sincronización perfecta (squash/stretch) entre todas las extremidades y el torso.

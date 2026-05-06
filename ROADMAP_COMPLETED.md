@@ -146,6 +146,8 @@
 - [x] **Animaciones Procedurales 8-Frame** — Walk cycles estilo Richard Williams
 - [x] **Física de Rodillas** — Knee flexion y estabilidad de torso en animaciones
 - [x] **Cast Avanzado** — 6 frames con elementos (fire, water, ice, electric, nature) y formas (burst, circle, beam, spark, pulse)
+- [x] **Procedural FX Panel** — Herramienta para aplicar transformaciones (Mover, Rotar, Squash/Stretch) a miembros específicos usando máscaras de anatomía.
+- [x] **Custom Animation Mode** — Flujo para crear animaciones personalizadas con nombrado manual e inicialización desde el frame actual.
 
 ---
 

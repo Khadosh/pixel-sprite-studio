@@ -13,6 +13,7 @@ import { LayersList } from './LayersList';
 import { PaletteSection } from './PaletteSection';
 import { MetadataPanel } from './MetadataPanel';
 import { AnatomyPanel } from './AnatomyPanel';
+import { ProceduralAnimPanel } from './ProceduralAnimPanel';
 import { AnimationLibrary } from './AnimationLibrary';
 import { TimelineStrip } from './Timeline/TimelineStrip';
 import { AnimationPreviewPanel, AnimationPreviewPanelHandle } from './AnimationPreviewPanel';
@@ -276,6 +277,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader 
                     {leftSidebarTab === 'layers' && <LayersList />}
                     {leftSidebarTab === 'animations' && <AnimationLibrary />}
                     {leftSidebarTab === 'anatomy' && <AnatomyPanel />}
+                    {leftSidebarTab === 'procedural' && <ProceduralAnimPanel />}
                     {leftSidebarTab === 'themes' && <PaletteLibrary />}
                     {leftSidebarTab === 'assets' && <AssetLibrary />}
                     {leftSidebarTab === 'history' && <HistoryPanel />}

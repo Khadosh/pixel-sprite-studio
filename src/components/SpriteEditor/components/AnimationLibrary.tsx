@@ -30,9 +30,10 @@ export const AnimationLibrary = React.memo(() => {
   const setSketchMode = useSpriteEditorStore(s => s.setSketchMode);
   const storeApi = useSpriteEditorStoreApi();
 
-  const [genType, setGenType] = useState<string>('idle');
+  const [genType, setGenType] = useState<string>('idle_down');
   const [editingName, setEditingName] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [customNameInput, setCustomNameInput] = useState('');
 
   const startEditing = (name: string, label: string) => {
     setEditingName(name);
@@ -70,7 +71,7 @@ export const AnimationLibrary = React.memo(() => {
 
   // Filter animations based on perspective
   const filteredAnims = AVAILABLE_ANIMS.filter(a => {
-    if (a.value === 'hurt' || a.value === 'die') return true;
+    if (a.value === 'hurt' || a.value === 'die' || a.value === 'custom') return true;
     if (activePerspective === 'front') return a.value.endsWith('_down');
     if (activePerspective === 'side') {
       return activeSide === 'right' ? a.value.endsWith('_right') : a.value.endsWith('_left');
@@ -238,22 +239,51 @@ export const AnimationLibrary = React.memo(() => {
             )}
           </div>
 
+          {genType === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={customNameInput}
+                onChange={(e) => setCustomNameInput(e.target.value)}
+                placeholder="Nombre de animación..."
+                className="flex-1 bg-black/40 border border-white/10 outline-none text-[9px] font-pixel text-primary p-2 h-8 rounded"
+              />
+            </div>
+          )}
+
           <div className="flex gap-1.5">
-            <Button
-              onClick={() => handleGenerateAnimations(genType)}
-              disabled={isGenerating || isAnimGenerating}
-              className="px-2 font-pixel text-[8px] bg-secondary/30 text-foreground hover:bg-secondary/50 border border-white/5 h-8 transition-all shrink-0"
-            >
-              QUICK
-            </Button>
-            <Button
-              onClick={() => handleGenerateAI(genType)}
-              disabled={isGenerating || isAnimGenerating}
-              className="flex-1 font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all overflow-hidden"
-            >
-              <PxSparkles size={11} className="mr-1 shrink-0" />
-              <span className="truncate">{isAnimGenerating ? '...' : 'IA GENERATE'}</span>
-            </Button>
+            {genType !== 'custom' ? (
+              <>
+                <Button
+                  onClick={() => handleGenerateAnimations(genType)}
+                  disabled={isGenerating || isAnimGenerating}
+                  className="px-2 font-pixel text-[8px] bg-secondary/30 text-foreground hover:bg-secondary/50 border border-white/5 h-8 transition-all shrink-0"
+                >
+                  QUICK
+                </Button>
+                <Button
+                  onClick={() => handleGenerateAI(genType)}
+                  disabled={isGenerating || isAnimGenerating}
+                  className="flex-1 font-pixel text-[8px] bg-primary text-primary-foreground hover:brightness-110 border border-primary h-8 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all overflow-hidden"
+                >
+                  <PxSparkles size={11} className="mr-1 shrink-0" />
+                  <span className="truncate">{isAnimGenerating ? '...' : 'IA GENERATE'}</span>
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => {
+                  if (customNameInput.trim()) {
+                    storeApi.getState().generateCustomAnimation(customNameInput.trim());
+                    setCustomNameInput('');
+                  }
+                }}
+                disabled={!customNameInput.trim()}
+                className="flex-1 font-pixel text-[8px] bg-blue-600 text-white hover:bg-blue-500 border border-blue-400 h-8 shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-all overflow-hidden"
+              >
+                CREATE CUSTOM
+              </Button>
+            )}
           </div>
         </div>
       </div>

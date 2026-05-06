@@ -25,6 +25,7 @@ export const AVAILABLE_ANIMS = [
   { value: 'cast', label: 'Cast Spell' },
   { value: 'hurt', label: 'Hurt' },
   { value: 'die', label: 'Die' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 export interface SpriteEditorModalProps {

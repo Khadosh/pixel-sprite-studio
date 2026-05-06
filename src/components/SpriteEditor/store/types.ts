@@ -24,7 +24,7 @@ export interface SpriteEditorState {
   mirrorX: boolean;
   layerClipboard: number[][] | null;
   frameClipboard: Record<string, number[][]> | null;
-  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null;
+  leftSidebarTab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | 'procedural' | null;
   isDirty: boolean;
   canvasBg: 'light' | 'dark';
   activePerspective: 'front' | 'side' | 'back';
@@ -92,7 +92,7 @@ export interface SpriteEditorState {
   setShowAllColors: (on: boolean | ((prev: boolean) => boolean)) => void;
   setScope: (scope: EditorScope) => void;
   setCastSettings: (settings: AdvancedCastSettings | ((prev: AdvancedCastSettings) => AdvancedCastSettings)) => void;
-  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | null) => void;
+  setLeftSidebarTab: (tab: 'layers' | 'themes' | 'assets' | 'animations' | 'config' | 'anatomy' | 'history' | 'procedural' | null) => void;
   applyPalettePreset: (colors: string[]) => void;
   addColorRamp: (colors: string[]) => void;
   setZoom: (z: number | ((prev: number) => number)) => void;
@@ -151,6 +151,7 @@ export interface SpriteEditorState {
   selectAllAnims: () => void;
   clearSelection: () => void;
   generateAnimations: (type?: string) => void;
+  generateCustomAnimation: (name: string) => void;
   generatePerspectiveAI: () => void;
   renameAnimation: (name: string, newLabel: string) => void;
   removeAnimation: (name: string) => void;
