@@ -32,6 +32,7 @@ export interface SpriteEditorState {
   showIsometricGrid: boolean;
   sketchMode: boolean;
   projectId?: string;
+  projectConfig?: import('@/lib/supabase').ProjectConfig;
   isIconMode?: boolean;
   iconId?: string;
 
@@ -195,6 +196,7 @@ export interface CreateSpriteEditorStoreOptions {
   onRegenerate?: () => void;
   isGenerating?: boolean;
   projectId?: string;
+  projectConfig?: import('@/lib/supabase').ProjectConfig;
   isIconMode?: boolean;
   iconId?: string;
 }

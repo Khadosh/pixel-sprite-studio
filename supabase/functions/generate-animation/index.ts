@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { baseFrame, palette, colorNames, size = 32, animationName } = await req.json();
+    const { baseFrame, palette, colorNames, size = 32, animationName, projectConfig } = await req.json();
 
     if (!baseFrame || !animationName || !palette) {
       return new Response(
@@ -81,6 +81,7 @@ RULES:
 4. The requested animation is: ${animationName}.
 5. Frame 1, Frame 2, and Frame 3 should represent the progression of the animation.
 6. DO NOT output empty arrays (all 0s). Fill the arrays to correctly represent the moving character.
+${projectConfig?.directionality ? `7. Note that the project uses a ${projectConfig.directionality} perspective. Ensure the movement makes sense for this perspective.` : ''}
 
 OUTPUT JSON FORMAT:
 {

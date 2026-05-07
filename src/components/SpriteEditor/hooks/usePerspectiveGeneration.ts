@@ -30,7 +30,8 @@ export function usePerspectiveGenerationBridge(store: SpriteEditorStore) {
       const result = await generate(prompt, editedAsset.size, referenceImageUrl, {
         strength: 0.6,
         maxColors: 32,
-        fixedPalette: editedAsset.palette
+        fixedPalette: editedAsset.palette,
+        projectConfig: state.projectConfig
       });
       
       if (result && result.frame) {

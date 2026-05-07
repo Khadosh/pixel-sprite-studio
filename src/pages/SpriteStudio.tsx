@@ -58,6 +58,7 @@ export default function SpriteStudio() {
       const newStore = createSpriteEditorStore({
         initialAsset: sprite.asset_data as SpriteAsset,
         projectId: realProjectId,
+        projectConfig: (project as any)?.config,
         onSave: (asset) => {
           handleManualSave(asset);
         },
@@ -66,6 +67,17 @@ export default function SpriteStudio() {
         },
         previewPanelRef,
       });
+
+      // Force overrides for 1-way projects to avoid cached localStorage overriding them
+      if ((project as any)?.config?.directionality === '1-way') {
+        newStore.setState({
+          activePerspective: 'side',
+          anatomySelectedOrientation: 1,
+          editingFrameIndex: 0,
+          viewingAnimation: 'base'
+        });
+      }
+
       setStore(newStore);
     }
   }, [sprite, store, projectId, projectSlug, navigate]);

@@ -15,7 +15,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { prompt, image_url, size = 32, palette = null } = await req.json()
+    const { prompt, image_url, size = 32, palette = null, projectConfig } = await req.json()
 
     if (!image_url) {
       throw new Error("Reference image_url is required for perspective generation.")
@@ -28,11 +28,16 @@ serve(async (req: Request) => {
       paletteGuidance = `Use strictly this color palette: ${colors}. `;
     }
 
+    let projectGuidance = "";
+    if (projectConfig?.aesthetics && projectConfig.aesthetics !== 'custom') {
+      projectGuidance += ` The aesthetic must strictly be ${projectConfig.aesthetics}.`;
+    }
+
     // Aggressive prompt for rotation - Focus on the TARGET perspective, not the source
     const technicalPrompt = `
       Context: You receive a front image of a pixel art character
       Mission: Rotate 90deg to return a strict side profile view
-      Expected result: High-quality pixel art of the character from the reference image shown from a complete side profile perspective. ${paletteGuidance}Exact same design, colors, and outfit. Precise 1:1 pixel scale, clean lines. Isolated character with NO background. Maintain exact height, proportions, and consistency. Professional sprite sheet style.
+      Expected result: High-quality pixel art of the character from the reference image shown from a complete side profile perspective. ${paletteGuidance}${projectGuidance} Exact same design, colors, and outfit. Precise 1:1 pixel scale, clean lines. Isolated character with NO background. Maintain exact height, proportions, and consistency. Professional sprite sheet style.
     `;
 
     console.log(`[generate-perspective-fal] Calling Seedream V4 Edit for: ${prompt}`);

@@ -11,6 +11,7 @@ interface AICreatorWizardProps {
   onOpenChange: (open: boolean) => void;
   projectSize: number;
   aiGeneration: any;
+  projectConfig?: import('@/lib/supabase').ProjectConfig;
 }
 
 type Step = 'concept' | 'style' | 'reference';
@@ -38,7 +39,7 @@ const STEP_INFO: Record<Step, { num: number; label: string }> = {
   reference: { num: 3, label: 'GENERAR' },
 };
 
-export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenChange, projectSize, aiGeneration }) => {
+export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenChange, projectSize, aiGeneration, projectConfig }) => {
   const [step, setStep] = useState<Step>('concept');
   const [prompt, setPrompt] = useState('');
   const [category, setCategory] = useState('character');
@@ -66,14 +67,25 @@ export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenCh
   }, []);
 
   const handleGenerate = async () => {
-    const finalPrompt = `front view of a ${category}, ${prompt}, ${style} pixel art style, high quality`;
+    const isOneWay = projectConfig?.directionality === '1-way';
+    const viewPrefix = isOneWay ? 'side profile view of a' : 'front view of a';
+    let finalPrompt = `${viewPrefix} ${category}, ${prompt}`;
+    if (projectConfig?.aesthetics && projectConfig.aesthetics !== 'custom') {
+      finalPrompt += `, strictly ${projectConfig.aesthetics} pixel art aesthetic`;
+    } else {
+      finalPrompt += `, ${style} pixel art style`;
+    }
+    finalPrompt += `, high quality`;
+    
     await generate(finalPrompt, projectSize, referenceImage || undefined, { 
       strength: parseFloat(strength),
-      maxColors 
+      maxColors,
+      projectConfig
     });
   };
 
-  const stepOrder: Step[] = ['concept', 'style', 'reference'];
+  const hasFixedStyle = projectConfig?.aesthetics && projectConfig.aesthetics !== 'custom';
+  const stepOrder: Step[] = hasFixedStyle ? ['concept', 'reference'] : ['concept', 'style', 'reference'];
 
   const renderStepIndicator = () => (
     <div className="flex items-center gap-1 w-full">
@@ -184,7 +196,7 @@ export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenCh
             </div>
 
             <Button 
-              onClick={() => setStep('style')} 
+              onClick={() => setStep(hasFixedStyle ? 'reference' : 'style')} 
               className="w-full mt-2 font-pixel text-xs h-11" 
               disabled={!prompt.trim()}
             >
@@ -236,7 +248,7 @@ export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenCh
                 <span className="text-border">·</span>
                 <span className="font-pixel text-[9px] text-foreground/80">{selectedCategory?.icon} {selectedCategory?.label}</span>
                 <span className="text-border">·</span>
-                <span className="font-pixel text-[9px] text-foreground/80">{selectedStyle?.label}</span>
+                <span className="font-pixel text-[9px] text-foreground/80">{hasFixedStyle ? projectConfig.aesthetics.toUpperCase() : selectedStyle?.label}</span>
               </div>
               <p className="font-mono text-[9px] text-foreground/60 italic truncate">"{prompt}"</p>
             </div>
@@ -325,9 +337,16 @@ export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenCh
             </div>
 
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setStep('style')} className="font-pixel text-[10px]">
-                <PxArrowLeft size={12} className="mr-1" /> ATRÁS
-              </Button>
+              {!hasFixedStyle && (
+                <Button variant="ghost" onClick={() => setStep('style')} className="font-pixel text-[10px]">
+                  <PxArrowLeft size={12} className="mr-1" /> ATRÁS
+                </Button>
+              )}
+              {hasFixedStyle && (
+                <Button variant="ghost" onClick={() => setStep('concept')} className="font-pixel text-[10px]">
+                  <PxArrowLeft size={12} className="mr-1" /> ATRÁS
+                </Button>
+              )}
               <Button 
                 onClick={handleGenerate} 
                 disabled={isGenerating}

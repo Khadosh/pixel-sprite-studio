@@ -18,6 +18,8 @@ const DEFAULT_MEMBERS: { type: MemberType, label: string }[] = [
 ];
 
 export function AnatomyPanel() {
+  const projectConfig = useSpriteEditorStore(s => s.projectConfig);
+  const isOneWay = projectConfig?.directionality === '1-way';
   const asset = useSpriteEditorStore(s => s.editedAsset);
   const setEditedAsset = useSpriteEditorStore(s => s.setEditedAsset);
   const selectedOrientation = useSpriteEditorStore(s => s.anatomySelectedOrientation);
@@ -96,22 +98,31 @@ export function AnatomyPanel() {
       </div>
 
       {/* ORIENTATION TABS */}
-      <div className="flex border-b border-border/50 gap-4 mt-2">
-        {([0, 1, 2] as const).map(idx => (
-          <button
-            key={idx}
-            className={cn(
-              "pb-1 text-[10px] font-bold uppercase transition-colors border-b-2",
-              selectedOrientation === idx
-                ? "text-primary border-primary"
-                : "text-muted-foreground border-transparent hover:text-foreground"
-            )}
-            onClick={() => setSelectedOrientation(idx)}
-          >
-            {idx === 0 ? 'Front' : idx === 1 ? 'Side' : 'Back'}
-          </button>
-        ))}
-      </div>
+      {!isOneWay && (
+        <div className="flex border-b border-border/50 gap-4 mt-2">
+          {([0, 1, 2] as const).map(idx => (
+            <button
+              key={idx}
+              className={cn(
+                "pb-1 text-[10px] font-bold uppercase transition-colors border-b-2",
+                selectedOrientation === idx
+                  ? "text-primary border-primary"
+                  : "text-muted-foreground border-transparent hover:text-foreground"
+              )}
+              onClick={() => setSelectedOrientation(idx)}
+            >
+              {idx === 0 ? 'Front' : idx === 1 ? 'Side' : 'Back'}
+            </button>
+          ))}
+        </div>
+      )}
+      {isOneWay && (
+        <div className="flex border-b border-border/50 gap-4 mt-2">
+          <div className="pb-1 text-[10px] font-bold uppercase text-primary border-b-2 border-primary">
+            Side Profile (1-Way)
+          </div>
+        </div>
+      )}
 
       {mode === 'custom' ? (
         <div className="space-y-4 pt-2">

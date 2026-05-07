@@ -9,6 +9,8 @@ import { AVAILABLE_ANIMS } from '../types';
 import { CastElement, CastShape, AnimationDef } from '@/lib/types';
 
 export const AnimationLibrary = React.memo(() => {
+  const projectConfig = useSpriteEditorStore(s => s.projectConfig);
+  const isOneWay = projectConfig?.directionality === '1-way';
   const editedAsset = useSpriteEditorStore(s => s.editedAsset);
   const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
   const setViewingAnimation = useSpriteEditorStore(s => s.setViewingAnimation);
@@ -84,15 +86,19 @@ export const AnimationLibrary = React.memo(() => {
     <ScrollArea className="h-full pr-3">
       <div className="space-y-6">
       
+        {!isOneWay && (
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="font-pixel text-[9px] text-primary tracking-widest uppercase">Perspectiva Activa</span>
           </div>
         </div>
+        )}
         
         <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-1.5">
+          {!isOneWay && (
+            <>
+              <div className="grid grid-cols-3 gap-1.5">
             {[
               { id: 'front', label: 'FRONT' },
               { id: 'side', label: 'SIDE' },
@@ -167,6 +173,8 @@ export const AnimationLibrary = React.memo(() => {
                 <PxImage size={12} />
               </Button>
             </div>
+          )}
+          </>
           )}
         </div>
       {/* SECTION: GENERATION PANEL - MOVED TO TOP */}
@@ -301,8 +309,10 @@ export const AnimationLibrary = React.memo(() => {
               setViewingAnimation('base');
               // Maintain current orientation frame
               let idx = 0;
-              if (activePerspective === 'side') idx = activeSide === 'right' ? 1 : 3;
-              else if (activePerspective === 'back') idx = 2;
+              if (!isOneWay) {
+                if (activePerspective === 'side') idx = activeSide === 'right' ? 1 : 3;
+                else if (activePerspective === 'back') idx = 2;
+              }
               setEditingFrameIndex(idx);
             }}
             className={`px-3 py-2 text-[10px] font-pixel rounded border transition-all flex items-center justify-between group ${viewingAnimation === 'base'

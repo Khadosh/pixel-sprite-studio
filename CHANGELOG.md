@@ -4,7 +4,18 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-05-06 (Hoy)
+## 2026-05-07 (Hoy)
+**1 commit realizado**
+
+- **Proyecto**: **Sistema de Configuración de Proyectos (ProjectConfig)**. Implementado flujo de trabajo basado en reglas globales de proyecto. Ahora, al crear un "Nuevo Mundo", se define la direccionalidad (1-Way vs 4-Way) y la estética (8-Bit, Fantasy, Gameboy, etc.). Estas reglas persisten en la base de datos y gobiernan dinámicamente todo el estudio.
+- **IA**: **Generación Condicionada por Contexto**. Las Edge Functions (`generate-sprite-fal`, `generate-animation`, `generate-perspective-fal`) ahora reciben la configuración del proyecto. Se inyectan reglas rígidas en los prompts técnicos para asegurar que los sprites y animaciones generados respeten la perspectiva y el estilo visual del juego automáticamente.
+- **UI/UX**: **Interfaz Adaptativa Pro**. El editor ahora oculta controles irrelevantes (como perspectivas frontales/traseras en juegos de scroll lateral) y pre-configura el motor de anatomía en la orientación correcta.
+- **IA**: **Wizard de Creación Inmersivo**. Rediseñado el flujo de creación de proyectos en el Dashboard con un asistente de 3 pasos ("Nuevo Mundo") con estética pixel-art y selección visual de reglas.
+- **Fix**: **Sincronización de Perspectiva Post-Caché**. Corregido el bug donde el LocalStorage mantenía perspectivas de proyectos anteriores; ahora se fuerza el estado correcto basado en la configuración del proyecto al abrir cualquier asset.
+
+---
+
+## 2026-05-06
 **3 commits realizados**
 
 - **Animación**: **Procedural FX Panel**. Implementado un nuevo panel de control para aplicar transformaciones procedurales (mover, rotar, expandir, colapsar) a miembros específicos basados en el motor de anatomía. Permite manipular directamente píxeles de cabeza, torso, brazos y piernas con parámetros de offset y ángulo.

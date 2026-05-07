@@ -35,12 +35,12 @@ export function useGenerateSpriteFal() {
     prompt: string, 
     size: number = 64, 
     referenceImageUrl?: string,
-    options?: { strength?: number; maxColors?: number }
+    options?: { strength?: number; maxColors?: number; projectConfig?: import('@/lib/supabase').ProjectConfig }
   ) => {
     setState({ isGenerating: true, error: null, result: null });
     
-    // Get palette only if we are in the editor context
     const currentPalette = storeApi ? storeApi.getState().editedAsset.palette : null;
+    const projectConfig = storeApi ? storeApi.getState().projectConfig : options?.projectConfig;
 
     try {
       const token = session?.access_token || SUPABASE_KEY;
@@ -59,7 +59,8 @@ export function useGenerateSpriteFal() {
           image_url: referenceImageUrl,
           palette: currentPalette,
           strength: options?.strength ?? 0.75,
-          maxColors: options?.maxColors ?? 24
+          maxColors: options?.maxColors ?? 24,
+          projectConfig
         }),
       });
 

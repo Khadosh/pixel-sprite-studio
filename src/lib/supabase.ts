@@ -11,12 +11,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
 // Tipos de Base de Datos para el proyecto
+export interface ProjectConfig {
+  directionality: '1-way' | '4-way';
+  aesthetics: '8-bit' | '16-bit' | 'gameboy' | 'fantasy' | 'sci-fi' | 'cyberpunk' | 'custom';
+}
+
 export interface Project {
   id: string;
   created_at: string;
   name: string;
   user_id: string;
   slug: string;
+  config: ProjectConfig;
 }
 
 export interface ProjectSprite {

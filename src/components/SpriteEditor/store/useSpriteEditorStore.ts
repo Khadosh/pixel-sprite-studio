@@ -91,8 +91,9 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         leftSidebarTab: options.isIconMode ? 'layers' : 'animations',
         isDirty: false,
         canvasBg: 'dark',
-        activePerspective: 'front',
+        activePerspective: options.projectConfig?.directionality === '1-way' ? 'side' : 'front',
         activeSide: 'right',
+        anatomySelectedOrientation: options.projectConfig?.directionality === '1-way' ? 1 : 0,
         showIsometricGrid: false,
         sketchMode: false,
         tool: 'pencil',
@@ -104,6 +105,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
 
         // Props from parent
         projectId: options.projectId,
+        projectConfig: options.projectConfig,
         _onSave: options.onSave,
         _onOpenChange: options.onOpenChange,
         _previewPanelRef: options.previewPanelRef,

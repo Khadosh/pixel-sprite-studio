@@ -43,7 +43,7 @@ export function useAnimationGenerationBridge(store: SpriteEditorStore) {
             return { ...a, name, label };
           })],
         }));
-      }, state.activeLayerId);
+      }, state.activeLayerId, state.projectConfig);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error generating animation';
       store.getState().setAnimError(message);

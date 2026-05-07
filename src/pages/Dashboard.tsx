@@ -4,9 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { PxFolder, PxLogOut, PxPlus } from '@/components/icons/PixelIcon';
+import { PxFolder, PxLogOut, PxPlus, PxSparkles } from '@/components/icons/PixelIcon';
 import { useProjects, useCreateProject } from '@/hooks/useProjectQueries';
 import { createSpec } from '@/lib/slugUtils';
+import { CreateProjectWizard } from '@/components/Dashboard/CreateProjectWizard';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -16,16 +17,15 @@ export default function Dashboard() {
   const { data: projects = [], isLoading } = useProjects();
   const createProjectMutation = useCreateProject();
   
-  const [newProjectName, setNewProjectName] = useState('');
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjectName.trim() || createProjectMutation.isPending) return;
+  const handleCreateProject = async (name: string, config: import('@/lib/supabase').ProjectConfig) => {
+    if (createProjectMutation.isPending) return;
 
-    createProjectMutation.mutate(newProjectName.trim(), {
+    createProjectMutation.mutate({ name: name.trim(), config }, {
       onSuccess: () => {
-        setNewProjectName('');
-        toast({ title: 'Proyecto creado', description: 'Tu nuevo proyecto está listo.' });
+        setIsWizardOpen(false);
+        toast({ title: 'Mundo creado', description: 'Tu nuevo proyecto está listo.' });
       },
       onError: (error: any) => {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -70,21 +70,21 @@ export default function Dashboard() {
                 Crea un proyecto para empezar a guardar, organizar y editar tus colecciones de pixel art generadas.
               </p>
             </div>
-            <form onSubmit={handleCreateProject} className="flex gap-2">
-              <Input 
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder="Nombre del proyecto..."
-                className="bg-secondary/50 font-mono w-full md:w-64"
-                maxLength={40}
-              />
-              <Button type="submit" disabled={createProjectMutation.isPending || !newProjectName.trim()} className="bg-primary text-primary-foreground font-pixel text-[10px] whitespace-nowrap border border-primary hover:brightness-110">
-                <PxPlus size={14} className="mr-1" />
-                NUEVO
+            <div className="flex gap-2">
+              <Button onClick={() => setIsWizardOpen(true)} className="bg-primary text-primary-foreground font-pixel text-[10px] whitespace-nowrap border border-primary hover:brightness-110">
+                <PxSparkles size={14} className="mr-2" />
+                NUEVO MUNDO
               </Button>
-            </form>
+            </div>
           </div>
         </section>
+
+        <CreateProjectWizard 
+          isOpen={isWizardOpen} 
+          onClose={() => setIsWizardOpen(false)} 
+          onCreate={handleCreateProject}
+          isPending={createProjectMutation.isPending}
+        />
 
         {/* Projects Grid */}
         <section>

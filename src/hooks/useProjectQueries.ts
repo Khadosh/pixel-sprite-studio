@@ -71,7 +71,7 @@ export function useCreateProject() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async ({ name, config }: { name: string; config: import('@/lib/supabase').ProjectConfig }) => {
       if (!user) throw new Error('User not authenticated');
       
       const { slugify } = await import('@/lib/slugUtils');
@@ -97,7 +97,7 @@ export function useCreateProject() {
 
       const { data, error } = await supabase
         .from('projects')
-        .insert([{ name, user_id: user.id, slug }])
+        .insert([{ name, user_id: user.id, slug, config }])
         .select()
         .single();
 

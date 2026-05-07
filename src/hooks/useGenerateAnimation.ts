@@ -26,6 +26,7 @@ export function useGenerateAnimation() {
     animationNames: string[],
     onProgress: (updatedAsset: SpriteAsset) => void,
     targetLayerId?: string | null,
+    projectConfig?: import('@/lib/supabase').ProjectConfig,
   ) => {
     setState({ isGenerating: true, currentAnimation: null, error: null });
     let currentAsset = { ...asset };
@@ -53,6 +54,7 @@ export function useGenerateAnimation() {
             colorNames,
             size,
             animationName: animName,
+            projectConfig
           }),
         });
 

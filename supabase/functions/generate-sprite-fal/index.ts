@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
     // @ts-ignore
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { prompt, size = 64, palette = null, image_url = null, strength = 0.5 } = await req.json();
+    const { prompt, size = 64, palette = null, image_url = null, strength = 0.5, projectConfig } = await req.json();
 
     if (!prompt) throw new Error("A text prompt is required");
 
@@ -55,7 +55,15 @@ Deno.serve(async (req: Request) => {
       paletteGuidance = `Use strictly this color palette: ${colors}. `;
     }
 
-    const technicalPrompt = `Professional pixel art sprite of ${prompt}. ${paletteGuidance}Isolated character on a solid flat LIME GREEN background (#00FF00). Full body, centered, clean retro pixel art.`;
+    let projectGuidance = "";
+    if (projectConfig?.directionality) {
+      projectGuidance += ` The character must strictly adhere to a ${projectConfig.directionality} game perspective.`;
+    }
+    if (projectConfig?.aesthetics && projectConfig.aesthetics !== 'custom') {
+      projectGuidance += ` The aesthetic must strictly be ${projectConfig.aesthetics}.`;
+    }
+
+    const technicalPrompt = `Professional pixel art sprite of ${prompt}. ${paletteGuidance}${projectGuidance} Isolated character on a solid flat LIME GREEN background (#00FF00). Full body, centered, clean retro pixel art.`;
     
     let endpoint = "https://fal.run/fal-ai/flux/schnell";
     let body: any = {

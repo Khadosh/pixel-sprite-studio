@@ -22,7 +22,7 @@ export function useGeneratePerspectiveAI() {
     prompt: string, 
     size: number, 
     referenceImageUrl: string,
-    options?: { strength?: number; maxColors?: number; fixedPalette?: Record<number, string> }
+    options?: { strength?: number; maxColors?: number; fixedPalette?: Record<number, string>; projectConfig?: import('@/lib/supabase').ProjectConfig }
   ) => {
     setState({ isGenerating: true, error: null });
     
@@ -41,7 +41,8 @@ export function useGeneratePerspectiveAI() {
           size,
           image_url: referenceImageUrl,
           strength: options?.strength ?? 0.55,
-          palette: options?.fixedPalette
+          palette: options?.fixedPalette,
+          projectConfig: options?.projectConfig
         }),
       });
 

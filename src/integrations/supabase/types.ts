@@ -45,18 +45,21 @@ export type Database = {
       }
       projects: {
         Row: {
+          config: Json
           created_at: string
           id: string
           name: string
           user_id: string
         }
         Insert: {
+          config?: Json
           created_at?: string
           id?: string
           name: string
           user_id: string
         }
         Update: {
+          config?: Json
           created_at?: string
           id?: string
           name?: string

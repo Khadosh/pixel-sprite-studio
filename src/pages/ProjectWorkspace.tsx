@@ -536,6 +536,7 @@ export default function ProjectWorkspace() {
         onOpenChange={setShowAIWizard} 
         projectSize={canvasSize}
         aiGeneration={aiGeneration}
+        projectConfig={(project as any)?.config}
       />
     </div>
   );
