@@ -11,7 +11,7 @@ export interface AnimationPreviewPanelHandle {
 
 export type PreviewSize = 'small' | 'medium' | 'large';
 
-export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanelHandle, {}>(
+export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanelHandle, object>(
   (_, ref) => {
     const editedAsset = useSpriteEditorStore(s => s.editedAsset);
     const viewingAnimation = useSpriteEditorStore(s => s.viewingAnimation);
@@ -33,7 +33,7 @@ export const AnimationPreviewPanel = React.memo(forwardRef<AnimationPreviewPanel
         else if (prev === 'medium') next = 'large';
         else if (prev === 'large') next = 'small';
 
-        try { localStorage.setItem('pps-preview-size', next); } catch { }
+        try { localStorage.setItem('pps-preview-size', next); } catch { /* localStorage no disponible */ }
         return next;
       });
     }, []);

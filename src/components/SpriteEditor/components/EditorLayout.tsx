@@ -26,7 +26,6 @@ import { AssetLibrary } from './AssetLibrary';
 import { StudioSheetModal } from './StudioSheetModal';
 import { HistoryPanel } from './HistoryPanel';
 import { PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { useStore } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 
 interface EditorLayoutProps {
@@ -34,7 +33,7 @@ interface EditorLayoutProps {
   hideHeader?: boolean;
 }
 
-export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, hideHeader = false }) => {
+export const EditorLayout: React.FC<EditorLayoutProps> = ({ hideHeader = false }) => {
   const store = useSpriteEditorStoreApi();
   const previewPanelRef = useRef<AnimationPreviewPanelHandle>(null);
   const [showStudioSheet, setShowStudioSheet] = React.useState(false);

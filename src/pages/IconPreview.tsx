@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 
 const IconPreview = () => {
   const [search, setSearch] = React.useState('');
+  const [editorOpen, setEditorOpen] = React.useState(false);
+  const [editingIconId, setEditingIconId] = React.useState<string | null>(null);
   
   // Restriction: localhost only
   const isLocalhost = typeof window !== 'undefined' && 
@@ -22,9 +24,6 @@ const IconPreview = () => {
   const icons = Object.entries(PIXEL_ICONS).filter(([name]) => 
     name.toLowerCase().includes(search.toLowerCase())
   );
-
-  const [editorOpen, setEditorOpen] = React.useState(false);
-  const [editingIconId, setEditingIconId] = React.useState<string | null>(null);
 
   const handleEditIcon = (name: string) => {
     // Normalize name PxSave -> save

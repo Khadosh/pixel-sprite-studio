@@ -31,3 +31,12 @@ export function useSpriteEditorStoreApi(): SpriteEditorStore {
   }
   return store;
 }
+
+/**
+ * Como `useSpriteEditorStoreApi`, pero devuelve `null` fuera del provider.
+ * Para hooks que funcionan tanto dentro como fuera del editor (p. ej. generación de IA
+ * desde el workspace), sin envolver un hook en try/catch.
+ */
+export function useOptionalSpriteEditorStoreApi(): SpriteEditorStore | null {
+  return useContext(SpriteEditorStoreContext);
+}
