@@ -1,3 +1,7 @@
+// Tipos del esquema de Supabase.
+// Se regeneran con: `supabase gen types typescript --local > src/integrations/supabase/types.ts`
+// Las columnas `slug` (projects, project_sprites) se agregaron a mano a partir de
+// supabase/migrations/20260421162500_add_slugs.sql porque el dump previo no las incluía.
 export type Json =
   | string
   | number
@@ -20,18 +24,24 @@ export type Database = {
           created_at: string
           id: string
           project_id: string
+          slug: string
+          updated_at: string
         }
         Insert: {
           asset_data: Json
           created_at?: string
           id?: string
           project_id: string
+          slug: string
+          updated_at?: string
         }
         Update: {
           asset_data?: Json
           created_at?: string
           id?: string
           project_id?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -49,21 +59,27 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          slug: string
           user_id: string
+          updated_at: string
         }
         Insert: {
           config?: Json
           created_at?: string
           id?: string
           name: string
+          slug: string
           user_id: string
+          updated_at?: string
         }
         Update: {
           config?: Json
           created_at?: string
           id?: string
           name?: string
+          slug?: string
           user_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -93,7 +109,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_ai_usage: {
+        Args: { p_limit: number; p_user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
