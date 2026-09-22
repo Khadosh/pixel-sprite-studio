@@ -4,6 +4,7 @@ import { EditorTool } from '@/hooks/usePixelEditor';
 import { BrushSize } from '@/components/EditorToolbar';
 import { DragEndEvent } from '@dnd-kit/core';
 import { AnimationPreviewPanelHandle } from '../components/AnimationPreviewPanel';
+import type { ProjectConfig } from '@/lib/supabase';
 
 export interface SpriteEditorState {
   // --- Core State ---
@@ -32,9 +33,11 @@ export interface SpriteEditorState {
   showIsometricGrid: boolean;
   sketchMode: boolean;
   projectId?: string;
-  projectConfig?: import('@/lib/supabase').ProjectConfig;
+  projectConfig?: ProjectConfig;
   isIconMode?: boolean;
   iconId?: string;
+  /** Huella del asset con el que se creó el store; ver persist/merge en useSpriteEditorStore. */
+  _sourceHash: string;
 
   // Animation generation state
   selectedAnims: string[];
@@ -166,6 +169,7 @@ export interface SpriteEditorState {
   handleDragEnd: (event: DragEndEvent) => void;
 
   handleExportPNG: (options?: { includeLabels?: boolean }) => void;
+  handleExportLayerPNG: () => void;
   handleExportGIF: () => Promise<void>;
   handleExportJSON: () => void;
   handleExportIcon: () => void;
@@ -196,7 +200,7 @@ export interface CreateSpriteEditorStoreOptions {
   onRegenerate?: () => void;
   isGenerating?: boolean;
   projectId?: string;
-  projectConfig?: import('@/lib/supabase').ProjectConfig;
+  projectConfig?: ProjectConfig;
   isIconMode?: boolean;
   iconId?: string;
 }

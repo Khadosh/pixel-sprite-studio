@@ -7,6 +7,7 @@ import React from 'react';
 vi.mock('../../utils/exportUtils', () => ({
   exportAsPNG: vi.fn(),
   exportAsGIF: vi.fn(),
+  exportLayerAsPNG: vi.fn(),
 }));
 
 const mockAsset: SpriteAsset = {
@@ -17,7 +18,10 @@ const mockAsset: SpriteAsset = {
   size: 16,
   palette: {},
   colorNames: {},
-  layers: [],
+  layers: [
+    { id: 'l1', name: 'Body', isVisible: true, isLocked: false, opacity: 1, frames: [[[0]], [[1]]] },
+    { id: 'l2', name: 'Hat', isVisible: true, isLocked: false, opacity: 1, frames: [[[0]], [[1]]] },
+  ],
   animations: [{ name: 'idle', label: 'IDLE', frameIndices: [0], fps: 5 }]
 };
 
@@ -49,5 +53,22 @@ describe('SpriteEditorStore - Export Actions', () => {
       'idle',
       5
     );
+  });
+
+  it('exports only the active layer at the frame being edited', () => {
+    store.setState({ activeLayerId: 'l2', editingFrameIndex: 1 });
+    store.getState().handleExportLayerPNG();
+    expect(exportUtils.exportLayerAsPNG).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'test' }),
+      expect.objectContaining({ id: 'l2', name: 'Hat' }),
+      1
+    );
+  });
+
+  it('does not export when there is no active layer', () => {
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    store.setState({ activeLayerId: null });
+    store.getState().handleExportLayerPNG();
+    expect(exportUtils.exportLayerAsPNG).not.toHaveBeenCalled();
   });
 });

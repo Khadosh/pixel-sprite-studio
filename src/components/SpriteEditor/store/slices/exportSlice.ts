@@ -1,10 +1,20 @@
 import { SpriteEditorState, StoreSlice } from '../types';
-import { exportAsPNG, exportAsGIF } from '../../utils/exportUtils';
+import { exportAsPNG, exportAsGIF, exportLayerAsPNG } from '../../utils/exportUtils';
 
 export const createExportSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get) => ({
   handleExportPNG: (options) => {
     const state = get();
     exportAsPNG(state.editedAsset, options);
+  },
+
+  handleExportLayerPNG: () => {
+    const state = get();
+    const layer = (state.editedAsset.layers || []).find(l => l.id === state.activeLayerId);
+    if (!layer) {
+      alert('No hay un layer activo para exportar.');
+      return;
+    }
+    exportLayerAsPNG(state.editedAsset, layer, state.editingFrameIndex);
   },
 
   handleExportGIF: async () => {
@@ -28,7 +38,11 @@ export const createExportSlice: StoreSlice<Partial<SpriteEditorState>> = (set, g
     const state = get();
     const iconId = state.iconId || 'new_icon';
     // Get first frame of first layer
-    const matrix = state.editedAsset.layers[0].frames[0];
+    const matrix = state.editedAsset.layers?.[0]?.frames?.[0];
+    if (!matrix) {
+      alert('No hay un frame para exportar como icono.');
+      return;
+    }
     
     // Format as a proper JS array string
     const matrixStr = JSON.stringify(matrix)

@@ -1,4 +1,4 @@
-import { SpriteAsset } from '@/lib/types';
+import { SpriteAsset, SpriteLayer } from '@/lib/types';
 import { compositeFrame } from '@/lib/layerUtils';
 import { GifWriter } from 'omggif';
 import { saveAs } from 'file-saver';
@@ -69,6 +69,41 @@ export const exportAsPNG = (asset: SpriteAsset, options: { includeLabels?: boole
 
   const link = document.createElement('a');
   link.download = `${asset.id || 'sprite'}-spritesheet${includeLabels ? '-labeled' : ''}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+};
+
+/**
+ * Exports a single layer's frame as a static PNG (no compositing with other layers).
+ * Opacity and visibility of the layer are ignored: the layer is exported as-is, at full opacity.
+ */
+export const exportLayerAsPNG = (asset: SpriteAsset, layer: SpriteLayer, frameIndex: number) => {
+  const frame = layer.frames[frameIndex];
+  if (!frame) return;
+
+  const size = asset.size * PIXEL_SCALE;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, size, size);
+
+  for (let r = 0; r < asset.size; r++) {
+    for (let c = 0; c < asset.size; c++) {
+      const val = frame[r]?.[c] ?? 0;
+      if (val === 0) continue;
+      const color = asset.palette[val];
+      if (!color || color === 'transparent') continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(c * PIXEL_SCALE, r * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+    }
+  }
+
+  const layerSlug = (layer.name || 'layer').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const link = document.createElement('a');
+  link.download = `${asset.id || 'sprite'}-${layerSlug}-f${frameIndex}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 };
