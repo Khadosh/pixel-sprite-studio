@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProjectSprite } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -10,14 +9,13 @@ import { PaletteProvider } from '@/hooks/usePalette';
 import SpriteSheetCanvas from '@/components/SpriteSheetCanvas';
 import { useGenerateSpriteFal } from '@/hooks/useGenerateSpriteFal';
 import type { SpriteAsset } from '@/lib/types';
-import { useProject, useProjectSprites, useCreateSprite, useUpdateSprite, useDeleteSprite, useUpdateProject } from '@/hooks/useProjectQueries';
-import { createSpec, parseSpec } from '@/lib/slugUtils';
+import { useProject, useProjectSprites, useCreateSprite, useDeleteSprite, useUpdateProject } from '@/hooks/useProjectQueries';
+import { parseSpec } from '@/lib/slugUtils';
 import { AICreatorWizard } from '@/components/AICreatorWizard';
 
 export default function ProjectWorkspace() {
   const { projectSlug } = useParams<{ projectSlug: string }>();
   const id = parseSpec(projectSlug || '');
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -25,7 +23,6 @@ export default function ProjectWorkspace() {
   const { data: sprites = [], isLoading: isSpritesLoading } = useProjectSprites(project?.id);
   
   const createSpriteMutation = useCreateSprite();
-  const updateSpriteMutation = useUpdateSprite();
   const deleteSpriteMutation = useDeleteSprite();
 
   // Creation panel state
@@ -536,7 +533,7 @@ export default function ProjectWorkspace() {
         onOpenChange={setShowAIWizard} 
         projectSize={canvasSize}
         aiGeneration={aiGeneration}
-        projectConfig={(project as any)?.config}
+        projectConfig={project?.config}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-import { SpriteAsset, Frame } from '@/lib/types';
 import { normalizeTags, normalizeTag } from '@/lib/tagUtils';
 import { SpriteEditorState, StoreSlice } from '../types';
 
@@ -7,7 +6,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   setEditedAsset: (assetOrFn) => set(state => ({
     editedAsset: typeof assetOrFn === 'function' ? assetOrFn(state.editedAsset) : assetOrFn,
   })),
-  setAnatomySelectedOrientation: (idx) => set(s => {
+  setAnatomySelectedOrientation: (idx) => set(() => {
     let p: 'front' | 'side' | 'back' = 'front';
     if (idx === 1 || idx === 3) p = 'side';
     else if (idx === 2) p = 'back';
@@ -27,10 +26,10 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   })),
   setIsEditingName: (editing) => set({ isEditingName: editing }),
   setOnionSkin: (onOrFn) => set(s => ({ 
-    onionSkin: typeof onOrFn === 'function' ? (onOrFn as Function)(s.onionSkin) : onOrFn 
+    onionSkin: typeof onOrFn === 'function' ? onOrFn(s.onionSkin) : onOrFn 
   })),
   setShowAllColors: (onOrFn) => set(s => ({ 
-    showAllColors: typeof onOrFn === 'function' ? (onOrFn as Function)(s.showAllColors) : onOrFn 
+    showAllColors: typeof onOrFn === 'function' ? onOrFn(s.showAllColors) : onOrFn 
   })),
   setScope: (scope) => set({ scope }),
   setCastSettings: (settingsOrFn) => set(state => ({
@@ -49,7 +48,7 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     leftSidebarTab: s.leftSidebarTab === tab ? null : tab 
   })),
   setCanvasBg: (bgOrFn) => set(s => ({ 
-    canvasBg: typeof bgOrFn === 'function' ? (bgOrFn as Function)(s.canvasBg) : bgOrFn 
+    canvasBg: typeof bgOrFn === 'function' ? bgOrFn(s.canvasBg) : bgOrFn 
   })),
   setActivePerspective: (p) => set(s => {
     let idx = 0;
@@ -141,13 +140,13 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
     };
   }),
   setShowIsometricGrid: (onOrFn: boolean | ((prev: boolean) => boolean)) => set(s => ({ 
-    showIsometricGrid: typeof onOrFn === 'function' ? (onOrFn as Function)(s.showIsometricGrid) : onOrFn 
+    showIsometricGrid: typeof onOrFn === 'function' ? onOrFn(s.showIsometricGrid) : onOrFn 
   })),
   setSketchMode: (onOrFn: boolean | ((prev: boolean) => boolean)) => set(s => ({ 
-    sketchMode: typeof onOrFn === 'function' ? (onOrFn as Function)(s.sketchMode) : onOrFn 
+    sketchMode: typeof onOrFn === 'function' ? onOrFn(s.sketchMode) : onOrFn 
   })),
   setMirrorX: (onOrFn: boolean | ((prev: boolean) => boolean)) => set(s => ({ 
-    mirrorX: typeof onOrFn === 'function' ? (onOrFn as Function)(s.mirrorX) : onOrFn 
+    mirrorX: typeof onOrFn === 'function' ? onOrFn(s.mirrorX) : onOrFn 
   })),
   setBrushSize: (size) => set({ brushSize: size }),
   setTool: (tool) => set({ tool }),

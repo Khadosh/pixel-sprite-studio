@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { PxSparkles, PxUpload, PxX, PxLoader, PxArrowLeft, PxGrid, PxImage } from '@/components/icons/PixelIcon';
-import { useGenerateSpriteFal } from '@/hooks/useGenerateSpriteFal';
 import { Textarea } from '@/components/ui/textarea';
 
 interface AICreatorWizardProps {
@@ -234,7 +233,7 @@ export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenCh
           </div>
         );
 
-      case 'reference':
+      case 'reference': {
         const selectedCategory = CATEGORIES.find(c => c.id === category);
         const selectedStyle = STYLES.find(s => s.id === style);
 
@@ -358,6 +357,7 @@ export const AICreatorWizard: React.FC<AICreatorWizardProps> = ({ open, onOpenCh
             </div>
           </div>
         );
+      }
     }
   };
 

@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase, Project, ProjectSprite } from '@/lib/supabase';
+import { supabase, toJson, fromJson, Project, ProjectSprite, ProjectConfig, Json } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 import { SpriteAsset } from '@/lib/types';
-import { serializeAsset, deserializeAsset } from '@/lib/spriteDto';
-import { createSpec, parseSpec } from '@/lib/slugUtils';
+import { serializeAsset, deserializeAsset, SpriteAssetDTO } from '@/lib/spriteDto';
+import { createSpec, slugify } from '@/lib/slugUtils';
 
 export const projectKeys = {
   all: ['projects'] as const,
@@ -20,11 +21,40 @@ export const spriteKeys = {
   detail: (id: string) => [...spriteKeys.details(), id] as const,
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUUID = (id: string) => UUID_RE.test(id);
+
+/** Límite a partir del cual se descarta `versions` para poder guardar (bytes de JSON). */
+const MAX_SAVE_BYTES = 500 * 1024;
+/** Límite a partir del cual se descarta `versions` al cargar. */
+const MAX_LOAD_BYTES = 1024 * 1024;
+
+function notifyVersionsPurged(action: 'guardar' | 'cargar') {
+  toast({
+    title: 'Historial de versiones descartado',
+    description: `El sprite superaba el tamaño máximo: se descartó el historial de versiones para poder ${action}.`,
+  });
+}
+
+/** Convierte una fila de `project_sprites` (asset_data serializado) al tipo de dominio. */
+function rowToProjectSprite(row: { id: string; slug: string; project_id: string; created_at: string; updated_at: string }, dto: SpriteAssetDTO | Json): ProjectSprite {
+  const asset = deserializeAsset(dto);
+  return {
+    id: row.id,
+    project_id: row.project_id,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    slug: row.slug || asset.slug || row.id,
+    asset_data: asset,
+    name: asset.name || 'Sin nombre',
+  };
+}
+
 // --- Projects Hooks ---
 
 export function useProjects() {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: projectKeys.list(user?.id || ''),
     queryFn: async () => {
@@ -46,18 +76,14 @@ export function useProject(idOrSlug?: string) {
     queryKey: projectKeys.detail(idOrSlug || ''),
     queryFn: async () => {
       if (!idOrSlug) throw new Error('Project ID or Slug is required');
-      
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-      
+
       const query = supabase.from('projects').select('*');
-      if (isUUID) {
+      if (isUUID(idOrSlug)) {
         query.eq('id', idOrSlug);
       } else {
-        // We suspect projects MIGHT have a slug column even if types are missing it,
-        // but let's try a safer approach if it fails. For now, keep as slug.
         query.eq('slug', idOrSlug);
       }
-      
+
       const { data, error } = await query.single();
       if (error) throw error;
       return data as Project;
@@ -66,43 +92,81 @@ export function useProject(idOrSlug?: string) {
   });
 }
 
+/** Busca un slug libre en `projects`, agregando un sufijo numérico si hace falta. */
+/** SQLSTATE 23505: violación de unique (por ejemplo `projects_user_id_slug_key`). */
+const isUniqueViolation = (error: unknown) =>
+  typeof error === 'object' && error !== null && (error as { code?: string }).code === '23505';
+
+/**
+ * Busca un slug libre en `projects` para el usuario. El unique real es `(user_id, slug)`,
+ * así que otro usuario puede tener el mismo slug. `attempt` permite reintentar tras un 23505
+ * (carrera entre el chequeo y el insert) arrancando desde un sufijo distinto.
+ */
+async function uniqueProjectSlug(name: string, userId: string, excludeId?: string, attempt = 0) {
+  const baseSlug = slugify(name) || 'untitled';
+  let counter = attempt;
+  let slug = counter === 0 ? baseSlug : `${baseSlug}-${counter}`;
+
+  for (;;) {
+    let query = supabase.from('projects').select('id').eq('user_id', userId).eq('slug', slug);
+    if (excludeId) query = query.neq('id', excludeId);
+    const { data } = await query.maybeSingle();
+    if (!data) return slug;
+    counter += 1;
+    slug = `${baseSlug}-${counter}`;
+  }
+}
+
+/** Ejecuta `run(slug)` reintentando con un slug nuevo si la DB responde 23505. */
+async function withUniqueProjectSlug<T>(
+  name: string,
+  userId: string,
+  run: (slug: string) => Promise<T>,
+  excludeId?: string,
+) {
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 0; ; attempt++) {
+    const slug = await uniqueProjectSlug(name, userId, excludeId, attempt);
+    try {
+      return await run(slug);
+    } catch (error) {
+      if (!isUniqueViolation(error) || attempt >= MAX_ATTEMPTS - 1) throw error;
+    }
+  }
+}
+
+/** Busca un slug libre en `project_sprites` dentro de un proyecto. */
+async function uniqueSpriteSlug(projectId: string, baseSlug: string, excludeId?: string) {
+  let slug = baseSlug;
+  let counter = 1;
+
+  for (;;) {
+    let query = supabase.from('project_sprites').select('id').eq('project_id', projectId).eq('slug', slug);
+    if (excludeId) query = query.neq('id', excludeId);
+    const { data } = await query.maybeSingle();
+    if (!data) return slug;
+    slug = `${baseSlug}-${counter++}`;
+  }
+}
+
 export function useCreateProject() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ name, config }: { name: string; config: import('@/lib/supabase').ProjectConfig }) => {
+    mutationFn: async ({ name, config }: { name: string; config: ProjectConfig }) => {
       if (!user) throw new Error('User not authenticated');
-      
-      const { slugify } = await import('@/lib/slugUtils');
-      let baseSlug = slugify(name) || 'untitled';
-      let slug = baseSlug;
-      let counter = 1;
-      let unique = false;
 
-      // Ensure slug uniqueness
-      while (!unique) {
-        const { data } = await supabase
+      return withUniqueProjectSlug(name, user.id, async (slug) => {
+        const { data, error } = await supabase
           .from('projects')
-          .select('id')
-          .eq('slug', slug)
-          .maybeSingle();
-        
-        if (!data) {
-          unique = true;
-        } else {
-          slug = `${baseSlug}-${counter++}`;
-        }
-      }
+          .insert([{ name, user_id: user.id, slug, config }])
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([{ name, user_id: user.id, slug, config }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Project;
+        if (error) throw error;
+        return data as Project;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
@@ -112,40 +176,23 @@ export function useCreateProject() {
 
 export function useUpdateProject() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { slugify } = await import('@/lib/slugUtils');
-      let baseSlug = slugify(name) || 'untitled';
-      let slug = baseSlug;
-      let counter = 1;
-      let unique = false;
+      if (!user) throw new Error('User not authenticated');
 
-      // Ensure slug uniqueness
-      while (!unique) {
-        const { data } = await supabase
+      return withUniqueProjectSlug(name, user.id, async (slug) => {
+        const { data, error } = await supabase
           .from('projects')
-          .select('id')
-          .eq('slug', slug)
-          .neq('id', id)
-          .maybeSingle();
-        
-        if (!data) {
-          unique = true;
-        } else {
-          slug = `${baseSlug}-${counter++}`;
-        }
-      }
+          .update({ name, slug })
+          .eq('id', id)
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from('projects')
-        .update({ name, slug })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Project;
+        if (error) throw error;
+        return data as Project;
+      }, id);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
@@ -157,77 +204,99 @@ export function useUpdateProject() {
 
 // --- Sprites Hooks ---
 
+/**
+ * Claves de `asset_data` que necesita el listado del workspace (miniatura, nombre, tags, clonado).
+ * Se excluye deliberadamente `versions`, que es lo que hace pesado el JSON.
+ */
+const LIST_ASSET_KEYS = [
+  'id', 'name', 'description', 'category', 'size', 'slug',
+  'palette', 'colorNames', 'frames', 'layers', 'animations', 'tags', 'anatomy',
+] as const;
+type ListAssetKey = typeof LIST_ASSET_KEYS[number];
+
+const SPRITE_LIST_SELECT = [
+  'id', 'slug', 'project_id', 'created_at', 'updated_at',
+  ...LIST_ASSET_KEYS.map(k => `asset_${k}:asset_data->${k}`),
+].join(', ');
+
+type SpriteListRow = {
+  id: string;
+  slug: string;
+  project_id: string;
+  created_at: string;
+  updated_at: string;
+} & Record<`asset_${ListAssetKey}`, Json | null>;
+
 export function useProjectSprites(projectId?: string) {
   return useQuery({
     queryKey: spriteKeys.lists(projectId || ''),
-    queryFn: async () => {
+    queryFn: async (): Promise<ProjectSprite[]> => {
       if (!projectId) return [];
       const { data, error } = await supabase
         .from('project_sprites')
-        .select('*')
+        .select(SPRITE_LIST_SELECT)
         .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .overrideTypes<SpriteListRow[], { merge: false }>();
 
       if (error) throw error;
-      return (data || []).map(s => {
-        const asset = deserializeAsset(s.asset_data);
-        return {
-          ...s,
-          asset_data: asset,
-          slug: asset.slug || s.id,
-          name: asset.name || 'Sin nombre'
-        };
-      }) as ProjectSprite[];
+      return (data || []).map(row => {
+        const dto: Record<string, Json> = {};
+        for (const key of LIST_ASSET_KEYS) {
+          const value = row[`asset_${key}`];
+          if (value !== null && value !== undefined) dto[key] = value;
+        }
+        return rowToProjectSprite(row, dto);
+      });
     },
     enabled: !!projectId,
   });
 }
 
-const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
 export function useSprite(idOrSlug?: string, projectId?: string) {
   return useQuery({
     queryKey: [...spriteKeys.detail(idOrSlug || ''), projectId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ProjectSprite | null> => {
       if (!idOrSlug) throw new Error('Sprite ID or Slug is required');
-      
-      const isIdUUID = isUUID(idOrSlug);
+
       const query = supabase.from('project_sprites').select('*');
-      
-      if (isIdUUID) {
+
+      if (isUUID(idOrSlug)) {
         query.eq('id', idOrSlug);
       } else {
-        // Search using the dedicated slug column (now confirmed to exist)
         query.eq('slug', idOrSlug);
-        
         // ONLY filter by project_id if it's a valid UUID to avoid Postgres errors
         if (projectId && isUUID(projectId)) {
           query.eq('project_id', projectId);
         }
       }
-      
+
       const { data, error } = await query.single();
       if (error) throw error;
       if (!data) return null;
 
-      let assetData = data.asset_data as any;
-      const rawJson = JSON.stringify(assetData);
+      let dto = fromJson<SpriteAssetDTO>(data.asset_data);
 
       // AUTO-CLEAN: If the sprite is massive (>1MB), purge history immediately on load
-      if (rawJson.length > 1024 * 1024) {
-        assetData.versions = [];
+      if (JSON.stringify(dto).length > MAX_LOAD_BYTES && dto.versions?.length) {
+        dto = { ...dto, versions: [] };
+        notifyVersionsPurged('cargar');
       }
 
-      const asset = deserializeAsset(assetData);
-      return {
-        ...data,
-        asset_data: asset,
-        slug: asset.slug || data.id,
-        name: asset.name || 'Sin nombre'
-      } as ProjectSprite;
+      return rowToProjectSprite(data, dto);
     },
     enabled: !!idOrSlug && (isUUID(idOrSlug) || (!!projectId && isUUID(projectId))),
   });
+}
+
+/** Aplica el slug al asset y descarta `versions` si el JSON supera el límite de guardado. */
+function prepareAssetForSave(asset: SpriteAsset, slug: string): SpriteAssetDTO {
+  const assetToSave: SpriteAsset = { ...asset, slug };
+  if (JSON.stringify(assetToSave).length > MAX_SAVE_BYTES && assetToSave.versions?.length) {
+    assetToSave.versions = [];
+    notifyVersionsPurged('guardar');
+  }
+  return serializeAsset(assetToSave);
 }
 
 export function useCreateSprite() {
@@ -236,54 +305,22 @@ export function useCreateSprite() {
   return useMutation({
     mutationFn: async ({ projectId, asset }: { projectId: string; asset: SpriteAsset }) => {
       // Generate initial slug for the sprite (scoped to project)
-      let baseSlug = createSpec('', asset.name || 'new sprite');
-      let slug = baseSlug;
-      let counter = 1;
-      let unique = false;
-
-      while (!unique) {
-        const { data } = await supabase
-          .from('project_sprites')
-          .select('id')
-          .eq('project_id', projectId)
-          .eq('slug', slug)
-          .maybeSingle();
-        
-        if (!data) {
-          unique = true;
-        } else {
-          slug = `${baseSlug}-${counter++}`;
-        }
-      }
-
-      const rawSize = JSON.stringify(asset).length;
-      let assetToSave = { 
-        ...asset,
-        slug: slug // Ensure slug is in the JSON
-      };
-      if (rawSize > 500 * 1024) assetToSave.versions = [];
-
-      const compressedAsset = serializeAsset(assetToSave);
+      const slug = await uniqueSpriteSlug(projectId, createSpec('', asset.name || 'new sprite'));
+      const compressedAsset = prepareAssetForSave(asset, slug);
 
       const { data, error: insertError } = await supabase
         .from('project_sprites')
-        .insert([{ 
-          project_id: projectId, 
-          asset_data: compressedAsset,
-          slug: slug // CRITICAL: Include the physical column
+        .insert([{
+          project_id: projectId,
+          asset_data: toJson(compressedAsset),
+          slug, // CRITICAL: Include the physical column
         }])
         .select()
         .single();
 
       if (insertError) throw insertError;
-      
-      const decompressedAsset = deserializeAsset(data.asset_data);
-      return {
-        ...data,
-        asset_data: decompressedAsset,
-        slug: decompressedAsset.slug || data.id,
-        name: decompressedAsset.name || 'Sin nombre'
-      } as ProjectSprite;
+
+      return rowToProjectSprite(data, data.asset_data);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: spriteKeys.lists(variables.projectId) });
@@ -299,68 +336,37 @@ export function useUpdateSprite() {
       // 1. Fetch current state to check if we need to update slug
       const { data: current } = await supabase
         .from('project_sprites')
-        .select('asset_data')
+        .select('slug, asset_data')
         .eq('id', id)
         .single();
-      
+
       const currentAsset = current?.asset_data ? deserializeAsset(current.asset_data) : null;
       const nameChanged = currentAsset?.name !== asset.name;
-      
-      // Determine the slug
-      let slug = currentAsset?.slug || id;
-      
-      if (nameChanged) {
-        let baseSlug = createSpec(id, asset.name);
-        slug = baseSlug;
-        let counter = 1;
-        let unique = false;
 
-        while (!unique) {
-          const { data } = await supabase
-            .from('project_sprites')
-            .select('id')
-            .eq('project_id', projectId)
-            .eq('slug', slug)
-            .neq('id', id)
-            .maybeSingle();
-          
-          if (!data) {
-            unique = true;
-          } else {
-            slug = `${baseSlug}-${counter++}`;
-          }
-        }
+      // Determine the slug
+      let slug = current?.slug || currentAsset?.slug || id;
+      if (nameChanged) {
+        slug = await uniqueSpriteSlug(projectId, createSpec(id, asset.name), id);
       }
 
       // 2. Prepare asset to save with the correct slug and size safety
-      let assetToSave = { 
-        ...asset,
-        slug: slug // Sync the slug into the JSON
-      };
-      
-      const rawSize = JSON.stringify(assetToSave).length;
-
-      if (rawSize > 500 * 1024) {
-        assetToSave.versions = [];
-      }
-
-      const compressedAsset = serializeAsset(assetToSave);
+      const compressedAsset = prepareAssetForSave(asset, slug);
 
       // 3. Perform the update
       const { error } = await supabase
         .from('project_sprites')
-        .update({ 
-          asset_data: compressedAsset,
-          slug: slug // CRITICAL: Sync the physical column
+        .update({
+          asset_data: toJson(compressedAsset),
+          slug, // CRITICAL: Sync the physical column
         })
         .eq('id', id);
 
       if (error) throw error;
-      
-      return { 
-        slugChanged: nameChanged, 
+
+      return {
+        slugChanged: nameChanged,
         newSlug: slug,
-        id 
+        id
       };
     },
     onSuccess: (data, variables) => {
@@ -377,7 +383,7 @@ export function useDeleteSprite() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
+    mutationFn: async ({ id }: { id: string; projectId: string }) => {
       const { error } = await supabase
         .from('project_sprites')
         .delete()

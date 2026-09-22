@@ -58,9 +58,8 @@ export const createPaletteSlice: StoreSlice<Partial<SpriteEditorState>> = (set, 
       },
     });
 
-    const bridge = get()._pixelEditorBridge;
-    if (bridge && bridge.activeColorKey === key) {
-      bridge.setActiveColorKey(1);
+    if (get().activeColorKey === key) {
+      set({ activeColorKey: 1 });
     }
   },
 

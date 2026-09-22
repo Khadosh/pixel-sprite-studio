@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 interface AuthContextType {
@@ -14,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,27 +35,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecoveryMode(true);
+
+      switch (event) {
+        case 'PASSWORD_RECOVERY':
+          setIsRecoveryMode(true);
+          break;
+        case 'TOKEN_REFRESHED':
+          // La sesión nueva ya quedó seteada arriba; los hooks que leen `session.access_token`
+          // (IA, queries) usan el token fresco en la próxima llamada.
+          break;
+        case 'SIGNED_OUT':
+          // Sesión cerrada (manual o por JWT expirado): no dejar datos del usuario anterior en caché.
+          setIsRecoveryMode(false);
+          queryClient.clear();
+          break;
+        default:
+          break;
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user, 
-      isLoading, 
-      isRecoveryMode, 
-      signOut, 
-      setRecoveryMode: setIsRecoveryMode 
+    <AuthContext.Provider value={{
+      session,
+      user,
+      isLoading,
+      isRecoveryMode,
+      signOut,
+      setRecoveryMode: setIsRecoveryMode
     }}>
       {children}
     </AuthContext.Provider>

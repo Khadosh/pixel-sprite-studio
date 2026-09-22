@@ -17,8 +17,9 @@ import { createExportSlice } from './slices/exportSlice';
 import { createAnatomySlice } from './slices/anatomySlice';
 import { serializeAsset, deserializeAsset } from '@/lib/spriteDto';
 import { decompressState } from '@/lib/storageCompression';
+import { hashAssetSource } from '@/lib/hashUtils';
 
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
 export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions) {
   const DEFAULT_THEORY_PALETTE = ['#1a0c24', '#4c1e3d', '#9e3a39', '#e87e35', '#ffce5e', '#fff1c7', '#141013', '#2b1b36', '#4e2d4d', '#7d4a41', '#b37748', '#e3a857', '#fee27d', '#3e3546', '#44a362', '#91db69'];
@@ -40,6 +41,11 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
   }
 
   const migrated = ensureLayerSupport(initialAsset);
+
+  // Huella del asset de origen (tal como vino de la DB / del caller). Si al rehidratar
+  // el snapshot local fue creado a partir de otro asset, se descarta.
+  const sourceHash = hashAssetSource(options.initialAsset);
+  const storageKey = `pps-editor-${options.initialAsset.id || `new-${options.projectId || 'sin-proyecto'}`}`;
 
   return createStore<SpriteEditorState>()(
     persist(
@@ -102,6 +108,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         mirrorX: false,
         isIconMode: options.isIconMode,
         iconId: options.iconId,
+        _sourceHash: sourceHash,
 
         // Props from parent
         projectId: options.projectId,
@@ -117,7 +124,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         _pixelEditorBridge: null,
       } as SpriteEditorState),
       {
-        name: `pps-editor-${options.initialAsset.id || 'new'}`,
+        name: storageKey,
         storage: {
           getItem: (name: string) => {
             const raw = localStorage.getItem(name);
@@ -132,7 +139,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
                 }
               }
               return data;
-            } catch (e) {
+            } catch {
               return null;
             }
           },
@@ -162,7 +169,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
                   }
                 }
                 saveToStorage(value);
-              } catch (e2) {
+              } catch {
                 // Fallback 2: Clear history versions of CURRENT asset
                 try {
                   const desperateValue = JSON.parse(JSON.stringify(value));
@@ -170,7 +177,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
                     desperateValue.state.editedAsset.versions = [];
                   }
                   saveToStorage(desperateValue);
-                } catch (e3) {
+                } catch {
                   // Silent fail if disk is completely full
                 }
               }
@@ -182,8 +189,21 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
           editedAsset: state.editedAsset, 
           isDirty: state.isDirty,
           assetName: state.assetName,
-          canvasBg: state.canvasBg
+          canvasBg: state.canvasBg,
+          _sourceHash: state._sourceHash,
         } as any),
+        merge: (persisted, current) => {
+          const snapshot = persisted as Partial<SpriteEditorState> | undefined;
+          if (!snapshot) return current;
+          if (snapshot._sourceHash !== current._sourceHash) {
+            console.warn(
+              `[Editor] Se descartó el borrador local de "${storageKey}": el sprite cambió en la base de datos ` +
+              `desde que se guardó el borrador (o el borrador es de una versión anterior de la app).`
+            );
+            return current;
+          }
+          return { ...current, ...snapshot };
+        },
       }
     )
   );
