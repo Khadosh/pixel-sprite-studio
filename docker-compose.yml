@@ -1,0 +1,18 @@
+# Frontend en Docker. El backend (Supabase) se levanta aparte con `supabase start`,
+# que administra sus propios contenedores. El browser habla con ambos desde el host.
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      # Bind mounts en macOS no siempre propagan eventos de archivos; polling asegura el hot reload.
+      CHOKIDAR_USEPOLLING: "true"

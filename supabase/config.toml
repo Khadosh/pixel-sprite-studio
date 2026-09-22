@@ -1,5 +1,29 @@
 project_id = "ejpdzlerrcoisajmotcz"
 
+# Puertos desplazados (+100) para convivir con otros proyectos Supabase locales.
+[api]
+port = 54421
+
+[db]
+port = 54422
+shadow_port = 54420
+
+[db.pooler]
+port = 54429
+
+[studio]
+port = 54423
+
+[inbucket]
+port = 54424
+
+[analytics]
+port = 54427
+
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080"]
+
 [functions.generate-sprite-fal]
 verify_jwt = false
 
@@ -7,4 +31,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-animation]
+verify_jwt = false
+
+[functions.generate-perspective-fal]
 verify_jwt = false

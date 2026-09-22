@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets (ver .env.example y supabase/functions/.env.example)
+.env
+!.env.example

@@ -4,7 +4,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-05-07 (Hoy)
+## 2026-09-22 (Hoy)
+**1 commit realizado**
+
+- **Infra**: **Stack local completo con Docker + Supabase CLI**. Añadidos `Dockerfile`, `docker-compose.yml` y `.dockerignore` para correr el frontend en un contenedor con hot reload. `supabase/config.toml` ahora define puertos propios (54421-54429) para convivir con otros proyectos Supabase locales, y habilita las cuatro Edge Functions en local.
+- **Seguridad**: **Higiene de secrets**. `.env` dejó de estar versionado (solo se commitean los `.env.example`), se eliminó el prefijo `VITE_` del connection string de Postgres (Vite lo habría expuesto al browser) y el cliente de Supabase generado por Lovable ya no tiene URL ni anon key hardcodeadas: lee `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` como el resto del código, lo que permite apuntar a local o nube cambiando solo `.env.local`.
+- **Docs**: Sección "Local stack" en el README con comandos, tabla de puertos y modelo de secrets (frontend vs Edge Functions, local vs nube).
+
+---
+
+## 2026-05-07
 **1 commit realizado**
 
 - **Proyecto**: **Sistema de Configuración de Proyectos (ProjectConfig)**. Implementado flujo de trabajo basado en reglas globales de proyecto. Ahora, al crear un "Nuevo Mundo", se define la direccionalidad (1-Way vs 4-Way) y la estética (8-Bit, Fantasy, Gameboy, etc.). Estas reglas persisten en la base de datos y gobiernan dinámicamente todo el estudio.
