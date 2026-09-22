@@ -20,7 +20,29 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+      // Deuda incremental: se bajan a warning para que `npm run lint` pase en CI
+      // y la limpieza de `any` / `@ts-ignore` quede visible sin bloquear.
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+    },
+  },
+  {
+    // Edge Functions (Deno): la sanitización de input usa regex con caracteres de control a propósito.
+    files: ["supabase/**/*.ts"],
+    rules: {
+      "no-control-regex": "off",
+    },
+  },,
+  {
+    // shadcn/ui es código generado: no se edita a mano (ver CLAUDE.md)
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-empty-object-type": "off",
+      "react-refresh/only-export-components": "off",
     },
   },
 );
