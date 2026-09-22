@@ -27,9 +27,6 @@ additional_redirect_urls = ["http://localhost:8080", "http://127.0.0.1:8080"]
 [functions.generate-sprite-fal]
 verify_jwt = false
 
-[functions.generate-sprite]
-verify_jwt = false
-
 [functions.generate-animation]
 verify_jwt = false
 
