@@ -32,15 +32,11 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      # El package.json de la raíz hace que Deno busque los npm: en node_modules; se desactiva explícitamente.
       - name: Type-check
         run: |
           for f in supabase/functions/*/index.ts; do
-            echo "== $f"; deno check "$f"
+            echo "== $f"; deno check --node-modules-dir=none --config "$(dirname "$f")/deno.json" "$f"
           done
       - name: Tests de _shared
-        run: |
-          if ls supabase/functions/_shared/*_test.ts >/dev/null 2>&1; then
-            deno test supabase/functions/_shared/
-          else
-            echo "sin tests de _shared"
-          fi
+        run: deno test --node-modules-dir=none supabase/functions/_shared/

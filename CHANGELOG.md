@@ -5,7 +5,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-09-22 (Hoy)
-**7 commits realizados**
+**10 commits realizados**
+
+- **Fix**: **CI en verde**. Corregida una coma duplicada en `eslint.config.js` que rompía el lint en Node 20, `deno check` con la config de cada función y sin `node_modules`, `.claude` ignorado por ESLint y `tailwind.config.ts` sin `require()`.
 
 - **Seguridad**: **Edge Functions con autenticación obligatoria y cuota atómica**. Nuevo `supabase/functions/_shared/` (auth, cuota, validación, CORS configurable, timeouts, parseo de LLM). Las tres funciones vivas (`generate-sprite-fal`, `generate-perspective-fal`, `generate-animation`) verifican el JWT antes de cualquier llamada externa, validan el input, consumen la cuota diaria mediante el RPC `increment_ai_usage` (atómico, verificado con 15 llamadas concurrentes) y responden errores sin filtrar detalles internos. Se eliminó `generate-sprite` (Gemini), que ningún cliente invocaba. 17 tests con `deno test`.
 - **DB**: **Migración de robustez**. Slug de proyecto único por usuario (`UNIQUE (user_id, slug)`), `updated_at` con trigger en `projects` y `project_sprites`, límite de 2 MB en `asset_data`, políticas RLS reescritas con `(select auth.uid())` y `EXISTS`. Verificado aislamiento entre usuarios con psql.
