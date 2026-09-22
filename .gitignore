@@ -26,3 +26,7 @@ dist-ssr
 # Secrets (ver .env.example y supabase/functions/.env.example)
 .env
 !.env.example
+
+# Scratch local
+scratch/
+deno.lock

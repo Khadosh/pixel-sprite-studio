@@ -295,7 +295,7 @@ export function medianCut(colors: RGB[], maxColors: number): RGB[] {
 
   // Build initial bucket with weighted entries
   type Bucket = { entries: { color: RGB; count: number }[] };
-  let buckets: Bucket[] = [{ entries: uniqueEntries }];
+  const buckets: Bucket[] = [{ entries: uniqueEntries }];
 
   while (buckets.length < maxColors) {
     // Find bucket with the largest color range to split

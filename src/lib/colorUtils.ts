@@ -76,7 +76,8 @@ export function hexToRgb(hex: string) {
 export function rgbToHsl(r: number, g: number, b: number) {
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s, l = (max + min) / 2;
+  let h = 0, s;
+  const l = (max + min) / 2;
 
   if (max === min) {
     h = s = 0; // achromatic

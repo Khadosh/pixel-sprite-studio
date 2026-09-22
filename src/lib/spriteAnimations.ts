@@ -10,19 +10,13 @@ import {
   generateDie,
   generateRun,
   generateJump,
-  analyzeBodySegments,
-  leanBody,
-  squash,
   shiftDown,
-  shiftRight,
-  findBounds,
   getCenterOfMass,
   drawCircle,
   drawBurst,
   drawBeam,
   drawSparks,
   drawPulse,
-  inferMainColorIndex,
   flipHorizontal,
   generateWalkTopDown,
   generateAttackTopDown,
@@ -31,7 +25,6 @@ import {
   cloneFrame,
   shiftPixels,
   stretchPixels,
-  rotatePixels,
 } from '@/lib/spriteTransforms';
 
 /**
@@ -132,7 +125,6 @@ export function generateAdvancedCastSequence(
   const { updatedAsset, colors } = getElementalColors(asset, settings.element);
   const { main, light, dark } = colors;
   
-  const bounds = findBounds(baseFrame);
   const com = getCenterOfMass(baseFrame) || { r: size / 2, c: size / 2 };
 
   // 3. Finalize Effect Layer Palette
@@ -145,7 +137,7 @@ export function generateAdvancedCastSequence(
 
   // 4. Randomization (if selected)
   let shape = settings.shape;
-  let randomizedOrigin = { r: com.r - 2, c: com.c + 4 };
+  const randomizedOrigin = { r: com.r - 2, c: com.c + 4 };
   if (shape === 'random') {
     const shapes: CastShape[] = ['circle', 'burst', 'beam', 'spark', 'pulse'];
     shape = shapes[Math.floor(Math.random() * shapes.length)];
@@ -153,13 +145,6 @@ export function generateAdvancedCastSequence(
     randomizedOrigin.r += (Math.random() - 0.5) * 4;
     randomizedOrigin.c += (Math.random() - 0.5) * 4;
   }
-  // Pre-calculate composite frame for anatomy analysis
-  const compositeFrame = layers.filter(l => l.isVisible).reduce((acc, l) => {
-    const f = l.frames[options?.baseIndex ?? 0] || l.frames[0];
-    return acc.map((r, ri) => r.map((c, ci) => c || f[ri][ci]));
-  }, Array.from({ length: size }, () => Array(size).fill(0)));
-  const segments: import('@/lib/sprite/anatomy').BodySegments = analyzeBodySegments(compositeFrame, asset.anatomy);
-
   // Define 6 frames for all layers
   for (let i = 0; i < 6; i++) {
     layers.forEach((layer, lIdx) => {

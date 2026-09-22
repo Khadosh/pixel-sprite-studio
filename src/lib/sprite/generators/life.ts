@@ -29,7 +29,7 @@ export function generateHurt(
   if (leg_right) f1 = shiftPixels(base, f1, leg_right.pixels, 0, 0);
   
   // 2. RECOVERY: Settle down
-  let f2 = shiftFrame(base, 1, -1);
+  const f2 = shiftFrame(base, 1, -1);
   
   return [base, f1, f2, base];
 }
@@ -70,7 +70,7 @@ export function generateDie(
   if (leg_right) f2 = shiftPixels(base, f2, leg_right.pixels, 4, 2);
 
   // 3. FLAT: Extreme squash / Grounded
-  let f3 = squash(f2, [Math.floor(base.length * 0.8), Math.floor(base.length * 0.9)]);
+  const f3 = squash(f2, [Math.floor(base.length * 0.8), Math.floor(base.length * 0.9)]);
   
   return [f1, f2, f3];
 }
