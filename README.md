@@ -4,7 +4,7 @@ Pixel Sprite Studio is a browser-based pixel art editor with AI-assisted sprite 
 
 ## ✨ Features
 
-- **AI Generation** — Create base characters and professional animation frames via Google Gemini 2.5 Flash.
+- **AI Generation** — Create base characters and perspectives via fal.ai (Flux, Seedream) and animation frames via Google Gemini, all through Supabase Edge Functions with a daily quota.
 - **Layer System** — Full layer management with visibility, lock, and opacity controls.
 - **Advanced Selection** — Rectangular selection with move, free rotation, and nearest-neighbor resizing.
 - **Procedural Animations** — Generate FX layers (Fire, Water, Electric) and base animations (Idle, Walk, Attack) procedurally.
@@ -22,7 +22,7 @@ Pixel Sprite Studio is a browser-based pixel art editor with AI-assisted sprite 
 | **State Management** | [Zustand](https://zustand-demo.pmnd.rs/) + [TanStack Query v5](https://tanstack.com/query) |
 | **Styling** | [Tailwind CSS 3](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
 | **Backend** | [Supabase](https://supabase.com) (Auth, DB, Edge Functions) |
-| **AI Engine** | [Google Gemini 2.5 Flash](https://deepmind.google/technologies/gemini/) |
+| **AI Engine** | [fal.ai](https://fal.ai) (sprites, perspectives) + [Google Gemini](https://deepmind.google/technologies/gemini/) (animations) |
 | **Drag & Drop** | [dnd-kit](https://dndkit.com) |
 | **GIF Export** | [omggif](https://github.com/deanm/omggif) |
 | **Testing** | [Vitest](https://vitest.dev) + [Playwright](https://playwright.dev) |
@@ -32,7 +32,7 @@ Pixel Sprite Studio is a browser-based pixel art editor with AI-assisted sprite 
 ### Prerequisites
 
 - **Node.js** ≥ 18
-- **npm** or **bun**
+- **npm** (the only supported package manager)
 
 ### Installation
 
@@ -93,23 +93,29 @@ Stop everything with `docker compose down` and `supabase stop`.
 
 ```
 src/
+├── pages/
+│   ├── SpriteStudio.tsx        # The editor page
+│   └── ProjectWorkspace.tsx    # Project page (sprite list, AI wizard)
 ├── components/
-│   ├── SpriteEditor/       # Main editor root and logic
-│   │   ├── components/     # Specialized UI (Layers, Timeline, Palette)
-│   │   ├── store/          # Zustand store (Global Editor State)
-│   │   └── hooks/          # Modular action hooks
-│   ├── ui/                 # shadcn/ui shared components
-│   └── ...                 # Other shared components (Toolbar, Preview)
-├── hooks/
-│   ├── use-pixel-editor.ts # Drawing logic (brush, fill, transforms)
-│   └── use-project-queries.ts # CRUD logic via TanStack Query
+│   ├── SpriteEditor/
+│   │   ├── store/slices/       # Zustand slices (layers, frames, palette, export, history, anatomy...)
+│   │   ├── components/         # Editor UI (EditorHeader, ExportMenu, Layers, Timeline, Palette...)
+│   │   └── hooks/              # Bridges between the store and the AI hooks
+│   ├── ui/                     # shadcn/ui generated components
+│   └── ...                     # Canvas, preview, toolbar
+├── hooks/                      # Drawing logic, TanStack Query hooks, AI hooks, auth
 ├── lib/
-│   ├── types.ts            # Core data contracts (SpriteAsset, Frame)
-│   ├── layerUtils.ts       # Compositing and layer manipulation
-│   └── spriteAnimations.ts # Procedural animation logic
-├── pages/                  # Route level components
-└── integrations/           # External service configurations (Supabase)
+│   ├── types.ts                # Core data contracts (SpriteAsset, Frame)
+│   ├── supabase.ts             # Typed Supabase client and DB row types
+│   ├── sprite/                 # Anatomy engine and procedural generators
+│   └── spriteDto.ts            # RLE + delta compression
+supabase/
+├── functions/_shared/          # Auth, quota, validation, timeouts shared by all Edge Functions
+├── functions/generate-*/       # Edge Functions (fal.ai, Gemini)
+└── migrations/                 # Schema, RLS, atomic quota RPC
 ```
+
+See `AGENTS.md` for the architecture in depth and `AUDIT_TECNICA.md` for the current state and plan.
 
 ## 🎨 Sprite Data Format
 

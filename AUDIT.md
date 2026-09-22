@@ -2,6 +2,7 @@
 
 > Generado: 2026-04-08  
 > Objetivo: Análisis FODA, brechas de producto, benchmarking competitivo y estrategia de monetización.
+> Ver también `AUDIT_TECNICA.md` (2026-09-22): auditoría de código, backend, seguridad y deuda técnica.
 
 ---
 

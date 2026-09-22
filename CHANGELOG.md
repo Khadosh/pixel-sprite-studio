@@ -5,7 +5,22 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-09-22 (Hoy)
-**1 commit realizado**
+**7 commits realizados**
+
+- **Seguridad**: **Edge Functions con autenticación obligatoria y cuota atómica**. Nuevo `supabase/functions/_shared/` (auth, cuota, validación, CORS configurable, timeouts, parseo de LLM). Las tres funciones vivas (`generate-sprite-fal`, `generate-perspective-fal`, `generate-animation`) verifican el JWT antes de cualquier llamada externa, validan el input, consumen la cuota diaria mediante el RPC `increment_ai_usage` (atómico, verificado con 15 llamadas concurrentes) y responden errores sin filtrar detalles internos. Se eliminó `generate-sprite` (Gemini), que ningún cliente invocaba. 17 tests con `deno test`.
+- **DB**: **Migración de robustez**. Slug de proyecto único por usuario (`UNIQUE (user_id, slug)`), `updated_at` con trigger en `projects` y `project_sprites`, límite de 2 MB en `asset_data`, políticas RLS reescritas con `(select auth.uid())` y `EXISTS`. Verificado aislamiento entre usuarios con psql.
+- **Refactor**: **Header único del editor**. `EditorHeader` con props `variant`, `backTo` y `syncStatus` reemplaza al header duplicado de `SpriteStudio`. `ExportMenu` e `ImportButton` compartidos: una sola fuente para exportar e importar. Renombrado con doble click y estado en el store; guardar crea checkpoint en ambos contextos.
+- **Refactor**: **Cliente Supabase único y tipado**. `src/lib/supabase.ts` usa `createClient<Database>` y deriva `Project`/`ProjectSprite` del esquema; `toJson`/`fromJson` son la única frontera JSONB. Eliminado el cliente huérfano de `integrations/`. Los cuatro hooks de IA pasan por `invokeAiFunction`, que exige sesión.
+- **Fix**: **Sesión expirada, snapshot local y listados**. Manejo global de 401/JWT expirado en `QueryClient` con signOut y toast; el snapshot de localStorage lleva un hash del asset origen y se descarta si la DB es más nueva; el listado de sprites ya no descarga `versions`; la purga de historial avisa con un toast en vez de ser silenciosa. Slug de proyecto con reintento ante 23505.
+- **Fix**: Corregidas 3 violaciones de `rules-of-hooks` (`useGenerateSpriteFal`, `IconPreview`) y los 2 errores de `tsc` preexistentes.
+- **Chore**: **Limpieza**. Borrados 5 archivos muertos de `src/`, 30 componentes shadcn sin uso, 25 dependencias huérfanas (59 → 34), `scratch/`, `.lovable/` y los lockfiles de bun. `npm audit fix` reduce las vulnerabilidades de 27 a 6 sin cambios breaking. `package.json` pasa a `pixel-sprite-studio@0.1.0` con `packageManager: npm`.
+- **Infra**: **CI en GitHub Actions**: lint, `tsc`, tests, build y `deno check` de las Edge Functions en cada push y PR. ESLint con `no-unused-vars` activo y `no-explicit-any`/`ban-ts-comment` como warnings (deuda visible: 183 warnings).
+- **Docs**: **`AGENTS.md` reescrito contra el código real** (slices de Zustand, `SpriteStudio` como editor principal, fal.ai + Gemini, cliente único, contratos de las Edge Functions). README con proveedores de IA correctos y estructura actualizada.
+
+- **Docs**: **Auditoría técnica para retomar el proyecto** (`AUDIT_TECNICA.md`). Cronología de la duplicación del header del editor (commit `1b0e1b8`), inventario de código muerto y dependencias sin uso, hallazgos de seguridad en Edge Functions (dos funciones de fal.ai sin autenticación, límite diario eludible por concurrencia), desincronización de `CLAUDE.md` con la arquitectura real de slices, y plan de retoma en 5 fases.
+- **Fix**: **`.dockerignore` con `**/.env`**. La imagen de Docker incluía `supabase/functions/.env` porque el patrón `.env` solo matchea en la raíz del contexto.
+
+- **Export**: **PNG del layer actual**. Nueva opción en el menú EXPORTAR que descarga solo el layer activo en el frame que se está editando como imagen estática, sin componer con el resto de los layers y a opacidad completa. El nombre del archivo incluye el asset, el layer y el índice de frame.
 
 - **Infra**: **Stack local completo con Docker + Supabase CLI**. Añadidos `Dockerfile`, `docker-compose.yml` y `.dockerignore` para correr el frontend en un contenedor con hot reload. `supabase/config.toml` ahora define puertos propios (54421-54429) para convivir con otros proyectos Supabase locales, y habilita las cuatro Edge Functions en local.
 - **Seguridad**: **Higiene de secrets**. `.env` dejó de estar versionado (solo se commitean los `.env.example`), se eliminó el prefijo `VITE_` del connection string de Postgres (Vite lo habría expuesto al browser) y el cliente de Supabase generado por Lovable ya no tiene URL ni anon key hardcodeadas: lee `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` como el resto del código, lo que permite apuntar a local o nube cambiando solo `.env.local`.
