@@ -43,7 +43,7 @@ function describe(name?: string): string {
   ].join('\n');
 }
 
-export function main(argv: string[]): number {
+export async function main(argv: string[]): Promise<number> {
   const [name, ...rest] = argv;
   if (!name || name === 'help' || name === '--help' || name === '-h') {
     console.log(describe(rest[0]));
@@ -56,7 +56,7 @@ export function main(argv: string[]): number {
     args = parseKeyValues(rest);
   }
   try {
-    const result = runCommand(name, args);
+    const result = await runCommand(name, args);
     if (result.text !== undefined) console.log(result.text);
     else console.log(JSON.stringify(result.data, null, 1));
     return 0;
@@ -67,5 +67,5 @@ export function main(argv: string[]): number {
 }
 
 if (process.argv[1] && /cli\.(ts|js)$/.test(process.argv[1])) {
-  process.exit(main(process.argv.slice(2)));
+  main(process.argv.slice(2)).then(code => process.exit(code));
 }

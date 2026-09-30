@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,6 +13,7 @@ import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 import { importCharacter } from './character';
 import { animateAsset } from './animate';
+import { generateImage, loadFalKey, pixelize } from './ai';
 
 let dir: string;
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'pss-')); });
@@ -241,6 +242,53 @@ describe('animate', () => {
   });
 });
 
+describe('ai', () => {
+  it('pixelizes a lime-green-backed image into a small asset and fits it to a palette', async () => {
+    // 64x64: green background, a red square in the middle with a blue dot.
+    const w = 64, img = { width: w, height: w, data: new Uint8Array(w * w * 4) };
+    for (let i = 0; i < w * w; i++) img.data.set([0, 255, 0, 255], i * 4);
+    for (let y = 16; y < 48; y++) for (let x = 16; x < 48; x++) img.data.set([200, 30, 30, 255], (y * w + x) * 4);
+    for (let y = 28; y < 36; y++) for (let x = 28; x < 36; x++) img.data.set([30, 30, 200, 255], (y * w + x) * 4);
+    const a = pixelize(img, { id: 'p', size: 16, maxColors: 4 });
+    const f = composite(a, 0);
+    expect(f[0][0]).toBe(0);
+    expect(f[8][8]).not.toBe(0);
+    expect(f[5][5]).not.toBe(0);
+    expect(f[5][5]).not.toBe(f[8][8]);
+    const table = fitPalette(a, ['#ff0000', '#0000ff']);
+    expect(table.every(t => ['#ff0000', '#0000ff'].includes(t.to))).toBe(true);
+  });
+
+  it('generate builds the technical prompt and downloads the first image, with an injected fetch', async () => {
+    const calls: string[] = [];
+    const fake = (async (url: string, init?: RequestInit) => {
+      calls.push(url);
+      if (url.startsWith('https://fal.run/')) {
+        const body = JSON.parse(String(init?.body));
+        expect(body.prompt).toContain('LIME GREEN');
+        expect(body.prompt).toContain('a monk');
+        expect(init?.headers).toMatchObject({ Authorization: 'Key k' });
+        return new Response(JSON.stringify({ images: [{ url: 'https://img.test/1.png' }] }), { status: 200 });
+      }
+      return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
+    }) as unknown as typeof fetch;
+    const out = await generateImage({ prompt: 'a monk' }, 'k', fake);
+    expect(out.model).toBe('fal-ai/flux/schnell');
+    expect([...out.bytes]).toEqual([1, 2, 3]);
+    expect(calls).toEqual(['https://fal.run/fal-ai/flux/schnell', 'https://img.test/1.png']);
+  });
+
+  it('loadFalKey reads the env file without printing it', () => {
+    const envFile = join(dir, '.env');
+    writeFileSync(envFile, 'GEMINI_API_KEY=\nFAL_AI_KEY=abc:def\n');
+    const prev = process.env.FAL_AI_KEY;
+    delete process.env.FAL_AI_KEY;
+    expect(loadFalKey(envFile)).toBe('abc:def');
+    expect(() => loadFalKey(join(dir, 'nope'))).toThrow(/FAL_AI_KEY/);
+    if (prev !== undefined) process.env.FAL_AI_KEY = prev;
+  });
+});
+
 describe('render', () => {
   it('hex helpers cover short, long and alpha forms', () => {
     expect(hexToRgba('#f00')).toEqual([255, 0, 0, 255]);
@@ -268,16 +316,16 @@ describe('palettes', () => {
     expect(table.find(t => t.index === 1)!.distance).toBeGreaterThan(0);
   });
 
-  it('palette map recolors by value and palette_show renders swatches', () => {
+  it('palette map recolors by value and palette_show renders swatches', async () => {
     const path = join(dir, 'p.pss.json');
-    runCommand('new', { path, width: 2, palette: ['#ff0000', '#ff0000', '#00ff00'] });
-    runCommand('palette', { path, map: { '#ff0000': '#0000ff' } });
+    await runCommand('new', { path, width: 2, palette: ['#ff0000', '#ff0000', '#00ff00'] });
+    await runCommand('palette', { path, map: { '#ff0000': '#0000ff' } });
     expect(loadAsset(path).palette).toEqual({ 1: '#0000ff', 2: '#0000ff', 3: '#00ff00' });
-    const shown = runCommand('palette_show', { path, cell: 8 });
+    const shown = await runCommand('palette_show', { path, cell: 8 });
     expect(shown.png!.length).toBeGreaterThan(50);
     const target = join(dir, 't.pss.json');
-    runCommand('new', { path: target, width: 1, palette: ['#000080', '#008000'] });
-    const fit = runCommand('palette_fit', { path, target }).data as { moved: number; asset: { palette: Record<number, string> } };
+    await runCommand('new', { path: target, width: 1, palette: ['#000080', '#008000'] });
+    const fit = (await runCommand('palette_fit', { path, target })).data as { moved: number; asset: { palette: Record<number, string> } };
     expect(fit.moved).toBe(3);
     expect(fit.asset.palette).toEqual({ 1: '#000080', 2: '#000080', 3: '#008000' });
   });
@@ -290,26 +338,26 @@ describe('commands', () => {
     for (const c of commands) expect(c.description.length).toBeGreaterThan(10);
   });
 
-  it('validates arguments and names the field', () => {
-    expect(() => runCommand('new', { path: join(dir, 'x.pss.json') })).toThrow(/width/);
-    expect(() => runCommand('nope', {})).toThrow(/unknown command/);
+  it('validates arguments and names the field', async () => {
+    await expect(runCommand('new', { path: join(dir, 'x.pss.json') })).rejects.toThrow(/width/);
+    await expect(runCommand('nope', {})).rejects.toThrow(/unknown command/);
   });
 
-  it('chains new → fx_anim → export_sheet → import_sheet from the registry', () => {
+  it('chains new → fx_anim → export_sheet → import_sheet from the registry', async () => {
     const path = join(dir, 'golpe.pss.json');
-    runCommand('new', { path, width: 16, palette: ['#ffd27a', '#ff8a3d', '#a83a29'] });
-    runCommand('fx_anim', { path, name: 'technique', shape: 'burst', frames: 4, color: 2, light: 1, dark: 3 });
+    await runCommand('new', { path, width: 16, palette: ['#ffd27a', '#ff8a3d', '#a83a29'] });
+    await runCommand('fx_anim', { path, name: 'technique', shape: 'burst', frames: 4, color: 2, light: 1, dark: 3 });
     const out = join(dir, 'golpe.png');
-    const exported = runCommand('export_sheet', { path, out }).data as { frames: number; tags: string[] };
+    const exported = (await runCommand('export_sheet', { path, out })).data as { frames: number; tags: string[] };
     expect(exported.frames).toBe(4);
     expect(exported.tags).toEqual(['technique 0-3']);
     expect(existsSync(join(dir, 'golpe.json'))).toBe(true);
     const meta = JSON.parse(readFileSync(join(dir, 'golpe.json'), 'utf8'));
     expect(meta.meta.image).toBe('golpe.png');
     expect(readPng(out).width).toBe(64);
-    const back = runCommand('import_sheet', { png: out, out: join(dir, 'back.pss.json'), frame_width: 16, frame_height: 16 }).data as { grid: { columns: number } };
+    const back = (await runCommand('import_sheet', { png: out, out: join(dir, 'back.pss.json'), frame_width: 16, frame_height: 16 })).data as { grid: { columns: number } };
     expect(back.grid.columns).toBe(4);
-    const render = runCommand('render', { path, scale: 2 });
+    const render = await runCommand('render', { path, scale: 2 });
     expect(render.png!.length).toBeGreaterThan(100);
   });
 
@@ -318,13 +366,13 @@ describe('commands', () => {
     expect(out).toContain('animate');
   });
 
-  it('the CLI parses key=value and JSON forms', () => {
+  it('the CLI parses key=value and JSON forms', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const path = join(dir, 'c.pss.json');
-    expect(cliMain(['new', `path=${path}`, 'width=4', 'palette=["#fff"]'])).toBe(0);
-    expect(cliMain(['draw', JSON.stringify({ path, frame: 0, ops: [{ op: 'pixel', x: 1, y: 1, color: 1 }] })])).toBe(0);
+    expect(await cliMain(['new', `path=${path}`, 'width=4', 'palette=["#fff"]'])).toBe(0);
+    expect(await cliMain(['draw', JSON.stringify({ path, frame: 0, ops: [{ op: 'pixel', x: 1, y: 1, color: 1 }] })])).toBe(0);
     expect(loadAsset(path).layers![0].frames[0][1][1]).toBe(1);
-    expect(cliMain(['draw', `path=${path}`])).toBe(1);
+    expect(await cliMain(['draw', `path=${path}`])).toBe(1);
   });
 });

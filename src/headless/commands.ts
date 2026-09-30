@@ -14,12 +14,15 @@ import {
   getFrame, loadAsset, normalizeHex, removeAnimation, removeFrame, saveAsset, setAnimation, setFrame, summarize,
 } from './asset';
 import { encodePng, writePng } from './png';
+import { fitPalette } from './ops';
 import { asciiLegend, contactSheet, paletteSheet, renderAscii, renderFrame } from './render';
 import { exportSheet, importSheet } from './sheet';
 import { importCharacter } from './character';
 import { ANIMATION_KINDS, animateAsset } from './animate';
+import { generateImage, loadFalKey, pixelize } from './ai';
+import { readPng } from './png';
 import {
-  applyDrawOps, applyFx, fitPalette, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
+  applyDrawOps, applyFx, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
 
 export interface CommandResult {
@@ -35,7 +38,7 @@ export interface Command<S extends z.ZodObject<z.ZodRawShape> = z.ZodObject<z.Zo
   name: string;
   description: string;
   schema: S;
-  run: (args: z.infer<S>) => CommandResult;
+  run: (args: z.infer<S>) => CommandResult | Promise<CommandResult>;
 }
 
 /** Keeps `args` typed from the schema inside each definition, erased in the list. */
@@ -254,6 +257,52 @@ export const commands: Command[] = [
       for (const k of ['neckRow', 'waistRow', 'kneeRow', 'ankleRow'] as const) if (a[k] !== undefined) asset.anatomy[k] = a[k];
       return { anatomy: asset.anatomy };
     }),
+  }),
+  define({
+    name: 'pixelize',
+    description: 'Turn any PNG (an AI render, a photo of a drawing) into a one-frame pixel-art asset: samples it on a square grid, removes a flat background (lime green or the dominant corner color) and quantizes the colors. "fit" maps the result onto another asset\'s palette afterwards.',
+    schema: z.object({
+      png: z.string(),
+      out: pathArg,
+      size: z.number().int().min(4).max(256).describe('output grid, e.g. 32'),
+      id: z.string().optional(),
+      name: z.string().optional(),
+      max_colors: z.number().int().min(2).max(64).optional().describe('default 16'),
+      alpha_threshold: z.number().int().min(0).max(255).optional(),
+      remove_background: z.boolean().optional().describe('default true'),
+      fit: pathArg.optional().describe('asset whose palette to fit the result to'),
+      category: category.optional(),
+    }),
+    run: (a) => {
+      const id = a.id ?? basename(a.out).replace(/\.pss\.json$|\.json$/i, '');
+      const asset = pixelize(readPng(a.png), {
+        id, name: a.name, size: a.size, maxColors: a.max_colors, alphaThreshold: a.alpha_threshold,
+        removeBackground: a.remove_background, category: a.category,
+      });
+      let table: unknown = null;
+      if (a.fit) table = fitPalette(asset, Object.values(loadAsset(a.fit).palette));
+      saveAsset(a.out, asset);
+      return { data: { fit: table, asset: summarize(asset) }, png: encodePng(renderFrame(asset, composite(asset, 0), 4)) };
+    },
+  }),
+  define({
+    name: 'generate',
+    description: 'Ask fal.ai for an image from a prompt (the same pixel-art wrapper prompt the editor uses; "raw" sends the prompt untouched) and save it as PNG. Needs FAL_AI_KEY in the environment or in supabase/functions/.env. Chain with pixelize to get an asset.',
+    schema: z.object({
+      prompt: z.string().min(3),
+      out: z.string().describe('PNG path'),
+      image_url: z.string().url().optional().describe('reference image for image-to-image'),
+      palette: z.array(z.string()).optional(),
+      perspective: z.string().optional().describe('e.g. "top-down"'),
+      raw: z.boolean().optional(),
+    }),
+    run: async (a) => {
+      const key = loadFalKey();
+      const img = await generateImage({ prompt: a.prompt, imageUrl: a.image_url, palette: a.palette, perspective: a.perspective, raw: a.raw }, key);
+      mkdirSync(dirname(a.out), { recursive: true });
+      writeFileSync(a.out, img.bytes);
+      return { data: { out: resolve(a.out), model: img.model, prompt: img.prompt, bytes: img.bytes.length } };
+    },
   }),
   define({
     name: 'export_sheet',
@@ -529,7 +578,7 @@ export function findCommand(name: string): Command | undefined {
   return commands.find(c => c.name === name);
 }
 
-export function runCommand(name: string, rawArgs: unknown): CommandResult {
+export async function runCommand(name: string, rawArgs: unknown): Promise<CommandResult> {
   const cmd = findCommand(name);
   if (!cmd) throw new Error(`unknown command "${name}". Known: ${commands.map(c => c.name).join(', ')}`);
   const parsed = cmd.schema.safeParse(rawArgs);
@@ -537,5 +586,5 @@ export function runCommand(name: string, rawArgs: unknown): CommandResult {
     const issues = parsed.error.issues.map(i => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ');
     throw new Error(`invalid arguments for ${name}: ${issues}`);
   }
-  return cmd.run(parsed.data);
+  return await cmd.run(parsed.data);
 }

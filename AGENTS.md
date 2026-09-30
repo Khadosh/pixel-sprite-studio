@@ -81,7 +81,8 @@ an agent (or a script) can produce art for a game:
   `export_sheet` (1:1 PNG + Aseprite-style JSON with frameTags and durations), `draw`,
   `fx`, `fx_anim`, `palette` (set/add/names/map), `palette_fit` (nearest colors of a target palette),
   `palette_show`, `remap`, `frames`, `anim`, `animate` (anatomy-engine generators from one pose), `anatomy`,
-  `transform`, `resize`.
+  `transform`, `resize`, `pixelize` (PNG → asset via the editor's quantizer), `generate` (fal.ai → PNG; key from
+  `FAL_AI_KEY` or `supabase/functions/.env`, never a command argument).
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
   Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
   (node environment, no jsdom).

@@ -36,6 +36,7 @@
 - [x] **Animación de anatomía por comando** (`animate` + `anatomy`).
 - [ ] **El motor sobre chibis de 16 px**: con piernas de 1–2 px la caminata casi no se mueve y `die` rota la cabeza en fragmentos. Hace falta un modo "chibi" (mover bloques enteros, sin rotar) o pasos mínimos de 1 px garantizados.
 - [ ] **Que el editor honre `width/height`, `durations` y `loop`** (hoy sólo el lado headless).
+- [x] **IA como materia prima por comando**: `generate` (fal.ai) y `pixelize` (el puente "HQ Image-to-Pixel" del roadmap, sin panel).
 - [ ] **Import de hojas desde la UI** reutilizando `importSheetImage`.
 
 ## ⏳ Futuro Cercano (Post-Anatomy)

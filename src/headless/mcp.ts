@@ -15,7 +15,7 @@ for (const cmd of commands) {
     { description: cmd.description, inputSchema: cmd.schema.shape },
     async (args: unknown) => {
       try {
-        const result = cmd.run(args as never);
+        const result = await cmd.run(args as never);
         const content: ({ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string })[] = [];
         content.push({ type: 'text', text: result.text ?? JSON.stringify(result.data, null, 1) });
         if (result.png) content.push({ type: 'image', data: result.png.toString('base64'), mimeType: 'image/png' });
