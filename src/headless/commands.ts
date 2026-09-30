@@ -66,7 +66,7 @@ const drawOpSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('clear') }),
 ]);
 
-const fxShape = z.enum(['burst', 'beam', 'sparks', 'pulse', 'circle', 'glow']);
+const fxShape = z.enum(['burst', 'beam', 'sparks', 'pulse', 'circle', 'glow', 'bolt']);
 
 export const commands: Command[] = [
   define({
@@ -313,6 +313,8 @@ export const commands: Command[] = [
       dark: color.optional(),
       radius: z.number().positive().optional(),
       seed: z.number().int().optional(),
+      x2: z.number().int().optional().describe('bolt end column'),
+      y2: z.number().int().optional().describe('bolt end row'),
     }),
     run: (a) => withAsset(a.path, asset => {
       const frame = applyFx(asset, getFrame(asset, a.frame), a);
@@ -337,6 +339,8 @@ export const commands: Command[] = [
       dark: color.optional(),
       radius: z.number().positive().optional(),
       seed: z.number().int().optional(),
+      x2: z.number().int().optional(),
+      y2: z.number().int().optional(),
       fps: z.number().positive().optional(),
       loop: z.boolean().optional(),
     }),

@@ -4,7 +4,7 @@
 
 import type { Frame, SpriteAsset } from '../lib/types';
 import {
-  addGlow, drawBeam, drawBurst, drawCircle, drawPulse, drawSparks,
+  addGlow, drawBeam, drawBolt, drawBurst, drawCircle, drawPulse, drawSparks,
 } from '../lib/sprite/drawing';
 import { cloneFrame } from '../lib/sprite/transforms';
 import { addFrame, colorIndex, dims, getFrame, setAnimation, setFrame } from './asset';
@@ -150,7 +150,7 @@ export function applyDrawOps(asset: SpriteAsset, frameIndex: number, ops: DrawOp
 
 // ── Procedural FX ──────────────────────────────────────────────────────
 
-export type FxShape = 'burst' | 'beam' | 'sparks' | 'pulse' | 'circle' | 'glow';
+export type FxShape = 'burst' | 'beam' | 'sparks' | 'pulse' | 'circle' | 'glow' | 'bolt';
 
 export interface FxOptions {
   shape: FxShape;
@@ -164,8 +164,11 @@ export interface FxOptions {
   dark?: Color;
   /** Radius for 'circle'. Default: intensity * min(w,h)/2 */
   radius?: number;
-  /** Seed for 'sparks'; same seed, same sparks. */
+  /** Seed for 'sparks' and 'bolt'; same seed, same picture. */
   seed?: number;
+  /** End point for 'bolt' (defaults: from top center to bottom center). */
+  x2?: number;
+  y2?: number;
 }
 
 /** Small deterministic PRNG (mulberry32). */
@@ -199,6 +202,11 @@ export function applyFx(asset: SpriteAsset, frame: Frame, fx: FxOptions): Frame 
       return drawCircle(frame, cy, cx, radius, main, fx.light !== undefined || fx.dark !== undefined ? shades : undefined);
     }
     case 'glow': return addGlow(frame, main);
+    case 'bolt': {
+      const fromY = fx.y ?? 0, fromX = fx.x ?? Math.floor(width / 2);
+      const toY = fx.y2 ?? height - 1, toX = fx.x2 ?? Math.floor(width / 2);
+      return drawBolt(frame, fromY, fromX, toY, toX, fx.intensity, main, shades, seededRandom(fx.seed ?? 1));
+    }
   }
 }
 

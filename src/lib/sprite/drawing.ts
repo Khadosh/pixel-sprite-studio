@@ -215,3 +215,68 @@ export function addGlow(frame: Frame, colorIndex: number): Frame {
   }
   return out;
 }
+
+
+/**
+ * Draws a lightning bolt: a jagged path from (r0,c0) to (r1,c1) with a few
+ * branches, core in `shades.light`, body in colorIdx, halo in `shades.dark`.
+ * intensity 0..1 scales thickness and branches; rng makes it reproducible.
+ */
+export function drawBolt(
+  frame: Frame,
+  r0: number,
+  c0: number,
+  r1: number,
+  c1: number,
+  intensity: number,
+  colorIdx: number,
+  shades: { light: number; dark: number },
+  rng: () => number = Math.random
+): Frame {
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
+  const out = cloneFrame(frame);
+  if (intensity <= 0) return out;
+  const put = (r: number, c: number, idx: number, onlyEmpty = false) => {
+    const rr = Math.round(r), cc = Math.round(c);
+    if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) return;
+    if (onlyEmpty && out[rr][cc] !== 0) return;
+    out[rr][cc] = idx;
+  };
+  const path = (ra: number, ca: number, rb: number, cb: number, jitter: number, width: number) => {
+    const steps = Math.max(2, Math.round(Math.hypot(rb - ra, cb - ca)));
+    let r = ra, c = ca;
+    const pts: [number, number][] = [[r, c]];
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const tr = ra + (rb - ra) * t, tc = ca + (cb - ca) * t;
+      r = tr + (rng() - 0.5) * jitter * (1 - Math.abs(t - 0.5) * 2 * 0.3);
+      c = tc + (rng() - 0.5) * jitter;
+      if (i === steps) { r = rb; c = cb; }
+      pts.push([r, c]);
+    }
+    for (let i = 1; i < pts.length; i++) {
+      const [pr, pc] = pts[i - 1], [qr, qc] = pts[i];
+      const n = Math.max(1, Math.round(Math.hypot(qr - pr, qc - pc) * 2));
+      for (let k = 0; k <= n; k++) {
+        const t = k / n, rr = pr + (qr - pr) * t, cc = pc + (qc - pc) * t;
+        for (let w = -width; w <= width; w++) {
+          put(rr, cc + w, Math.abs(w) === 0 ? shades.light : colorIdx, Math.abs(w) > 0);
+        }
+        put(rr, cc - width - 1, shades.dark, true);
+        put(rr, cc + width + 1, shades.dark, true);
+      }
+    }
+    return pts;
+  };
+  const width = intensity > 0.66 ? 1 : 0;
+  const main = path(r0, c0, r1, c1, 3 * intensity + 1, width);
+  const branches = Math.round(intensity * 3);
+  for (let b = 0; b < branches; b++) {
+    const [br, bc] = main[Math.floor(rng() * (main.length - 2)) + 1];
+    const len = (rows / 4) * intensity;
+    const dir = rng() < 0.5 ? -1 : 1;
+    path(br, bc, br + len * 0.8, bc + dir * len * (0.5 + rng() * 0.5), 2, 0);
+  }
+  return out;
+}

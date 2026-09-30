@@ -97,6 +97,18 @@ describe('drawing', () => {
     expect(rng()).toBe(seededRandom(3)());
   });
 
+  it('bolt draws a connected jagged path from top to bottom, reproducibly', () => {
+    const a = createAsset({ id: 'x', width: 16, height: 32, palette: ['#fff', '#88f', '#448'] });
+    const blank = () => a.layers![0].frames[0].map(r => [...r]);
+    const one = applyFx(a, blank(), { shape: 'bolt', intensity: 1, color: 2, light: 1, dark: 3, seed: 5 });
+    const two = applyFx(a, blank(), { shape: 'bolt', intensity: 1, color: 2, light: 1, dark: 3, seed: 5 });
+    expect(one).toEqual(two);
+    // Every row between the ends has at least one painted pixel: no gaps.
+    for (let r = 0; r < 32; r++) expect(one[r].some(v => v !== 0)).toBe(true);
+    expect(one[0][8]).toBe(1);
+    expect(one[31][8]).toBe(1);
+  });
+
   it('fx_anim appends tagged frames whose intensity rises and falls', () => {
     const a = createAsset({ id: 'x', width: 16, palette: ['#fff', '#f80', '#800'] });
     const idx = generateFxAnimation(a, { name: 'technique', shape: 'circle', frames: 5, color: 2, light: 1, dark: 3 });
