@@ -253,6 +253,7 @@ describe('ai', () => {
     expect(crop.box.w).toBeGreaterThanOrEqual(32);
     expect(crop.box.w).toBeLessThan(40);
     const a = pixelize(img, { id: 'p', size: 16, maxColors: 4, crop: false });
+    expect(a.palette[0]).toBeUndefined();
     const f = composite(a, 0);
     expect(f[0][0]).toBe(0);
     expect(f[8][8]).not.toBe(0);

@@ -223,7 +223,10 @@ export function pixelize(source: Rgba, o: PixelizeOptions): SpriteAsset {
   });
   const asset = createAsset({ id: o.id, name: o.name, width: o.size, category: o.category ?? 'character' });
   asset.layers![0].frames[0] = result.frame;
-  asset.palette = result.palette;
-  asset.colorNames = result.colorNames;
+  asset.palette = { ...result.palette };
+  asset.colorNames = { ...result.colorNames };
+  // Index 0 is transparent by convention and never listed in the palette.
+  delete asset.palette[0];
+  delete asset.colorNames[0];
   return asset;
 }
