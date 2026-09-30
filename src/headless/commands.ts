@@ -272,12 +272,13 @@ export const commands: Command[] = [
       remove_background: z.boolean().optional().describe('default true'),
       fit: pathArg.optional().describe('asset whose palette to fit the result to'),
       category: category.optional(),
+      crop: z.boolean().optional().describe('crop to the figure before sampling (default true)'),
     }),
     run: (a) => {
       const id = a.id ?? basename(a.out).replace(/\.pss\.json$|\.json$/i, '');
       const asset = pixelize(readPng(a.png), {
         id, name: a.name, size: a.size, maxColors: a.max_colors, alphaThreshold: a.alpha_threshold,
-        removeBackground: a.remove_background, category: a.category,
+        removeBackground: a.remove_background, category: a.category, crop: a.crop,
       });
       let table: unknown = null;
       if (a.fit) table = fitPalette(asset, Object.values(loadAsset(a.fit).palette));

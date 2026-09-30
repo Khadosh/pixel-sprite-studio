@@ -13,7 +13,7 @@ import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 import { importCharacter } from './character';
 import { animateAsset } from './animate';
-import { generateImage, loadFalKey, pixelize } from './ai';
+import { cropToContent, generateImage, loadFalKey, pixelize } from './ai';
 
 let dir: string;
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'pss-')); });
@@ -249,12 +249,20 @@ describe('ai', () => {
     for (let i = 0; i < w * w; i++) img.data.set([0, 255, 0, 255], i * 4);
     for (let y = 16; y < 48; y++) for (let x = 16; x < 48; x++) img.data.set([200, 30, 30, 255], (y * w + x) * 4);
     for (let y = 28; y < 36; y++) for (let x = 28; x < 36; x++) img.data.set([30, 30, 200, 255], (y * w + x) * 4);
-    const a = pixelize(img, { id: 'p', size: 16, maxColors: 4 });
+    const crop = cropToContent(img);
+    expect(crop.box.w).toBeGreaterThanOrEqual(32);
+    expect(crop.box.w).toBeLessThan(40);
+    const a = pixelize(img, { id: 'p', size: 16, maxColors: 4, crop: false });
     const f = composite(a, 0);
     expect(f[0][0]).toBe(0);
     expect(f[8][8]).not.toBe(0);
     expect(f[5][5]).not.toBe(0);
     expect(f[5][5]).not.toBe(f[8][8]);
+    // Cropped: the square fills the grid (only the margin stays empty).
+    const c = composite(pixelize(img, { id: 'c', size: 16, maxColors: 4 }), 0);
+    expect(c[3][3]).not.toBe(0);
+    expect(c[12][12]).not.toBe(0);
+    expect(c[8][8]).not.toBe(c[3][3]);
     const table = fitPalette(a, ['#ff0000', '#0000ff']);
     expect(table.every(t => ['#ff0000', '#0000ff'].includes(t.to))).toBe(true);
   });
@@ -268,13 +276,14 @@ describe('ai', () => {
         expect(body.prompt).toContain('LIME GREEN');
         expect(body.prompt).toContain('a monk');
         expect(init?.headers).toMatchObject({ Authorization: 'Key k' });
+        expect(body.output_format).toBe('png');
         return new Response(JSON.stringify({ images: [{ url: 'https://img.test/1.png' }] }), { status: 200 });
       }
-      return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
+      return new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]), { status: 200 });
     }) as unknown as typeof fetch;
     const out = await generateImage({ prompt: 'a monk' }, 'k', fake);
     expect(out.model).toBe('fal-ai/flux/schnell');
-    expect([...out.bytes]).toEqual([1, 2, 3]);
+    expect(out.bytes.length).toBe(7);
     expect(calls).toEqual(['https://fal.run/fal-ai/flux/schnell', 'https://img.test/1.png']);
   });
 

@@ -16,6 +16,7 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Animación**: `animate` genera con el motor de anatomía (idle, walk, run, jump, attack, cast, hurt, die, con sufijo de dirección) a partir de un cuadro base, y `anatomy` guarda las filas del cuerpo en el asset. Probado sobre chibis de 16 px de un pack ajeno: la respiración, el retroceso y el brillo de cast sirven; la caminata mueve poco con piernas de dos píxeles y `die` (rotación de cabeza) deja fragmentos: deuda para el motor.
 - **FX**: `bolt`, un rayo dentado con ramas y halo entre dos puntos (`x,y` → `x2,y2`), reproducible por semilla; disponible en `fx` y `fx_anim`.
 - **IA headless**: `generate` pide una imagen a fal.ai con el mismo prompt técnico de la Edge Function (clave desde `FAL_AI_KEY` o `supabase/functions/.env`, nunca por argumento) y `pixelize` convierte cualquier PNG en un asset de un cuadro con el cuantizador del editor (fondo verde fuera, colores reducidos, opcionalmente ajustado a la paleta de otro asset). Los comandos pueden ser asíncronos.
+- **Pixelize afinado**: recorta al contenido (el fondo se detecta por las esquinas de la imagen entera, no del recorte), vuelve transparente el fondo antes de muestrear para que no sangre verde en los bordes, y pide PNG a fal.ai (flux responde JPEG por defecto).
 - **Tests**: 29 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
 
 ---
