@@ -11,6 +11,7 @@ import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fi
 import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 import { importCharacter } from './character';
+import { animateAsset } from './animate';
 
 let dir: string;
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'pss-')); });
@@ -199,6 +200,31 @@ describe('characters', () => {
     expect(asset.animations.find(a => a.name === 'walk_left')!.frameIndices).toEqual([6, 10, 14, 18]);
     expect(asset.animations.find(a => a.name === 'attack_up')!.frameIndices).toEqual([21]);
     expect(Object.keys(asset.palette)).toHaveLength(3);
+  });
+});
+
+describe('animate', () => {
+  it('grows a walk cycle and an idle from one pose and tags them', () => {
+    const a = createAsset({ id: 'x', width: 16, palette: ['#000', '#f00', '#0f0'] });
+    // A crude humanoid: head rows 1-4, torso 5-10, legs 11-14.
+    applyDrawOps(a, 0, [
+      { op: 'rect', x: 6, y: 1, w: 4, h: 4, color: 2, fill: true },
+      { op: 'rect', x: 5, y: 5, w: 6, h: 6, color: 3, fill: true },
+      { op: 'rect', x: 3, y: 5, w: 2, h: 5, color: 1, fill: true },
+      { op: 'rect', x: 11, y: 5, w: 2, h: 5, color: 1, fill: true },
+      { op: 'rect', x: 5, y: 11, w: 2, h: 4, color: 1, fill: true },
+      { op: 'rect', x: 9, y: 11, w: 2, h: 4, color: 1, fill: true },
+    ]);
+    const walk = animateAsset(a, { base: 0, anim: 'walk_down' });
+    expect(walk.length).toBeGreaterThanOrEqual(4);
+    const idle = animateAsset(a, { base: 0, anim: 'idle', anatomy: { neckRow: 4, waistRow: 10 } });
+    expect(idle).toHaveLength(4);
+    expect(a.animations.map(x => x.name)).toEqual(['walk_down', 'idle']);
+    expect(a.animations[0].loop).toBe(true);
+    const painted = (i: number) => composite(a, i).flat().filter(v => v).length;
+    // Frames keep roughly the same amount of body: nothing vanished.
+    for (const i of [...walk, ...idle]) expect(painted(i)).toBeGreaterThan(painted(0) * 0.6);
+    expect(() => animateAsset(a, { base: 0, anim: 'fly' })).toThrow(/unknown animation/);
   });
 });
 

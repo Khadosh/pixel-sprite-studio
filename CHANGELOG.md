@@ -13,7 +13,8 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Import**: `import_sheet … into=<asset>` agrega los cuadros de otra hoja a un asset existente (mismo tamaño de cuadro, paleta fusionada por hex, tags con índices corridos). Sirve para juntar las hojas separadas de un pack (Idle, Walk, Attack…) en un solo personaje.
 - **Paletas**: `palette_fit` ajusta cada color de un asset al más cercano de una paleta (la de otro asset o una lista), con mapeos forzados y conservando alpha, y devuelve la tabla de qué fue a qué; `palette_show` dibuja la paleta como muestrario; `palette map` recolorea por valor (mismo mapeo para un sprite y su retrato).
 - **Personajes**: `import_character` importa un personaje entero desde la carpeta de un pack en un solo paso, con los tags estándar por dirección (idle, walk, attack, hurt × down/up/left/right, más technique y die). Layouts `ninja_separate` (Idle/Walk/Attack/Special1/Dead) y `ninja_sheet` (una hoja de 4 columnas × N pasos).
-- **Tests**: 23 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
+- **Animación**: `animate` genera con el motor de anatomía (idle, walk, run, jump, attack, cast, hurt, die, con sufijo de dirección) a partir de un cuadro base, y `anatomy` guarda las filas del cuerpo en el asset. Probado sobre chibis de 16 px de un pack ajeno: la respiración, el retroceso y el brillo de cast sirven; la caminata mueve poco con piernas de dos píxeles y `die` (rotación de cabeza) deja fragmentos: deuda para el motor.
+- **Tests**: 24 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
 
 ---
 

@@ -17,6 +17,7 @@ import { encodePng, writePng } from './png';
 import { asciiLegend, contactSheet, paletteSheet, renderAscii, renderFrame } from './render';
 import { exportSheet, importSheet } from './sheet';
 import { importCharacter } from './character';
+import { ANIMATION_KINDS, animateAsset } from './animate';
 import {
   applyDrawOps, applyFx, fitPalette, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
@@ -219,6 +220,40 @@ export const commands: Command[] = [
       saveAsset(a.out, asset);
       return { data: { sheets, asset: summarize(asset) } };
     },
+  }),
+  define({
+    name: 'animate',
+    description: `Generate an animation from one base pose with the anatomy engine (${ANIMATION_KINDS.join(', ')}), optionally with a direction suffix ("walk_down", "attack_left": left is generated as right and flipped). Appends the frames and tags them. Use "anatomy" (or the asset's) to fix where neck, waist, knees and ankles are when the automatic guess is off.`,
+    schema: z.object({
+      path: pathArg,
+      base: z.number().int().nonnegative().describe('frame index of the base pose'),
+      anim: z.string(),
+      name: z.string().optional().describe('tag name (default: anim)'),
+      fps: z.number().positive().optional(),
+      loop: z.boolean().optional(),
+      glow: color.optional().describe('glow color for cast'),
+      anatomy: z.object({
+        neckRow: z.number().int().optional(), waistRow: z.number().int().optional(),
+        kneeRow: z.number().int().optional(), ankleRow: z.number().int().optional(),
+      }).optional(),
+    }),
+    run: (a) => withAsset(a.path, asset => ({ frames: animateAsset(asset, a) })),
+  }),
+  define({
+    name: 'anatomy',
+    description: 'Store body rows on the asset (neck, waist, knee, ankle, in pixels from the top) so every "animate" call uses them.',
+    schema: z.object({
+      path: pathArg,
+      neckRow: z.number().int().optional(), waistRow: z.number().int().optional(),
+      kneeRow: z.number().int().optional(), ankleRow: z.number().int().optional(),
+      clear: z.boolean().optional(),
+    }),
+    run: (a) => withAsset(a.path, asset => {
+      if (a.clear) { delete asset.anatomy; return { anatomy: null }; }
+      asset.anatomy = { ...(asset.anatomy ?? {}), mode: 'humanoid' };
+      for (const k of ['neckRow', 'waistRow', 'kneeRow', 'ankleRow'] as const) if (a[k] !== undefined) asset.anatomy[k] = a[k];
+      return { anatomy: asset.anatomy };
+    }),
   }),
   define({
     name: 'export_sheet',

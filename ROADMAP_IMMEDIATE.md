@@ -33,7 +33,8 @@
 - [x] **Import de hojas 1:1** (grilla, margen, espaciado, colores exactos, tags por fila/columna).
 - [x] **Export hoja 1:1 + JSON estilo Aseprite** (rects, duración por cuadro, frameTags con loop).
 - [x] **FX procedurales por comando** (`fx`, `fx_anim`) con semilla reproducible.
-- [ ] **Animación de anatomía por comando** (`animate`: walk/idle/run/jump sobre un asset importado).
+- [x] **Animación de anatomía por comando** (`animate` + `anatomy`).
+- [ ] **El motor sobre chibis de 16 px**: con piernas de 1–2 px la caminata casi no se mueve y `die` rota la cabeza en fragmentos. Hace falta un modo "chibi" (mover bloques enteros, sin rotar) o pasos mínimos de 1 px garantizados.
 - [ ] **Que el editor honre `width/height`, `durations` y `loop`** (hoy sólo el lado headless).
 - [ ] **Import de hojas desde la UI** reutilizando `importSheetImage`.
 
