@@ -105,3 +105,19 @@ export function contactSheet(asset: SpriteAsset, opts: ContactSheetOptions = {})
   });
   return img;
 }
+
+
+/** Swatches of a palette in a row per 8 colors, each cell `cell` px, with a 1px index mark. */
+export function paletteSheet(palette: Record<number, string>, cell = 24, perRow = 8): Rgba {
+  const entries = Object.entries(palette).map(([k, v]) => [Number(k), v] as const).sort((a, b) => a[0] - b[0]);
+  const rows = Math.max(1, Math.ceil(entries.length / perRow));
+  const img = blankImage(perRow * cell, rows * cell, [24, 22, 20, 255]);
+  entries.forEach(([idx, hex], i) => {
+    const x0 = (i % perRow) * cell, y0 = Math.floor(i / perRow) * cell;
+    const rgba = hexToRgba(hex);
+    for (let y = 1; y < cell - 1; y++) for (let x = 1; x < cell - 1; x++) setPixel(img, x0 + x, y0 + y, rgba);
+    // Index as a tiny tally along the top edge: idx dots.
+    for (let d = 0; d < Math.min(idx, cell - 4); d++) setPixel(img, x0 + 2 + d, y0 + 2, [255, 255, 255, 255]);
+  });
+  return img;
+}

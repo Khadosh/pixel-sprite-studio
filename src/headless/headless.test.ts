@@ -7,7 +7,7 @@ import { createAsset, composite, dims, frameCount, loadAsset, saveAsset, setAnim
 import { readPng, writePng, getPixel } from './png';
 import { renderAscii, renderFrame, hexToRgba, rgbaToHex } from './render';
 import { exportSheet, importSheet, importSheetImage } from './sheet';
-import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill } from './ops';
+import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fitPalette } from './ops';
 import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 
@@ -192,6 +192,30 @@ describe('render', () => {
     expect(img.width).toBe(6);
     expect(getPixel(img, 2, 2)).toEqual([255, 255, 255, 255]);
     expect(getPixel(img, 3, 0)).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe('palettes', () => {
+  it('fits colors to the nearest of a target palette, honoring forced maps and alpha', () => {
+    const a = createAsset({ id: 'x', width: 2, palette: ['#ff0000', '#00ff0080', '#123456'] });
+    const table = fitPalette(a, ['#ee0000', '#00cc00', '#ffffff'], { '#123456': '#ffffff' });
+    expect(a.palette).toEqual({ 1: '#ee0000', 2: '#00cc0080', 3: '#ffffff' });
+    expect(table.find(t => t.index === 3)!.forced).toBe(true);
+    expect(table.find(t => t.index === 1)!.distance).toBeGreaterThan(0);
+  });
+
+  it('palette map recolors by value and palette_show renders swatches', () => {
+    const path = join(dir, 'p.pss.json');
+    runCommand('new', { path, width: 2, palette: ['#ff0000', '#ff0000', '#00ff00'] });
+    runCommand('palette', { path, map: { '#ff0000': '#0000ff' } });
+    expect(loadAsset(path).palette).toEqual({ 1: '#0000ff', 2: '#0000ff', 3: '#00ff00' });
+    const shown = runCommand('palette_show', { path, cell: 8 });
+    expect(shown.png!.length).toBeGreaterThan(50);
+    const target = join(dir, 't.pss.json');
+    runCommand('new', { path: target, width: 1, palette: ['#000080', '#008000'] });
+    const fit = runCommand('palette_fit', { path, target }).data as { moved: number; asset: { palette: Record<number, string> } };
+    expect(fit.moved).toBe(3);
+    expect(fit.asset.palette).toEqual({ 1: '#000080', 2: '#000080', 3: '#008000' });
   });
 });
 

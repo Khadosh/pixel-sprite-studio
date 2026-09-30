@@ -78,7 +78,8 @@ an agent (or a script) can produce art for a game:
   (a game repo points its `.mcp.json` at it). `render` returns the PNG as an image.
 - Commands: `new`, `info`, `ascii`, `render`, `import_sheet` (grid cut, exact colors; `into` appends to an existing asset),
   `export_sheet` (1:1 PNG + Aseprite-style JSON with frameTags and durations), `draw`,
-  `fx`, `fx_anim`, `palette`, `remap`, `frames`, `anim`, `transform`, `resize`.
+  `fx`, `fx_anim`, `palette` (set/add/names/map), `palette_fit` (nearest colors of a target palette),
+  `palette_show`, `remap`, `frames`, `anim`, `transform`, `resize`.
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
   Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
   (node environment, no jsdom).

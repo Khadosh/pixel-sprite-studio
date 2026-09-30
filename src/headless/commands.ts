@@ -14,10 +14,10 @@ import {
   getFrame, loadAsset, normalizeHex, removeAnimation, removeFrame, saveAsset, setAnimation, setFrame, summarize,
 } from './asset';
 import { encodePng, writePng } from './png';
-import { asciiLegend, contactSheet, renderAscii, renderFrame } from './render';
+import { asciiLegend, contactSheet, paletteSheet, renderAscii, renderFrame } from './render';
 import { exportSheet, importSheet } from './sheet';
 import {
-  applyDrawOps, applyFx, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
+  applyDrawOps, applyFx, fitPalette, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
 
 export interface CommandResult {
@@ -288,8 +288,15 @@ export const commands: Command[] = [
       set: z.record(z.string(), z.string()).optional().describe('{index: hex} to change existing colors'),
       add: z.array(z.string()).optional().describe('hex colors to append'),
       names: z.record(z.string(), z.string()).optional().describe('{index: name}'),
+      map: z.record(z.string(), z.string()).optional().describe('{fromHex: toHex}: recolor by value, e.g. to apply the same table to a sprite and its portrait'),
     }),
     run: (a) => withAsset(a.path, asset => {
+      for (const [from, to] of Object.entries(a.map ?? {})) {
+        const f = normalizeHex(from);
+        for (const [k, hex] of Object.entries(asset.palette)) {
+          if (normalizeHex(hex) === f) asset.palette[Number(k)] = normalizeHex(to);
+        }
+      }
       for (const [k, hex] of Object.entries(a.set ?? {})) {
         const idx = Number(k);
         if (!asset.palette[idx]) throw new Error(`no color at index ${idx}`);
@@ -299,6 +306,38 @@ export const commands: Command[] = [
       for (const [k, name] of Object.entries(a.names ?? {})) asset.colorNames[Number(k)] = name;
       return { added };
     }),
+  }),
+  define({
+    name: 'palette_fit',
+    description: 'Map every color of the asset to the nearest color of a target palette (another asset\'s palette, or a list of hex). "map" forces specific colors (fromHex → toHex). Returns the table of what went where; pixels are untouched, only the palette changes.',
+    schema: z.object({
+      path: pathArg,
+      target: pathArg.optional().describe('asset whose palette is the target'),
+      colors: z.array(z.string()).optional().describe('target colors as hex, instead of target'),
+      map: z.record(z.string(), z.string()).optional().describe('{fromHex: toHex} forced mappings'),
+    }),
+    run: (a) => withAsset(a.path, asset => {
+      let colors = a.colors ?? [];
+      if (a.target) colors = colors.concat(Object.values(loadAsset(a.target).palette));
+      if (colors.length === 0) throw new Error('palette_fit needs target or colors');
+      const table = fitPalette(asset, colors, a.map ?? {});
+      return { table, moved: table.filter(t => t.from !== t.to).length };
+    }),
+  }),
+  define({
+    name: 'palette_show',
+    description: 'Render the palette of an asset as swatches (one white dot per index along the top of each cell). Returns the image.',
+    schema: z.object({
+      path: pathArg,
+      out: z.string().optional(),
+      cell: z.number().int().positive().optional().describe('swatch size in px (default 24)'),
+    }),
+    run: (a) => {
+      const asset = loadAsset(a.path);
+      const png = encodePng(paletteSheet(asset.palette, a.cell ?? 24));
+      if (a.out) { mkdirSync(dirname(a.out), { recursive: true }); writeFileSync(a.out, png); }
+      return { data: { palette: asset.palette, names: asset.colorNames, out: a.out ?? null }, png };
+    },
   }),
   define({
     name: 'remap',

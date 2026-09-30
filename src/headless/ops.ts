@@ -252,3 +252,72 @@ export function generateFxAnimation(asset: SpriteAsset, opts: FxAnimationOptions
   setAnimation(asset, { name: opts.name, frameIndices: indices, fps: opts.fps ?? 12, loop: opts.loop ?? false });
   return indices;
 }
+
+
+// ── Palettes ───────────────────────────────────────────────────────────
+
+/** Perceptual-ish distance between two hex colors (weighted RGB). */
+export function colorDistance(a: string, b: string): number {
+  const pa = hexToRgbaTuple(a), pb = hexToRgbaTuple(b);
+  const dr = pa[0] - pb[0], dg = pa[1] - pb[1], db = pa[2] - pb[2];
+  const rm = (pa[0] + pb[0]) / 2;
+  // Classic "redmean" weighting: closer to how eyes rank differences than plain RGB.
+  return Math.sqrt((2 + rm / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rm) / 256) * db * db);
+}
+
+function hexToRgbaTuple(hex: string): [number, number, number, number] {
+  const h = hex.replace('#', '');
+  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16), n.length === 8 ? parseInt(n.slice(6, 8), 16) : 255];
+}
+
+export interface FitEntry {
+  index: number;
+  from: string;
+  to: string;
+  distance: number;
+  forced: boolean;
+}
+
+/**
+ * Maps every palette color of the asset to the nearest color of `target`
+ * (a list of hex), honoring explicit `overrides` (fromHex → toHex). Alpha
+ * is preserved from the source color. Returns the table of what went where.
+ */
+export function fitPalette(asset: SpriteAsset, target: string[], overrides: Record<string, string> = {}): FitEntry[] {
+  const table: FitEntry[] = [];
+  const normalizedOverrides = new Map(Object.entries(overrides).map(([k, v]) => [normalizeHexLocal(k), normalizeHexLocal(v)]));
+  const candidates = target.map(normalizeHexLocal);
+  for (const [k, hex] of Object.entries(asset.palette)) {
+    const from = normalizeHexLocal(hex);
+    if (from === 'transparent') continue;
+    const opaque = from.slice(0, 7);
+    const alpha = from.length === 9 ? from.slice(7) : '';
+    let to: string;
+    let forced = false;
+    const override = normalizedOverrides.get(opaque) ?? normalizedOverrides.get(from);
+    if (override) {
+      to = override;
+      forced = true;
+    } else {
+      let best = candidates[0], bestD = Infinity;
+      for (const c of candidates) {
+        const d = colorDistance(opaque, c.slice(0, 7));
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      to = best.slice(0, 7) + alpha;
+    }
+    asset.palette[Number(k)] = to;
+    table.push({ index: Number(k), from, to, distance: Math.round(colorDistance(opaque, to.slice(0, 7))), forced });
+  }
+  return table;
+}
+
+function normalizeHexLocal(hex: string): string {
+  let h = hex.trim().toLowerCase();
+  if (h === 'transparent') return h;
+  if (!h.startsWith('#')) h = '#' + h;
+  if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+  if (h.length === 9 && h.endsWith('ff')) h = h.slice(0, 7);
+  return h;
+}
