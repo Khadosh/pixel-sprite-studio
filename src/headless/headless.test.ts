@@ -341,6 +341,27 @@ describe('palettes', () => {
   });
 });
 
+describe('png_fit', () => {
+  it('recolors every opaque pixel of a PNG to the target palette, keeping alpha and layout', async () => {
+    const w = 4, img = { width: w, height: 1, data: new Uint8Array(w * 4) };
+    img.data.set([250, 10, 10, 255], 0);
+    img.data.set([10, 250, 10, 255], 4);
+    img.data.set([10, 10, 250, 128], 8);
+    img.data.set([0, 0, 0, 0], 12);
+    const png = join(dir, 't.png');
+    writePng(png, img);
+    const out = join(dir, 't2.png');
+    const r = (await runCommand('png_fit', { png, out, colors: ['#ff0000', '#0000ff'], map: { '#0afa0a': '#0000ff' } })).data as { colors: number; moved: number };
+    expect(r.colors).toBe(3);
+    expect(r.moved).toBe(3);
+    const back = readPng(out);
+    expect(getPixel(back, 0, 0)).toEqual([255, 0, 0, 255]);
+    expect(getPixel(back, 1, 0)).toEqual([0, 0, 255, 255]);
+    expect(getPixel(back, 2, 0)).toEqual([0, 0, 255, 128]);
+    expect(getPixel(back, 3, 0)).toEqual([0, 0, 0, 0]);
+  });
+});
+
 describe('commands', () => {
   it('every command has a unique name and a description', () => {
     const names = commands.map(c => c.name);

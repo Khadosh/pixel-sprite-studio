@@ -3,6 +3,7 @@
 // the same pixels.
 
 import type { Frame, SpriteAsset } from '../lib/types';
+import type { Rgba } from './png';
 import {
   addGlow, drawBeam, drawBolt, drawBurst, drawCircle, drawPulse, drawSparks,
 } from '../lib/sprite/drawing';
@@ -328,4 +329,46 @@ function normalizeHexLocal(hex: string): string {
   if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
   if (h.length === 9 && h.endsWith('ff')) h = h.slice(0, 7);
   return h;
+}
+
+
+/**
+ * Recolors an RGBA image in place of its palette: every distinct opaque color
+ * goes to its forced mapping or to the nearest color of `target`. Alpha is
+ * kept. Returns the table of what went where (one row per distinct color).
+ */
+export function fitImageColors(img: Rgba, target: string[], overrides: Record<string, string> = {}): FitEntry[] {
+  const candidates = target.map(normalizeHexLocal);
+  const forced = new Map(Object.entries(overrides).map(([k, v]) => [normalizeHexLocal(k), normalizeHexLocal(v)]));
+  const mapping = new Map<string, { to: string; entry: FitEntry }>();
+  const hex = (r: number, g: number, b: number) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  for (let i = 0; i < img.data.length; i += 4) {
+    if (img.data[i + 3] === 0) continue;
+    const from = hex(img.data[i], img.data[i + 1], img.data[i + 2]);
+    let m = mapping.get(from);
+    if (!m) {
+      let to = forced.get(from);
+      let isForced = true;
+      if (!to) {
+        isForced = false;
+        let bestD = Infinity;
+        to = candidates[0];
+        for (const c of candidates) {
+          const d = colorDistance(from, c.slice(0, 7));
+          if (d < bestD) { bestD = d; to = c; }
+        }
+      }
+      to = to.slice(0, 7);
+      m = { to, entry: { index: mapping.size + 1, from, to, distance: Math.round(colorDistance(from, to)), forced: isForced } };
+      mapping.set(from, m);
+    }
+    const rgb = hexToRgbLocal(m.to);
+    img.data[i] = rgb[0]; img.data[i + 1] = rgb[1]; img.data[i + 2] = rgb[2];
+  }
+  return [...mapping.values()].map(m => m.entry);
+}
+
+function hexToRgbLocal(h: string): [number, number, number] {
+  const n = h.replace('#', '');
+  return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
 }

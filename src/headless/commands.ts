@@ -14,7 +14,7 @@ import {
   getFrame, loadAsset, normalizeHex, removeAnimation, removeFrame, saveAsset, setAnimation, setFrame, summarize,
 } from './asset';
 import { encodePng, writePng } from './png';
-import { fitPalette } from './ops';
+import { fitImageColors, fitPalette } from './ops';
 import { asciiLegend, contactSheet, paletteSheet, renderAscii, renderFrame } from './render';
 import { exportSheet, importSheet } from './sheet';
 import { importCharacter } from './character';
@@ -439,6 +439,26 @@ export const commands: Command[] = [
       const table = fitPalette(asset, colors, a.map ?? {});
       return { table, moved: table.filter(t => t.from !== t.to).length };
     }),
+  }),
+  define({
+    name: 'png_fit',
+    description: 'Recolor a PNG (a tileset, any image) to a target palette without touching its layout: every color goes to its forced mapping ("map") or to the nearest target color; alpha is kept. Returns the table of what went where.',
+    schema: z.object({
+      png: z.string(),
+      out: z.string().describe('PNG path (may be the same file)'),
+      target: pathArg.optional().describe('asset whose palette is the target'),
+      colors: z.array(z.string()).optional(),
+      map: z.record(z.string(), z.string()).optional().describe('{fromHex: toHex} forced mappings'),
+    }),
+    run: (a) => {
+      let colors = a.colors ?? [];
+      if (a.target) colors = colors.concat(Object.values(loadAsset(a.target).palette));
+      if (colors.length === 0) throw new Error('png_fit needs target or colors');
+      const img = readPng(a.png);
+      const table = fitImageColors(img, colors, a.map ?? {});
+      writePng(a.out, img);
+      return { data: { out: resolve(a.out), colors: table.length, moved: table.filter(t => t.from !== t.to).length, table } };
+    },
   }),
   define({
     name: 'palette_show',
