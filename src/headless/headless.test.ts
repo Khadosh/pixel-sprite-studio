@@ -10,6 +10,7 @@ import { exportSheet, importSheet, importSheetImage } from './sheet';
 import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fitPalette } from './ops';
 import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
+import { importCharacter } from './character';
 
 let dir: string;
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'pss-')); });
@@ -174,6 +175,30 @@ describe('sheets', () => {
     const a = createAsset({ id: 'x', width: 2, frames: 3 });
     setAnimation(a, { name: 'odd', frameIndices: [0, 2] });
     expect(() => exportSheet(a, { imageName: 'x.png', layout: 'strip' })).toThrow(/contiguous/);
+  });
+});
+
+describe('characters', () => {
+  it('imports a ninja_separate folder with the standard tags, skipping optional sheets', () => {
+    const solid = (w: number, h: number, rgb: number[]) => {
+      const img = { width: w, height: h, data: new Uint8Array(w * h * 4) };
+      for (let i = 0; i < w * h; i++) img.data.set([...rgb, 255], i * 4);
+      return img;
+    };
+    writePng(join(dir, 'Idle.png'), solid(8, 2, [10, 10, 10]));
+    writePng(join(dir, 'Walk.png'), solid(8, 8, [20, 20, 20]));
+    writePng(join(dir, 'Attack.png'), solid(8, 2, [30, 30, 30]));
+    const { asset, sheets } = importCharacter({ dir, layout: 'ninja_separate', id: 'npc', frameSize: 2 });
+    expect(sheets).toEqual(['Idle.png', 'Walk.png', 'Attack.png']);
+    expect(frameCount(asset)).toBe(4 + 16 + 4);
+    const names = asset.animations.map(a => a.name);
+    for (const d of ['down', 'up', 'left', 'right']) {
+      for (const p of ['idle', 'hurt', 'walk', 'attack']) expect(names).toContain(`${p}_${d}`);
+    }
+    expect(names).not.toContain('technique');
+    expect(asset.animations.find(a => a.name === 'walk_left')!.frameIndices).toEqual([6, 10, 14, 18]);
+    expect(asset.animations.find(a => a.name === 'attack_up')!.frameIndices).toEqual([21]);
+    expect(Object.keys(asset.palette)).toHaveLength(3);
   });
 });
 

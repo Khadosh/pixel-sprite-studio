@@ -77,6 +77,7 @@ an agent (or a script) can produce art for a game:
 - `bin/pss-mcp` is an MCP server over stdio exposing every command as `pss_<command>`
   (a game repo points its `.mcp.json` at it). `render` returns the PNG as an image.
 - Commands: `new`, `info`, `ascii`, `render`, `import_sheet` (grid cut, exact colors; `into` appends to an existing asset),
+  `import_character` (a pack folder → one asset with directional tags; layouts in `src/headless/character.ts`),
   `export_sheet` (1:1 PNG + Aseprite-style JSON with frameTags and durations), `draw`,
   `fx`, `fx_anim`, `palette` (set/add/names/map), `palette_fit` (nearest colors of a target palette),
   `palette_show`, `remap`, `frames`, `anim`, `transform`, `resize`.

@@ -12,7 +12,8 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **FX**: `drawSparks` acepta un generador aleatorio (semilla reproducible), reparte las chispas en círculo y escala cantidad y dispersión con el lienzo (calibrado a 16 px). Todos los FX aceptan lienzos no cuadrados.
 - **Import**: `import_sheet … into=<asset>` agrega los cuadros de otra hoja a un asset existente (mismo tamaño de cuadro, paleta fusionada por hex, tags con índices corridos). Sirve para juntar las hojas separadas de un pack (Idle, Walk, Attack…) en un solo personaje.
 - **Paletas**: `palette_fit` ajusta cada color de un asset al más cercano de una paleta (la de otro asset o una lista), con mapeos forzados y conservando alpha, y devuelve la tabla de qué fue a qué; `palette_show` dibuja la paleta como muestrario; `palette map` recolorea por valor (mismo mapeo para un sprite y su retrato).
-- **Tests**: 22 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
+- **Personajes**: `import_character` importa un personaje entero desde la carpeta de un pack en un solo paso, con los tags estándar por dirección (idle, walk, attack, hurt × down/up/left/right, más technique y die). Layouts `ninja_separate` (Idle/Walk/Attack/Special1/Dead) y `ninja_sheet` (una hoja de 4 columnas × N pasos).
+- **Tests**: 23 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
 
 ---
 

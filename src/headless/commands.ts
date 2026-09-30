@@ -16,6 +16,7 @@ import {
 import { encodePng, writePng } from './png';
 import { asciiLegend, contactSheet, paletteSheet, renderAscii, renderFrame } from './render';
 import { exportSheet, importSheet } from './sheet';
+import { importCharacter } from './character';
 import {
   applyDrawOps, applyFx, fitPalette, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
@@ -191,6 +192,32 @@ export const commands: Command[] = [
       });
       saveAsset(a.out, asset);
       return { data: { grid: { columns, rows }, asset: summarize(asset) } };
+    },
+  }),
+  define({
+    name: 'import_character',
+    description: 'Import a whole character from a pack folder in one go, with the standard tags (idle/walk/attack/hurt per direction: down, up, left, right; plus technique and die). Layout "ninja_separate": Idle/Walk/Attack/Special1/Dead PNGs. "ninja_sheet": one SpriteSheet.png, 4 columns × N step rows.',
+    schema: z.object({
+      dir: z.string().describe('folder with the PNGs'),
+      out: pathArg,
+      layout: z.enum(['ninja_separate', 'ninja_sheet']),
+      id: z.string().optional(),
+      name: z.string().optional(),
+      frame_size: z.number().int().positive().optional().describe('default 16'),
+      walk_fps: z.number().positive().optional(),
+      attack_ms: z.number().positive().optional(),
+      hurt_ms: z.number().positive().optional(),
+      technique_ms: z.number().positive().optional(),
+      die_ms: z.number().positive().optional(),
+    }),
+    run: (a) => {
+      const id = a.id ?? basename(a.out).replace(/\.pss\.json$|\.json$/i, '');
+      const { asset, sheets } = importCharacter({
+        dir: a.dir, layout: a.layout, id, name: a.name, frameSize: a.frame_size,
+        walkFps: a.walk_fps, attackMs: a.attack_ms, hurtMs: a.hurt_ms, techniqueMs: a.technique_ms, dieMs: a.die_ms,
+      });
+      saveAsset(a.out, asset);
+      return { data: { sheets, asset: summarize(asset) } };
     },
   }),
   define({
