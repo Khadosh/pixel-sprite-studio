@@ -14,7 +14,7 @@ import {
   getFrame, loadAsset, normalizeHex, removeAnimation, removeFrame, saveAsset, setAnimation, setFrame, summarize,
 } from './asset';
 import { encodePng, writePng } from './png';
-import { fitImageColors, fitPalette } from './ops';
+import { fitImageColors, fitPalette, knockOutColor } from './ops';
 import { asciiLegend, contactSheet, paletteSheet, renderAscii, renderFrame } from './render';
 import { exportSheet, importSheet } from './sheet';
 import { importCharacter } from './character';
@@ -458,6 +458,22 @@ export const commands: Command[] = [
       const table = fitImageColors(img, colors, a.map ?? {});
       writePng(a.out, img);
       return { data: { out: resolve(a.out), colors: table.length, moved: table.filter(t => t.from !== t.to).length, table } };
+    },
+  }),
+  define({
+    name: 'png_knockout',
+    description: 'Make transparent, in a PNG, the pixels of one color that touch the border of each region (flood from the edges); islands of that color inside stay. For tileset pieces with background baked around them. Regions [{x,y,w,h}] in pixels; default: the whole image.',
+    schema: z.object({
+      png: z.string(),
+      out: z.string(),
+      color: z.string(),
+      regions: z.array(z.object({ x: z.number().int(), y: z.number().int(), w: z.number().int().positive(), h: z.number().int().positive() })).optional(),
+    }),
+    run: (a) => {
+      const img = readPng(a.png);
+      const removed = knockOutColor(img, a.color, a.regions);
+      writePng(a.out, img);
+      return { data: { out: resolve(a.out), removed, regions: a.regions?.length ?? 1 } };
     },
   }),
   define({

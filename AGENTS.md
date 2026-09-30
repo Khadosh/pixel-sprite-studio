@@ -80,7 +80,7 @@ an agent (or a script) can produce art for a game:
   `import_character` (a pack folder → one asset with directional tags; layouts in `src/headless/character.ts`),
   `export_sheet` (1:1 PNG + Aseprite-style JSON with frameTags and durations), `draw`,
   `fx`, `fx_anim`, `palette` (set/add/names/map), `palette_fit` (nearest colors of a target palette),
-  `palette_show`, `png_fit` (recolor a whole PNG to a palette, layout untouched), `remap`, `frames`, `anim`, `animate` (anatomy-engine generators from one pose), `anatomy`,
+  `palette_show`, `png_fit` (recolor a whole PNG to a palette, layout untouched), `png_knockout` (drop a background color connected to region edges), `remap`, `frames`, `anim`, `animate` (anatomy-engine generators from one pose), `anatomy`,
   `transform`, `resize`, `pixelize` (PNG → asset via the editor's quantizer), `generate` (fal.ai → PNG; key from
   `FAL_AI_KEY` or `supabase/functions/.env`, never a command argument).
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.

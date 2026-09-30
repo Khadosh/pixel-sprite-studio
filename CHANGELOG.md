@@ -18,7 +18,8 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **IA headless**: `generate` pide una imagen a fal.ai con el mismo prompt técnico de la Edge Function (clave desde `FAL_AI_KEY` o `supabase/functions/.env`, nunca por argumento) y `pixelize` convierte cualquier PNG en un asset de un cuadro con el cuantizador del editor (fondo verde fuera, colores reducidos, opcionalmente ajustado a la paleta de otro asset). Los comandos pueden ser asíncronos.
 - **Pixelize afinado**: recorta al contenido (el fondo se detecta por las esquinas de la imagen entera, no del recorte), vuelve transparente el fondo antes de muestrear para que no sangre verde en los bordes, y pide PNG a fal.ai (flux responde JPEG por defecto).
 - **Paletas**: `png_fit` recolorea un PNG entero (un tileset, cualquier imagen) a una paleta destino sin tocar su disposición: cada color va a su mapeo forzado o al más cercano, con alpha intacto.
-- **Tests**: 30 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
+- **Paletas**: `png_knockout` vuelve transparente, en un PNG, el color de fondo que toca el borde de cada región (relleno desde los bordes), dejando las islas del mismo color: despega el pasto pegado alrededor de las piezas de un tileset sin tocar los rellenos.
+- **Tests**: 31 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
 
 ---
 

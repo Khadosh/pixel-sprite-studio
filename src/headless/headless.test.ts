@@ -8,7 +8,7 @@ import { createAsset, composite, dims, frameCount, loadAsset, saveAsset, setAnim
 import { readPng, writePng, getPixel } from './png';
 import { renderAscii, renderFrame, hexToRgba, rgbaToHex } from './render';
 import { exportSheet, importSheet, importSheetImage } from './sheet';
-import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fitPalette } from './ops';
+import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fitPalette, knockOutColor } from './ops';
 import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 import { importCharacter } from './character';
@@ -359,6 +359,26 @@ describe('png_fit', () => {
     expect(getPixel(back, 1, 0)).toEqual([0, 0, 255, 255]);
     expect(getPixel(back, 2, 0)).toEqual([0, 0, 255, 128]);
     expect(getPixel(back, 3, 0)).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe('png_knockout', () => {
+  it('removes the background color connected to the region edges but keeps islands', () => {
+    // 6x6 green with a 2x2 red block in the middle that has one green pixel inside its ring.
+    const w = 6, img = { width: w, height: w, data: new Uint8Array(w * w * 4) };
+    for (let i = 0; i < w * w; i++) img.data.set([0, 255, 0, 255], i * 4);
+    for (let y = 1; y < 5; y++) for (let x = 1; x < 5; x++) img.data.set([255, 0, 0, 255], (y * w + x) * 4);
+    img.data.set([0, 255, 0, 255], (2 * w + 2) * 4); // green island inside the red
+    const removed = knockOutColor(img, '#00ff00');
+    expect(removed).toBe(20);
+    expect(getPixel(img, 0, 0)[3]).toBe(0);
+    expect(getPixel(img, 2, 2)).toEqual([0, 255, 0, 255]);
+    expect(getPixel(img, 1, 1)).toEqual([255, 0, 0, 255]);
+    // A region that does not touch the outer green leaves it alone.
+    const again = { width: w, height: w, data: new Uint8Array(w * w * 4) };
+    for (let i = 0; i < w * w; i++) again.data.set([0, 255, 0, 255], i * 4);
+    expect(knockOutColor(again, '#00ff00', [{ x: 2, y: 2, w: 2, h: 2 }])).toBe(4);
+    expect(getPixel(again, 0, 0)[3]).toBe(255);
   });
 });
 

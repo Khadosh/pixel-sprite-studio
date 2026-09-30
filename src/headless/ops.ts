@@ -372,3 +372,45 @@ function hexToRgbLocal(h: string): [number, number, number] {
   const n = h.replace('#', '');
   return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
 }
+
+
+export interface KnockoutRegion { x: number; y: number; w: number; h: number }
+
+/**
+ * Makes transparent the pixels of `color` that touch the border of each
+ * region (4-connected flood from the region's edges), leaving islands of the
+ * same color inside untouched. That is how a tileset piece with grass baked
+ * around it loses the grass but keeps the same green used as a fill.
+ * Regions default to the whole image. Returns how many pixels went away.
+ */
+export function knockOutColor(img: Rgba, color: string, regions?: KnockoutRegion[]): number {
+  const [tr, tg, tb] = hexToRgbLocal(normalizeHexLocal(color));
+  const same = (x: number, y: number) => {
+    const i = (y * img.width + x) * 4;
+    return img.data[i + 3] !== 0 && img.data[i] === tr && img.data[i + 1] === tg && img.data[i + 2] === tb;
+  };
+  const list = regions && regions.length ? regions : [{ x: 0, y: 0, w: img.width, h: img.height }];
+  let removed = 0;
+  for (const r of list) {
+    const x0 = Math.max(0, r.x), y0 = Math.max(0, r.y);
+    const x1 = Math.min(img.width, r.x + r.w), y1 = Math.min(img.height, r.y + r.h);
+    const seen = new Uint8Array((x1 - x0) * (y1 - y0));
+    const stack: [number, number][] = [];
+    const push = (x: number, y: number) => {
+      if (x < x0 || y < y0 || x >= x1 || y >= y1) return;
+      const k = (y - y0) * (x1 - x0) + (x - x0);
+      if (seen[k] || !same(x, y)) return;
+      seen[k] = 1;
+      stack.push([x, y]);
+    };
+    for (let x = x0; x < x1; x++) { push(x, y0); push(x, y1 - 1); }
+    for (let y = y0; y < y1; y++) { push(x0, y); push(x1 - 1, y); }
+    while (stack.length) {
+      const [x, y] = stack.pop()!;
+      img.data[(y * img.width + x) * 4 + 3] = 0;
+      removed++;
+      push(x + 1, y); push(x - 1, y); push(x, y + 1); push(x, y - 1);
+    }
+  }
+  return removed;
+}
