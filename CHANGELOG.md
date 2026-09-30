@@ -10,7 +10,8 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Headless**: **Núcleo sin navegador, CLI y servidor MCP** (`src/headless/`, `bin/pss`, `bin/pss-mcp`). Un agente puede crear assets, importar hojas PNG 1:1 (colores exactos), dibujar, aplicar los FX procedurales (`fx`, `fx_anim` con curvas de intensidad y semilla), manejar paleta, cuadros y animaciones, y exportar hoja 1:1 + JSON estilo Aseprite (`frameTags` con `loop`, duración por cuadro). `render` devuelve la imagen por MCP. Primer consumidor: el juego *The Unwritten Dao* (Godot).
 - **Modelo**: `SpriteAsset.width/height` opcionales (lienzo no cuadrado), `AnimationDef.durations` (ms por cuadro) y `AnimationDef.loop`. Sólo el lado headless los honra por ahora.
 - **FX**: `drawSparks` acepta un generador aleatorio (semilla reproducible), reparte las chispas en círculo y escala cantidad y dispersión con el lienzo (calibrado a 16 px). Todos los FX aceptan lienzos no cuadrados.
-- **Tests**: 19 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
+- **Import**: `import_sheet … into=<asset>` agrega los cuadros de otra hoja a un asset existente (mismo tamaño de cuadro, paleta fusionada por hex, tags con índices corridos). Sirve para juntar las hojas separadas de un pack (Idle, Walk, Attack…) en un solo personaje.
+- **Tests**: 20 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
 
 ---
 

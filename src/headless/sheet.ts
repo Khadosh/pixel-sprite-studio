@@ -24,6 +24,11 @@ export interface TagInput {
 
 export interface ImportSheetOptions {
   png: string;
+  /**
+   * Append into this existing asset instead of creating one: same frame size,
+   * colors merged into its palette by hex, frame indices offset past its frames.
+   */
+  into?: SpriteAsset;
   frameWidth: number;
   frameHeight: number;
   margin?: number;
@@ -65,9 +70,20 @@ export function importSheetImage(img: Rgba, opts: Omit<ImportSheetOptions, 'png'
     throw new Error(`the ${img.width}x${img.height} image has no room for ${fw}x${fh} frames`);
   }
   const id = opts.id ?? basename(opts.png ?? 'sheet').replace(/\.png$/i, '');
-  const asset = createAsset({ id, name: opts.name ?? id, width: fw, height: fh, category: opts.category, frames: 1 });
-  asset.layers![0].frames = [];
+  let asset: SpriteAsset;
   const byHex = new Map<string, number>();
+  if (opts.into) {
+    asset = opts.into;
+    const have = dims(asset);
+    if (have.width !== fw || have.height !== fh) {
+      throw new Error(`cannot append ${fw}x${fh} frames into a ${have.width}x${have.height} asset`);
+    }
+    for (const [idx, hex] of Object.entries(asset.palette)) byHex.set(hex.toLowerCase(), Number(idx));
+  } else {
+    asset = createAsset({ id, name: opts.name ?? id, width: fw, height: fh, category: opts.category, frames: 1 });
+    asset.layers![0].frames = [];
+  }
+  const offset = asset.layers![0].frames.length;
   const kept: number[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < columns; c++) {
@@ -82,7 +98,7 @@ export function importSheetImage(img: Rgba, opts: Omit<ImportSheetOptions, 'png'
           const hex = rgbaToHex(p);
           let idx = byHex.get(hex);
           if (idx === undefined) {
-            idx = byHex.size + 1;
+            idx = Math.max(0, ...byHex.values()) + 1;
             byHex.set(hex, idx);
             asset.palette[idx] = hex;
             asset.colorNames[idx] = hex;
@@ -94,7 +110,9 @@ export function importSheetImage(img: Rgba, opts: Omit<ImportSheetOptions, 'png'
       const gridIndex = r * columns + c;
       if (opts.skipEmpty && !any) continue;
       kept.push(gridIndex);
-      asset.layers![0].frames.push(frame);
+      for (const [li, layer] of asset.layers!.entries()) {
+        layer.frames.push(li === 0 ? frame : blankFrame(fw, fh));
+      }
     }
   }
   if (asset.layers![0].frames.length === 0) asset.layers![0].frames.push(blankFrame(fw, fh));
@@ -103,7 +121,7 @@ export function importSheetImage(img: Rgba, opts: Omit<ImportSheetOptions, 'png'
     const frameIndices = gridFrames.map(g => {
       const i = kept.indexOf(g);
       if (i < 0) throw new Error(`tag ${tag.name}: grid frame ${g} was skipped or does not exist`);
-      return i;
+      return offset + i;
     });
     setAnimation(asset, { name: tag.name, frameIndices, fps: tag.fps, durations: tag.durations, loop: tag.loop });
   }

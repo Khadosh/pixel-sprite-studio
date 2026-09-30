@@ -152,10 +152,11 @@ export const commands: Command[] = [
   }),
   define({
     name: 'import_sheet',
-    description: 'Cut a PNG sprite sheet on a grid into an asset, keeping every color exactly. Tags map grid frames to animations ("row:N", "col:N" or a list, row-major).',
+    description: 'Cut a PNG sprite sheet on a grid into an asset, keeping every color exactly. Tags map grid frames to animations ("row:N", "col:N" or a list, row-major). With "into", the frames are appended to that existing asset (same frame size; palette merged by hex).',
     schema: z.object({
       png: z.string(),
       out: pathArg,
+      into: pathArg.optional().describe('existing asset to append into; defaults to a new asset at out'),
       frame_width: z.number().int().positive(),
       frame_height: z.number().int().positive(),
       margin: z.number().int().nonnegative().optional(),
@@ -176,6 +177,7 @@ export const commands: Command[] = [
     run: (a) => {
       const { asset, columns, rows } = importSheet({
         png: a.png,
+        into: a.into ? loadAsset(a.into) : undefined,
         frameWidth: a.frame_width,
         frameHeight: a.frame_height,
         margin: a.margin,

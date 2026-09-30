@@ -153,6 +153,23 @@ describe('sheets', () => {
     expect(r.asset.palette[1]).toBe('#0a141e');
   });
 
+  it('appends a second sheet into an existing asset, merging the palette and offsetting tags', () => {
+    const a = createAsset({ id: 'hero', width: 2, height: 2, palette: ['#ff0000'], frames: 2 });
+    a.layers![0].frames[0][0][0] = 1;
+    const img = { width: 4, height: 2, data: new Uint8Array(4 * 2 * 4) };
+    const paint = (x: number, y: number, rgb: number[]) => { const i = (y * 4 + x) * 4; img.data.set([...rgb, 255], i); };
+    paint(0, 0, [255, 0, 0]);   // same red as the asset
+    paint(2, 1, [0, 0, 255]);   // new blue
+    const r = importSheetImage(img, { into: a, frameWidth: 2, frameHeight: 2, tags: [{ name: 'walk', frames: 'row:0' }] });
+    expect(r.asset).toBe(a);
+    expect(frameCount(a)).toBe(4);
+    expect(a.palette).toEqual({ 1: '#ff0000', 2: '#0000ff' });
+    expect(a.layers![0].frames[2][0][0]).toBe(1);
+    expect(a.layers![0].frames[3][1][0]).toBe(2);
+    expect(a.animations[0].frameIndices).toEqual([2, 3]);
+    expect(() => importSheetImage(img, { into: a, frameWidth: 4, frameHeight: 2 })).toThrow(/cannot append/);
+  });
+
   it('strip layout refuses non-contiguous animations', () => {
     const a = createAsset({ id: 'x', width: 2, frames: 3 });
     setAnimation(a, { name: 'odd', frameIndices: [0, 2] });
