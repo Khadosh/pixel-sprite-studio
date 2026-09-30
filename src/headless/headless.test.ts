@@ -379,6 +379,12 @@ describe('png_knockout', () => {
     for (let i = 0; i < w * w; i++) again.data.set([0, 255, 0, 255], i * 4);
     expect(knockOutColor(again, '#00ff00', [{ x: 2, y: 2, w: 2, h: 2 }])).toBe(4);
     expect(getPixel(again, 0, 0)[3]).toBe(255);
+    // Empty air on the region border still lets the flood reach the color inside.
+    const air = { width: 4, height: 4, data: new Uint8Array(4 * 4 * 4) };
+    air.data.set([0, 255, 0, 255], (1 * 4 + 1) * 4);
+    air.data.set([255, 0, 0, 255], (2 * 4 + 2) * 4);
+    expect(knockOutColor(air, '#00ff00')).toBe(1);
+    expect(getPixel(air, 2, 2)).toEqual([255, 0, 0, 255]);
   });
 });
 

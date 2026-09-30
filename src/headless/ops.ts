@@ -385,10 +385,14 @@ export interface KnockoutRegion { x: number; y: number; w: number; h: number }
  */
 export function knockOutColor(img: Rgba, color: string, regions?: KnockoutRegion[]): number {
   const [tr, tg, tb] = hexToRgbLocal(normalizeHexLocal(color));
-  const same = (x: number, y: number) => {
+  // The flood walks through the color and through already-transparent pixels
+  // (a region's border is often empty air around the piece); only the
+  // colored ones are removed.
+  const isColor = (x: number, y: number) => {
     const i = (y * img.width + x) * 4;
     return img.data[i + 3] !== 0 && img.data[i] === tr && img.data[i + 1] === tg && img.data[i + 2] === tb;
   };
+  const same = (x: number, y: number) => img.data[(y * img.width + x) * 4 + 3] === 0 || isColor(x, y);
   const list = regions && regions.length ? regions : [{ x: 0, y: 0, w: img.width, h: img.height }];
   let removed = 0;
   for (const r of list) {
@@ -407,8 +411,10 @@ export function knockOutColor(img: Rgba, color: string, regions?: KnockoutRegion
     for (let y = y0; y < y1; y++) { push(x0, y); push(x1 - 1, y); }
     while (stack.length) {
       const [x, y] = stack.pop()!;
-      img.data[(y * img.width + x) * 4 + 3] = 0;
-      removed++;
+      if (isColor(x, y)) {
+        img.data[(y * img.width + x) * 4 + 3] = 0;
+        removed++;
+      }
       push(x + 1, y); push(x - 1, y); push(x, y + 1); push(x, y - 1);
     }
   }
