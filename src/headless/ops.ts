@@ -337,13 +337,18 @@ function normalizeHexLocal(hex: string): string {
  * goes to its forced mapping or to the nearest color of `target`. Alpha is
  * kept. Returns the table of what went where (one row per distinct color).
  */
-export function fitImageColors(img: Rgba, target: string[], overrides: Record<string, string> = {}): FitEntry[] {
+export function fitImageColors(img: Rgba, target: string[], overrides: Record<string, string> = {}, regions?: KnockoutRegion[]): FitEntry[] {
   const candidates = target.map(normalizeHexLocal);
   const forced = new Map(Object.entries(overrides).map(([k, v]) => [normalizeHexLocal(k), normalizeHexLocal(v)]));
   const mapping = new Map<string, { to: string; entry: FitEntry }>();
   const hex = (r: number, g: number, b: number) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  const inRegions = (i: number) => {
+    if (!regions || regions.length === 0) return true;
+    const p = i / 4, x = p % img.width, y = Math.floor(p / img.width);
+    return regions.some(r => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h);
+  };
   for (let i = 0; i < img.data.length; i += 4) {
-    if (img.data[i + 3] === 0) continue;
+    if (img.data[i + 3] === 0 || !inRegions(i)) continue;
     const from = hex(img.data[i], img.data[i + 1], img.data[i + 2]);
     let m = mapping.get(from);
     if (!m) {

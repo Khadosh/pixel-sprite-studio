@@ -449,13 +449,14 @@ export const commands: Command[] = [
       target: pathArg.optional().describe('asset whose palette is the target'),
       colors: z.array(z.string()).optional(),
       map: z.record(z.string(), z.string()).optional().describe('{fromHex: toHex} forced mappings'),
+      regions: z.array(z.object({ x: z.number().int(), y: z.number().int(), w: z.number().int().positive(), h: z.number().int().positive() })).optional().describe('only recolor inside these rects (pixels); default: the whole image'),
     }),
     run: (a) => {
       let colors = a.colors ?? [];
       if (a.target) colors = colors.concat(Object.values(loadAsset(a.target).palette));
       if (colors.length === 0) throw new Error('png_fit needs target or colors');
       const img = readPng(a.png);
-      const table = fitImageColors(img, colors, a.map ?? {});
+      const table = fitImageColors(img, colors, a.map ?? {}, a.regions);
       writePng(a.out, img);
       return { data: { out: resolve(a.out), colors: table.length, moved: table.filter(t => t.from !== t.to).length, table } };
     },

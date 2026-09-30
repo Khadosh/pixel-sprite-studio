@@ -359,6 +359,12 @@ describe('png_fit', () => {
     expect(getPixel(back, 1, 0)).toEqual([0, 0, 255, 255]);
     expect(getPixel(back, 2, 0)).toEqual([0, 0, 255, 128]);
     expect(getPixel(back, 3, 0)).toEqual([0, 0, 0, 0]);
+    // With regions, pixels outside are left alone.
+    writePng(png, img);
+    await runCommand('png_fit', { png, out, colors: ['#0000ff'], regions: [{ x: 0, y: 0, w: 1, h: 1 }] });
+    const part = readPng(out);
+    expect(getPixel(part, 0, 0)).toEqual([0, 0, 255, 255]);
+    expect(getPixel(part, 1, 0)).toEqual([10, 250, 10, 255]);
   });
 });
 
