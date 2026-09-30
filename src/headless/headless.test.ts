@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createAsset, composite, dims, frameCount, loadAsset, saveAsset, setAnimation, removeFrame, colorIndex } from './asset';
@@ -298,6 +299,11 @@ describe('commands', () => {
     expect(back.grid.columns).toBe(4);
     const render = runCommand('render', { path, scale: 2 });
     expect(render.png!.length).toBeGreaterThan(100);
+  });
+
+  it('the real binary starts under tsx (catches "@/" alias imports that only vitest resolves)', () => {
+    const out = execFileSync(join(process.cwd(), 'bin/pss'), ['help'], { encoding: 'utf8' });
+    expect(out).toContain('animate');
   });
 
   it('the CLI parses key=value and JSON forms', () => {

@@ -306,7 +306,7 @@ function getElementalColors(asset: SpriteAsset, element: CastElement): { updated
   };
 }
 
-export function generateFrameSequence(
+function generateFrameSequence(
   base: number[][],
   anim: string,
   glowColor: number,
