@@ -68,6 +68,27 @@ Key capabilities:
 | `supabase/migrations/` | Schema. `increment_ai_usage` RPC enforces the daily AI quota atomically |
 | `src/components/ui/` | shadcn/ui components — do NOT edit manually, use the shadcn CLI |
 
+## Headless: CLI and MCP (no browser)
+
+`src/headless/` drives the same asset JSON without React, Zustand or Supabase, so
+an agent (or a script) can produce art for a game:
+
+- `bin/pss <command> '<json>'` or `bin/pss <command> key=value …`; `bin/pss help`.
+- `bin/pss-mcp` is an MCP server over stdio exposing every command as `pss_<command>`
+  (a game repo points its `.mcp.json` at it). `render` returns the PNG as an image.
+- Commands: `new`, `info`, `ascii`, `render`, `import_sheet` (grid cut, exact colors),
+  `export_sheet` (1:1 PNG + Aseprite-style JSON with frameTags and durations), `draw`,
+  `fx`, `fx_anim`, `palette`, `remap`, `frames`, `anim`, `transform`, `resize`.
+- Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
+  Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
+  (node environment, no jsdom).
+- Model additions honored only by the headless side for now: `SpriteAsset.width/height`
+  (non-square canvas), `AnimationDef.durations` (ms per frame) and `AnimationDef.loop`.
+- Coordinates in commands are x = column, y = row; frames stay `number[][]` as `[row][col]`.
+
+First consumer: *The Unwritten Dao* (Godot), whose `arte.sh` exports `art/pss/src/*.pss.json`
+through `bin/pss export_sheet`.
+
 ## Roadmap (3 archivos)
 
 - **`ROADMAP_COMPLETED.md`**: historial de lo completado.

@@ -2,7 +2,8 @@ import "@testing-library/jest-dom";
 
 import { beforeEach, vi } from 'vitest';
 
-Object.defineProperty(window, "matchMedia", {
+// Headless tests (src/headless) run in the node environment: no window there.
+if (typeof window !== 'undefined') Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
     matches: false,
@@ -30,6 +31,6 @@ if (typeof crypto === 'undefined' || !crypto.randomUUID) {
 
 // Clear storage before each test to prevent bleed-through
 beforeEach(() => {
-  localStorage.clear();
+  if (typeof localStorage !== 'undefined') localStorage.clear();
   vi.clearAllMocks();
 });

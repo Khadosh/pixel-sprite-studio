@@ -26,11 +26,22 @@
 
 ---
 
+## 🖥️ 3. Headless (CLI + MCP) — para alimentar juegos desde un agente
+*Ver "Headless" en AGENTS.md. Primer consumidor: The Unwritten Dao (Godot).*
+
+- [x] **Núcleo headless**: `src/headless/` con registro de comandos, CLI (`bin/pss`) y MCP (`bin/pss-mcp`).
+- [x] **Import de hojas 1:1** (grilla, margen, espaciado, colores exactos, tags por fila/columna).
+- [x] **Export hoja 1:1 + JSON estilo Aseprite** (rects, duración por cuadro, frameTags con loop).
+- [x] **FX procedurales por comando** (`fx`, `fx_anim`) con semilla reproducible.
+- [ ] **Animación de anatomía por comando** (`animate`: walk/idle/run/jump sobre un asset importado).
+- [ ] **Que el editor honre `width/height`, `durations` y `loop`** (hoy sólo el lado headless).
+- [ ] **Import de hojas desde la UI** reutilizando `importSheetImage`.
+
 ## ⏳ Futuro Cercano (Post-Anatomy)
 - [ ] **Auto-Shade Generator** (Herramientas de Paleta)
 - [ ] **HSL Color Picker Pro**
-- [ ] **Export Texture Packer JSON**
-- [ ] **Duración por Frame editable**
+- [x] **Export Texture Packer JSON** (hecho en headless: `export_sheet`)
+- [x] **Duración por Frame** (modelo: `AnimationDef.durations`; falta la UI)
 
 ---
 

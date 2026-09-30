@@ -26,6 +26,10 @@ export interface AnimationDef {
   frameIndices: number[];
   /** Playback speed in frames per second. Default: 5 (200ms per frame) */
   fps?: number;
+  /** Optional per-frame duration in ms, aligned with frameIndices. Wins over fps when present. */
+  durations?: number[];
+  /** Whether the animation loops. Default: true. */
+  loop?: boolean;
 }
 
 export type MemberType = 'head' | 'torso' | 'arm_left' | 'arm_right' | 'leg_left' | 'leg_right' | 'tail' | 'wing' | 'prop';
@@ -85,6 +89,13 @@ export interface SpriteAsset {
   
   /** Grid size in pixels (width = height). Typically 16 or 32. */
   size: number;
+  /**
+   * Optional non-square canvas. When present they win over `size`; when absent,
+   * width = height = size. Today only the headless tools (src/headless) honor
+   * them; the web editor still assumes a square canvas.
+   */
+  width?: number;
+  height?: number;
   /** Unique URL-friendly identifier */
   slug?: string;
   /** Color palette: number → hex color string. 0 is always transparent. */

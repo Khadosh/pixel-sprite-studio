@@ -31,12 +31,13 @@ export function drawCircle(
   colorIdx: number,
   shades?: { light: number; dark: number }
 ): Frame {
-  const size = frame.length;
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
   const out = cloneFrame(frame);
   const r2 = radius * radius;
   
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       const dist2 = Math.pow(r - cr, 2) + Math.pow(c - cc, 2);
       if (dist2 <= r2) {
         const dist = Math.sqrt(dist2);
@@ -62,7 +63,9 @@ export function drawBurst(
   colorIdx: number,
   shades?: { light: number; dark: number }
 ): Frame {
-  const size = frame.length;
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
+  const size = Math.min(rows, cols);
   const out = cloneFrame(frame);
   if (intensity <= 0) return out;
 
@@ -77,7 +80,7 @@ export function drawBurst(
     for (let step = 0; step < maxLen; step++) {
       const r = Math.round(cr + step * sin);
       const c = Math.round(cc + step * cos);
-      if (r >= 0 && r < size && c >= 0 && c < size) {
+      if (r >= 0 && r < rows && c >= 0 && c < cols) {
         if (shades && step < maxLen * 0.3) {
           out[r][c] = shades.light;
         } else if (shades && step > maxLen * 0.7) {
@@ -100,20 +103,21 @@ export function drawBeam(
   colorIdx: number,
   shades: { light: number; dark: number }
 ): Frame {
-  const size = frame.length;
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
   const out = cloneFrame(frame);
   if (intensity <= 0) return out;
 
-  const length = size * intensity;
+  const length = cols * intensity;
   const width = Math.max(1, 4 * intensity);
 
   for (let step = 0; step < length; step++) {
     const c = Math.round(cc + step);
-    if (c < 0 || c >= size) continue;
+    if (c < 0 || c >= cols) continue;
 
     for (let w = -Math.floor(width/2); w <= Math.ceil(width/2); w++) {
       const r = Math.round(cr + w);
-      if (r >= 0 && r < size) {
+      if (r >= 0 && r < rows) {
         const absW = Math.abs(w);
         if (absW === 0) out[r][c] = shades.light;
         else if (absW >= width/2 - 0.5) out[r][c] = shades.dark;
@@ -131,23 +135,28 @@ export function drawSparks(
   cc: number,
   intensity: number,
   colorIdx: number,
-  shades: { light: number; dark: number }
+  shades: { light: number; dark: number },
+  rng: () => number = Math.random
 ): Frame {
-  const size = frame.length;
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
   const out = cloneFrame(frame);
   if (intensity <= 0) return out;
 
-  const count = Math.floor(10 + 20 * intensity);
-  const spread = 6 * intensity;
+  // Calibrated on a 16px canvas; bigger canvases get proportionally more sparks.
+  const unit = Math.min(rows, cols) / 16;
+  const count = Math.floor((10 + 20 * intensity) * unit * unit);
+  const spread = 6 * intensity * unit;
 
   for (let i = 0; i < count; i++) {
-    const dr = (Math.random() - 0.5) * spread * 2;
-    const dc = (Math.random() - 0.5) * spread * 2;
-    const r = Math.round(cr + dr);
-    const c = Math.round(cc + dc);
+    // Polar sampling: a round cloud, denser near the center.
+    const angle = rng() * Math.PI * 2;
+    const dist = Math.sqrt(rng()) * spread;
+    const r = Math.round(cr + Math.sin(angle) * dist);
+    const c = Math.round(cc + Math.cos(angle) * dist);
     
-    if (r >= 0 && r < size && c >= 0 && c < size) {
-      const rand = Math.random();
+    if (r >= 0 && r < rows && c >= 0 && c < cols) {
+      const rand = rng();
       if (rand > 0.7) out[r][c] = shades.light;
       else if (rand > 0.4) out[r][c] = colorIdx;
       else out[r][c] = shades.dark;
@@ -165,14 +174,15 @@ export function drawPulse(
   colorIdx: number,
   shades: { light: number; dark: number }
 ): Frame {
-  const size = frame.length;
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
   const out = cloneFrame(frame);
   if (intensity <= 0) return out;
 
-  const radius = (size / 2) * intensity;
+  const radius = (Math.min(rows, cols) / 2) * intensity;
   
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       const dist = Math.sqrt(Math.pow(r - cr, 2) + Math.pow(c - cc, 2));
       if (Math.abs(dist - radius) < 1) {
         out[r][c] = colorIdx;
@@ -188,16 +198,17 @@ export function drawPulse(
 
 /** Adds a glow effect to a frame. */
 export function addGlow(frame: Frame, colorIndex: number): Frame {
-  const size = frame.length;
+  const rows = frame.length;
+  const cols = frame[0]?.length ?? rows;
   const out = cloneFrame(frame);
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       if (frame[r][c] === 0) {
         const hasNeighbor = 
           (r > 0 && frame[r-1][c] !== 0) ||
-          (r < size-1 && frame[r+1][c] !== 0) ||
+          (r < rows-1 && frame[r+1][c] !== 0) ||
           (c > 0 && frame[r][c-1] !== 0) ||
-          (c < size-1 && frame[r][c+1] !== 0);
+          (c < cols-1 && frame[r][c+1] !== 0);
         if (hasNeighbor) out[r][c] = colorIndex;
       }
     }

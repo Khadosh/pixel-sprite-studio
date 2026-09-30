@@ -1,0 +1,254 @@
+// Drawing and transform operations on frames, addressed with x = column and
+// y = row. Thin wrappers over src/lib/sprite so the editor and the tools share
+// the same pixels.
+
+import type { Frame, SpriteAsset } from '../lib/types';
+import {
+  addGlow, drawBeam, drawBurst, drawCircle, drawPulse, drawSparks,
+} from '../lib/sprite/drawing';
+import { cloneFrame } from '../lib/sprite/transforms';
+import { addFrame, colorIndex, dims, getFrame, setAnimation, setFrame } from './asset';
+
+export type Color = string | number;
+
+function inBounds(frame: Frame, x: number, y: number): boolean {
+  return y >= 0 && y < frame.length && x >= 0 && x < (frame[0]?.length ?? 0);
+}
+
+export function plot(frame: Frame, x: number, y: number, idx: number): void {
+  if (inBounds(frame, x, y)) frame[y][x] = idx;
+}
+
+/** Bresenham line, inclusive. */
+export function line(frame: Frame, x0: number, y0: number, x1: number, y1: number, idx: number): void {
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = dx + dy;
+  let x = x0, y = y0;
+  for (;;) {
+    plot(frame, x, y, idx);
+    if (x === x1 && y === y1) break;
+    const e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x += sx; }
+    if (e2 <= dx) { err += dx; y += sy; }
+  }
+}
+
+export function rect(frame: Frame, x: number, y: number, w: number, h: number, idx: number, fill = false): void {
+  for (let yy = y; yy < y + h; yy++) {
+    for (let xx = x; xx < x + w; xx++) {
+      const edge = yy === y || yy === y + h - 1 || xx === x || xx === x + w - 1;
+      if (fill || edge) plot(frame, xx, yy, idx);
+    }
+  }
+}
+
+/** Midpoint circle outline. */
+export function circleOutline(frame: Frame, cx: number, cy: number, radius: number, idx: number): void {
+  let x = radius, y = 0, err = 1 - radius;
+  while (x >= y) {
+    for (const [px, py] of [[x, y], [y, x], [-y, x], [-x, y], [-x, -y], [-y, -x], [y, -x], [x, -y]]) {
+      plot(frame, cx + px, cy + py, idx);
+    }
+    y++;
+    if (err < 0) err += 2 * y + 1;
+    else { x--; err += 2 * (y - x) + 1; }
+  }
+}
+
+/** Flood fill of the contiguous region (4-neighbour) under (x, y). */
+export function floodFill(frame: Frame, x: number, y: number, idx: number): number {
+  if (!inBounds(frame, x, y)) return 0;
+  const target = frame[y][x];
+  if (target === idx) return 0;
+  const stack: [number, number][] = [[x, y]];
+  let painted = 0;
+  while (stack.length) {
+    const [cx, cy] = stack.pop()!;
+    if (!inBounds(frame, cx, cy) || frame[cy][cx] !== target) continue;
+    frame[cy][cx] = idx;
+    painted++;
+    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+  }
+  return painted;
+}
+
+export function replaceIndex(frame: Frame, from: number, to: number): number {
+  let n = 0;
+  for (const row of frame) {
+    for (let c = 0; c < row.length; c++) {
+      if (row[c] === from) { row[c] = to; n++; }
+    }
+  }
+  return n;
+}
+
+export function flipH(frame: Frame): Frame {
+  return frame.map(row => [...row].reverse());
+}
+
+export function flipV(frame: Frame): Frame {
+  return [...frame].reverse().map(row => [...row]);
+}
+
+/** Moves the picture by (dx, dy); what leaves the canvas is lost. */
+export function shift(frame: Frame, dx: number, dy: number): Frame {
+  const h = frame.length, w = frame[0]?.length ?? 0;
+  const out: Frame = Array.from({ length: h }, () => Array<number>(w).fill(0));
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const v = frame[y][x];
+      if (!v) continue;
+      const nx = x + dx, ny = y + dy;
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h) out[ny][nx] = v;
+    }
+  }
+  return out;
+}
+
+// ── Draw ops as data (what the "draw" command receives) ─────────────────
+
+export type DrawOp =
+  | { op: 'pixel'; x: number; y: number; color: Color }
+  | { op: 'pixels'; points: [number, number][]; color: Color }
+  | { op: 'line'; x0: number; y0: number; x1: number; y1: number; color: Color }
+  | { op: 'rect'; x: number; y: number; w: number; h: number; color: Color; fill?: boolean }
+  | { op: 'circle'; x: number; y: number; radius: number; color: Color; fill?: boolean }
+  | { op: 'fill'; x: number; y: number; color: Color }
+  | { op: 'replace'; from: Color; to: Color }
+  | { op: 'clear' };
+
+export function applyDrawOps(asset: SpriteAsset, frameIndex: number, ops: DrawOp[], layer = 0): void {
+  const frame = cloneFrame(getFrame(asset, frameIndex, layer));
+  for (const o of ops) {
+    switch (o.op) {
+      case 'pixel': plot(frame, o.x, o.y, colorIndex(asset, o.color)); break;
+      case 'pixels': {
+        const idx = colorIndex(asset, o.color);
+        for (const [x, y] of o.points) plot(frame, x, y, idx);
+        break;
+      }
+      case 'line': line(frame, o.x0, o.y0, o.x1, o.y1, colorIndex(asset, o.color)); break;
+      case 'rect': rect(frame, o.x, o.y, o.w, o.h, colorIndex(asset, o.color), o.fill ?? false); break;
+      case 'circle': {
+        const idx = colorIndex(asset, o.color);
+        if (o.fill) {
+          const filled = drawCircle(frame, o.y, o.x, o.radius, idx);
+          frame.splice(0, frame.length, ...filled);
+        } else {
+          circleOutline(frame, o.x, o.y, o.radius, idx);
+        }
+        break;
+      }
+      case 'fill': floodFill(frame, o.x, o.y, colorIndex(asset, o.color)); break;
+      case 'replace': replaceIndex(frame, colorIndex(asset, o.from), colorIndex(asset, o.to)); break;
+      case 'clear': for (const row of frame) row.fill(0); break;
+    }
+  }
+  setFrame(asset, frameIndex, frame, layer);
+}
+
+// ── Procedural FX ──────────────────────────────────────────────────────
+
+export type FxShape = 'burst' | 'beam' | 'sparks' | 'pulse' | 'circle' | 'glow';
+
+export interface FxOptions {
+  shape: FxShape;
+  /** Center, in pixels. Defaults to the canvas center. */
+  x?: number;
+  y?: number;
+  /** 0..1 */
+  intensity: number;
+  color: Color;
+  light?: Color;
+  dark?: Color;
+  /** Radius for 'circle'. Default: intensity * min(w,h)/2 */
+  radius?: number;
+  /** Seed for 'sparks'; same seed, same sparks. */
+  seed?: number;
+}
+
+/** Small deterministic PRNG (mulberry32). */
+export function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function applyFx(asset: SpriteAsset, frame: Frame, fx: FxOptions): Frame {
+  const { width, height } = dims(asset);
+  const cx = fx.x ?? Math.floor(width / 2);
+  const cy = fx.y ?? Math.floor(height / 2);
+  const main = colorIndex(asset, fx.color);
+  const shades = {
+    light: fx.light !== undefined ? colorIndex(asset, fx.light) : main,
+    dark: fx.dark !== undefined ? colorIndex(asset, fx.dark) : main,
+  };
+  switch (fx.shape) {
+    case 'burst': return drawBurst(frame, cy, cx, fx.intensity, main, shades);
+    case 'beam': return drawBeam(frame, cy, cx, fx.intensity, main, shades);
+    case 'sparks': return drawSparks(frame, cy, cx, fx.intensity, main, shades, seededRandom(fx.seed ?? 1));
+    case 'pulse': return drawPulse(frame, cy, cx, fx.intensity, main, shades);
+    case 'circle': {
+      const radius = fx.radius ?? Math.max(1, (Math.min(width, height) / 2) * fx.intensity);
+      return drawCircle(frame, cy, cx, radius, main, fx.light !== undefined || fx.dark !== undefined ? shades : undefined);
+    }
+    case 'glow': return addGlow(frame, main);
+  }
+}
+
+export type FxCurve = 'grow' | 'fade' | 'grow_fade' | 'flat';
+
+export interface FxAnimationOptions extends Omit<FxOptions, 'intensity'> {
+  name: string;
+  /** How many frames to generate. */
+  frames: number;
+  /** How intensity moves across the frames. Default grow_fade. */
+  curve?: FxCurve;
+  /** Peak intensity, 0..1. Default 1. */
+  peak?: number;
+  fps?: number;
+  loop?: boolean;
+}
+
+export function intensityAt(curve: FxCurve, i: number, n: number, peak: number): number {
+  if (n <= 1) return peak;
+  const t = i / (n - 1);
+  switch (curve) {
+    case 'grow': return peak * (0.2 + 0.8 * t);
+    case 'fade': return peak * (1 - 0.8 * t);
+    case 'flat': return peak;
+    case 'grow_fade': {
+      // Fast rise, slower fall, peaking around a third of the way.
+      const p = 0.35;
+      return peak * (t <= p ? 0.25 + 0.75 * (t / p) : 1 - 0.85 * ((t - p) / (1 - p)));
+    }
+  }
+}
+
+/**
+ * Appends N frames drawn with the FX at a moving intensity and tags them as
+ * an animation. Returns the new frame indices.
+ */
+export function generateFxAnimation(asset: SpriteAsset, opts: FxAnimationOptions): number[] {
+  const { width, height } = dims(asset);
+  const indices: number[] = [];
+  const curve = opts.curve ?? 'grow_fade';
+  const peak = opts.peak ?? 1;
+  for (let i = 0; i < opts.frames; i++) {
+    const blank: Frame = Array.from({ length: height }, () => Array<number>(width).fill(0));
+    const drawn = applyFx(asset, blank, {
+      ...opts,
+      intensity: intensityAt(curve, i, opts.frames, peak),
+      seed: (opts.seed ?? 1) + i * 7919,
+    });
+    indices.push(addFrame(asset, drawn));
+  }
+  setAnimation(asset, { name: opts.name, frameIndices: indices, fps: opts.fps ?? 12, loop: opts.loop ?? false });
+  return indices;
+}
