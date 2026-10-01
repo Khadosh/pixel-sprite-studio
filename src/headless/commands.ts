@@ -390,7 +390,7 @@ export const commands: Command[] = [
   }),
   define({
     name: 'contact',
-    description: 'Control sheet: several assets side by side at an integer scale on a background color, over a grid of N px anchored at their feet, each named underneath and with a reference asset (the player) standing next to it to compare sizes. Returns the PNG.',
+    description: 'Control sheet: several assets side by side at an integer scale on a background color (semi-transparent pixels composited over it, or added with blend=add for lights), over a grid of N px anchored at their feet, each named underneath and with a reference asset (the player) standing next to it to compare sizes. Returns the PNG.',
     schema: z.object({
       paths: z.array(z.string()).min(1).describe('asset JSON paths'),
       ref: pathArg.optional().describe('reference asset shown next to each one'),
@@ -400,6 +400,7 @@ export const commands: Command[] = [
       background: z.string().optional().describe('hex (default #a6c778, grass)'),
       grid: z.number().int().nonnegative().optional().describe('grid every N asset px (default 16, 0 = none)'),
       columns: z.number().int().positive().optional().describe('assets per row (default up to 8)'),
+      blend: z.enum(['over', 'add']).optional().describe('over (default): semi-transparent pixels composite over the background as in a game; add: sum them, to preview a light halo (use a dark background)'),
       out: z.string().optional().describe('PNG path; when omitted the image is only returned'),
     }),
     run: (a) => {
@@ -408,7 +409,7 @@ export const commands: Command[] = [
         return { asset, frame: Math.min(a.frame ?? 0, frameCount(asset) - 1) };
       });
       const img = contactSheetMany(items, {
-        scale: a.scale, background: a.background, grid: a.grid, columns: a.columns,
+        scale: a.scale, background: a.background, grid: a.grid, columns: a.columns, blend: a.blend,
         reference: a.ref ? { asset: loadAsset(a.ref), frame: a.ref_frame } : undefined,
       });
       const png = encodePng(img);

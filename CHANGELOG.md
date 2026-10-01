@@ -5,7 +5,10 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-10-01 (Hoy)
-**2 commits realizados**
+**3 commits realizados**
+
+- **Headless**: **La hoja de control respeta el alpha**. `contact` compone cada píxel semitransparente sobre el fondo (source-over) en vez de copiarlo tal cual: una sombra de tinta al 40 % oscurece el pasto como en el juego, en vez de verse como una mancha gris opaca, y lo mismo la niebla. Con `blend=add` los suma (color por alfa), para ver un halo de luz como lo dibuja el juego sobre un fondo oscuro. Nuevo `blitBlend` en `png.ts` (`over` | `add`). Primer uso: las sombras de contacto y el halo de las luces del juego.
+- **Tests**: 49 tests headless (1 nuevo: la sombra a medio alfa oscurece el fondo y el halo se suma).
 
 - **Headless**: **Variantes de un asset**. `variant` copia un asset a otro archivo y pinta los cambios en una capa nueva encima ("variante"): un dibujo de texto en el formato de `from_ascii` donde todo glifo menos `.` va sobre la base, y/o operaciones de `draw`. El archivo base y sus capas no se tocan nunca, así que rearmar la base y volver a correr el mismo comando rearma la variante. Devuelve cuántos píxeles pinta y cuántos cambian de verdad; con `fit`, el dibujo tiene que estar en la paleta. Primer uso: los retratos con ánimo del juego (cálido y duro, desde el neutro).
 - **Paletas**: `fit` (en `from_ascii` y `variant`) y `lint` aceptan un color de la paleta con cualquier opacidad: `#rrggbbaa` pasa si su `#rrggbb` está. La niebla y las sombras son colores de la madre con alpha, no colores nuevos.

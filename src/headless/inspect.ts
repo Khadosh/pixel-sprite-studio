@@ -6,7 +6,7 @@
 import type { Frame, SpriteAsset } from '../lib/types';
 import { composite, dims, frameCount, normalizeHex, onPalette } from './asset';
 import { despeckle } from './ops';
-import { blankImage, blit, setPixel, type Rgba } from './png';
+import { blankImage, blitBlend, setPixel, type BlendMode, type Rgba } from './png';
 import { hexToRgba, renderFrame, type RgbaTuple } from './render';
 
 // ── A 3×5 pixel font for labels ─────────────────────────────────────────
@@ -62,6 +62,13 @@ export interface ContactOptions {
   reference?: ContactItem;
   /** Items per row before wrapping (default: all in one row up to 8). */
   columns?: number;
+  /**
+   * How each item is laid over the background: 'over' (default) composites
+   * semi-transparent pixels the way the game does, so a shadow or a fog wisp
+   * reads as it will on the map; 'add' sums them, to preview a light halo.
+   * The reference is always drawn 'over'.
+   */
+  blend?: BlendMode;
 }
 
 function shade(rgba: RgbaTuple, amount: number): RgbaTuple {
@@ -124,10 +131,11 @@ export function contactSheetMany(items: ContactItem[], opts: ContactOptions = {}
       }
       if (ref) {
         const frame = composite(ref.asset, ref.frame ?? 0);
-        blit(img, renderFrame(ref.asset, frame, scale), x0, baseline - refDims.height * scale);
+        blitBlend(img, renderFrame(ref.asset, frame, scale), x0, baseline - refDims.height * scale);
       }
       const frame = composite(c.it.asset, c.it.frame ?? 0);
-      blit(img, renderFrame(c.it.asset, frame, scale), x0 + (refDims.width + gap) * scale, baseline - c.d.height * scale);
+      blitBlend(img, renderFrame(c.it.asset, frame, scale), x0 + (refDims.width + gap) * scale,
+        baseline - c.d.height * scale, opts.blend ?? 'over');
       drawText(img, c.name, x0, baseline + 3 * label, label, textColor);
       x0 += cellW(c) + pad;
     }

@@ -635,6 +635,26 @@ describe('contact and lint', () => {
     expect(getPixel(img, pad + 32 + 2, pad)).toEqual([0, 0, 255, 255]); // the tall one reaches the top
   });
 
+  it('contact composites semi-transparent pixels over the background, or adds them with blend=add', async () => {
+    const shadow = join(dir, 'shadow.pss.json');
+    await runCommand('new', { path: shadow, width: 16, palette: ['#00000080'] });
+    await runCommand('draw', { path: shadow, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 16, h: 16, color: 1, fill: true }] });
+    await runCommand('contact', { paths: [shadow], scale: 1, grid: 0, background: '#c8c8c8', out: join(dir, 'over.png') });
+    // Half-transparent black over light gray darkens it (100), not a flat copy of the color.
+    const over = getPixel(readPng(join(dir, 'over.png')), 4 + 4, 4 + 4);
+    expect(over[0]).toBeGreaterThan(95);
+    expect(over[0]).toBeLessThan(105);
+    expect(over[3]).toBe(255);
+    const halo = join(dir, 'halo.pss.json');
+    await runCommand('new', { path: halo, width: 16, palette: ['#ff800080'] });
+    await runCommand('draw', { path: halo, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 16, h: 16, color: 1, fill: true }] });
+    await runCommand('contact', { paths: [halo], scale: 1, grid: 0, background: '#202020', blend: 'add', out: join(dir, 'add.png') });
+    const add = getPixel(readPng(join(dir, 'add.png')), 4 + 4, 4 + 4);
+    expect(add[0]).toBe(0x20 + 128); // the light adds on top of the dark background
+    expect(add[1]).toBe(0x20 + 64);
+    expect(add[2]).toBe(0x20);
+  });
+
   it('lint reports off-palette colors, sizes off the grid, lone pixels and seams, without touching the asset', () => {
     const a = createAsset({ id: 't', width: 8, height: 6, palette: ['#00ff00', '#ff00ff', '#000000'] });
     const f = a.layers![0].frames[0];

@@ -64,3 +64,33 @@ export function blit(dst: Rgba, src: Rgba, x: number, y: number): void {
     }
   }
 }
+
+export type BlendMode = 'over' | 'add';
+
+/**
+ * Composites src onto dst at (x, y) honoring alpha. 'over' is the usual
+ * source-over (a shadow at 40 % darkens the grass under it instead of
+ * replacing it with a gray); 'add' sums the color weighted by its alpha, the
+ * way a light is drawn in a game (a halo brightens what is under it).
+ */
+export function blitBlend(dst: Rgba, src: Rgba, x: number, y: number, mode: BlendMode = 'over'): void {
+  for (let sy = 0; sy < src.height; sy++) {
+    for (let sx = 0; sx < src.width; sx++) {
+      const dx = x + sx, dy = y + sy;
+      if (dx < 0 || dy < 0 || dx >= dst.width || dy >= dst.height) continue;
+      const p = getPixel(src, sx, sy);
+      if (p[3] === 0) continue;
+      const q = getPixel(dst, dx, dy);
+      const a = p[3] / 255;
+      if (mode === 'add') {
+        const add = (i: number) => Math.min(255, Math.round(q[i] + p[i] * a));
+        setPixel(dst, dx, dy, [add(0), add(1), add(2), Math.max(q[3], p[3])]);
+        continue;
+      }
+      const qa = q[3] / 255;
+      const outA = a + qa * (1 - a);
+      const mix = (i: number) => outA === 0 ? 0 : Math.round((p[i] * a + q[i] * qa * (1 - a)) / outA);
+      setPixel(dst, dx, dy, [mix(0), mix(1), mix(2), Math.round(outA * 255)]);
+    }
+  }
+}
