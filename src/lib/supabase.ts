@@ -11,8 +11,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Faltan VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY. Revisá .env o .env.local (ver .env.example).');
 }
 
-/** Único cliente de Supabase de la app, tipado con el esquema de `src/integrations/supabase/types.ts`. */
-export const supabase = createClient<Database>(supabaseUrl ?? '', supabaseAnonKey ?? '', {
+/**
+ * Único cliente de Supabase de la app, tipado con el esquema de `src/integrations/supabase/types.ts`.
+ * Sin .env apunta al stack local por defecto en vez de romper la app entera: lo que no usa la nube
+ * (/dibujo, /icon-preview) sigue andando y lo demás falla al pedir datos.
+ */
+export const supabase = createClient<Database>(supabaseUrl || 'http://127.0.0.1:54321', supabaseAnonKey || 'sin-configurar', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

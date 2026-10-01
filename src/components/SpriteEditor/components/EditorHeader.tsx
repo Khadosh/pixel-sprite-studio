@@ -15,6 +15,7 @@ import {
 import { useSpriteEditorStore } from '../context/SpriteEditorContext';
 import { ExportMenu } from './ExportMenu';
 import { ImportButton } from './ImportButton';
+import { TextFileButton } from './TextFileButton';
 
 export interface EditorHeaderProps {
   /**
@@ -174,6 +175,7 @@ export const EditorHeader = React.memo(({ variant = 'modal', backTo, syncStatus 
 
         {syncStatus && <div className="h-4 w-px bg-border mx-1" />}
 
+        <TextFileButton />
         {!isIconMode && <ImportButton />}
         <ExportMenu />
 

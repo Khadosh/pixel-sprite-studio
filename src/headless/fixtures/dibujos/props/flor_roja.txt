@@ -1,0 +1,28 @@
+id: flor_roja
+name: Flores bermellón
+category: prop
+size: 16x16
+
+d = #d14b34
+e = #a83a29
+m = #345a52
+l = #56864c
+k = #8fb66a
+
+==
+................
+................
+................
+..........d.....
+.........ded....
+...d......d.....
+..ded.....m.....
+...d......m..d..
+...m.d....m.ded.
+...m.m..k.m..d..
+.k.m.m..l.m..m..
+.l.mlm.kl.ml.m..
+.l.ml.mllmll.ml.
+.lml..l.ll.l.ml.
+ll.l.ll..l.ll.l.
+................

@@ -37,7 +37,7 @@
 - [x] **Animación de anatomía por comando** (`animate` + `anatomy`).
 - [ ] **El motor sobre chibis de 16 px**: con piernas de 1–2 px la caminata casi no se mueve y `die` rota la cabeza en fragmentos. Hace falta un modo "chibi" (mover bloques enteros, sin rotar) o pasos mínimos de 1 px garantizados.
 - [ ] **Que el editor honre `width/height`, `durations` y `loop`** (hoy sólo el lado headless).
-- [ ] **El editor abre y guarda los dibujos de texto** (`from_ascii` / `to_ascii`, formato en `src/headless/ascii.ts`). **Prioridad.** Hoy el agente dibuja por texto y nadie puede retocar eso en el editor; con esto se juntan las dos mitades: el agente arma por texto, una persona abre el mismo dibujo con línea de tiempo, piel de cebolla y capas para animar o pulir, guarda, y el agente sigue sobre lo guardado. Pedido por Joaquín (1 de octubre). Criterios:
+- [x] **El editor abre y guarda los dibujos de texto** (página `/dibujo`, `src/lib/textDrawing.ts`; hecho el 1 de octubre) (`from_ascii` / `to_ascii`, formato en `src/headless/ascii.ts`). **Prioridad.** Hoy el agente dibuja por texto y nadie puede retocar eso en el editor; con esto se juntan las dos mitades: el agente arma por texto, una persona abre el mismo dibujo con línea de tiempo, piel de cebolla y capas para animar o pulir, guarda, y el agente sigue sobre lo guardado. Pedido por Joaquín (1 de octubre). Criterios:
   - Abrir un `.txt` (o pegar su contenido) carga tamaño, paleta, cuadros y animaciones (`== idle 0`) en el editor.
   - Guardar vuelve a escribir el `.txt` sin perder nada que el formato tenga (ida y vuelta exacta, con test: `to_ascii(from_ascii(x)) == x`).
   - Lo que el formato no sabe guardar (capas, alfa parcial fuera de la paleta) avisa al guardar en vez de perderse en silencio.
@@ -47,7 +47,7 @@
 - [x] **Arte como texto** (`from_ascii` / `to_ascii`): el dibujo de caracteres con leyenda es la fuente de verdad de lo dibujado a mano; el juego guarda 43 en `art/pss/dibujos/` y `arte.sh` los rearma.
 - [x] **Control de escala y limpieza** (`contact` + `lint`): la hoja al lado del jugador que atrapó los faroles gigantes, ahora por comando.
 - [x] **Variantes de un asset** (`variant`): la misma cara con otras cejas, boca o mirada, en una capa encima de la base sin tocarla; el juego hace 24 retratos con ánimo así.
-- [ ] **Abrir un `.txt` de dibujo en el editor** (y guardar de vuelta), para retocar con el mouse lo que nació como texto.
+- [x] **Abrir un `.txt` de dibujo en el editor** (y guardar de vuelta), para retocar con el mouse lo que nació como texto. (Ver el ítem de arriba.)
 
 ## ⏳ Futuro Cercano (Post-Anatomy)
 - [ ] **Auto-Shade Generator** (Herramientas de Paleta)

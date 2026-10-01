@@ -1,0 +1,29 @@
+id: estacas
+name: Estacas del corral de pesca
+category: prop
+size: 16x16
+
+u = #5a3a26
+t = #8a5a3c
+g = #c9a34c
+a = #bfb8a8
+q = #8d8a86
+G = #7a5236
+
+==
+................
+.uu....uu.......
+utu...utu....uu.
+utu...utu...utu.
+utuqaqutuaqautu.
+u.uqaqutuaqautu.
+utuqq.utuaa.utu.
+utuqqqutuaaautu.
+utuqq.u.u.a.utu.
+utuqqqutu...utu.
+utuaqautuqqqutu.
+utua.autu...utu.
+GtGG..utu...utu.
+GG...GGtGG.GGtGG
+...........G....
+................

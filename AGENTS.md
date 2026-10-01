@@ -47,6 +47,8 @@ Key capabilities:
 | `src/lib/assets/` | Pre-loaded catalog (`ASSET_CATALOG`), `PALETTE_LIBRARY`, `PROP_LIBRARY` |
 | `src/pages/SpriteStudio.tsx` | **The editor page** (`/project/:projectSlug/editor/:spriteSlug`). Creates the store and renders `EditorLayout` |
 | `src/pages/ProjectWorkspace.tsx` | Project page: sprite list, AI creator wizard, navigation to the editor |
+| `src/pages/TextDrawing.tsx` | `/dibujo`: opens a text drawing (`from_ascii` format) in the editor and saves it back to the same `.txt`. No backend |
+| `src/lib/textDrawing.ts`, `src/lib/textFileAccess.ts` | Text drawing ↔ editor asset (session keeps glyphs, real canvas size; `warnings` for what the text cannot hold) and local file open/save (File System Access API, else input + download) |
 | `src/pages/IconPreview.tsx` | Localhost-only tool that edits the app's pixel icons using `SpriteEditorModal` |
 | `src/components/SpriteEditor/SpriteEditor.tsx` | Modal wrapper around `EditorLayout`. Only used by `IconPreview` |
 | `src/components/SpriteEditor/store/useSpriteEditorStore.ts` | Store factory: composes the slices, persists a hashed snapshot to localStorage |
@@ -89,7 +91,10 @@ an agent (or a script) can produce art for a game:
   `anim: <name> fps=N durations=a,b loop=true|false label=X`; legend `glyph = #hex [name]` in palette order
   (`.` is transparent); then frames, each after `== <anim> <pos>, <anim2> <pos>` (`==` alone: no animation;
   pos optional = next). Errors name file, line, frame, row and column. `to_ascii glyphs_from=<asset>` picks
-  each glyph from that palette's index so files on one palette share glyphs. `contact` is a control sheet
+  each glyph from that palette's index so files on one palette share glyphs. `fromAscii` also returns the text's
+  `layout` (glyphs, declared `anim:` lines, `fit:`, comment count) and `toAscii(asset, { layout })` writes the same
+  text back; tested on the game's 79 drawings in `src/headless/fixtures/dibujos`. `ascii.ts` and `assetModel.ts`
+  (the pure model; `asset.ts` adds disk I/O) have no Node imports: the web editor uses them (`/dibujo`). `contact` is a control sheet
   (assets next to a reference sprite on a baseline, background color, grid of N px, names in a 3×5 font) and
   `lint` reports colors off a palette, sides off `grid`, lone pixels (the `despeckle` rule, read-only) and
   tile edges that do not meet. `fit` and `lint` accept a palette color at any opacity (`#rrggbbaa` whose
@@ -156,6 +161,7 @@ and checks new art with `arte.sh control` (`contact` + `lint`).
 /project/:projectSlug/editor/:spriteSlug → Sprite editor (protected)
 /catalog, /asset/:assetSlug              → Public asset browser
 /icon-preview                            → Icon tool (localhost only)
+/dibujo                                  → Open/save a text drawing in the editor (no backend)
 ```
 
 ## Coding Conventions

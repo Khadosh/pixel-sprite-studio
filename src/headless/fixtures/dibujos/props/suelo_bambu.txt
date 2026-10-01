@@ -1,0 +1,26 @@
+id: suelo_bambu
+name: Suelo de hojarasca del bambú
+category: prop
+size: 16x16
+
+m = #345a52
+l = #56864c
+G = #7a5236
+
+==
+mmmllmmmmmmlmmmm
+mmllmmmmmmllmmmm
+mmmmmmmlmmmmmmmm
+mlmmmmllmmmmmllm
+mllmmmmmmGGmmlmm
+mmmmmmmmmmmmmmmm
+mmmmllmmmmmmmmmm
+mmmllmmmmlmmmmmm
+mmmmmmmmllmmmmmm
+mmlmmmmmmmmmmlmm
+mllmmmmmmmmmmllm
+mmmmmmmlmmmmmmmm
+mmmmmmllmmllmmmm
+mmllmmmmmmlmmmmm
+mmmlmmmmmmmmmmmm
+mmmmmmmmmmmmllmm

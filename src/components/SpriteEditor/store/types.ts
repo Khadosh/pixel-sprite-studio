@@ -38,6 +38,11 @@ export interface SpriteEditorState {
   iconId?: string;
   /** Huella del asset con el que se creó el store; ver persist/merge en useSpriteEditorStore. */
   _sourceHash: string;
+  /**
+   * Dibujo de texto abierto (página /dibujo): el header muestra el archivo y el botón para abrir otro.
+   * GUARDAR escribe el .txt a través de `_onSave`.
+   */
+  _textFile?: { name: string; onOpen: () => void } | null;
 
   // Animation generation state
   selectedAnims: string[];
@@ -45,7 +50,8 @@ export interface SpriteEditorState {
   animError: string | null;
 
   // Props from parent
-  _onSave: (asset: SpriteAsset) => void;
+  /** Devolver `false` (o una promesa que resuelve a `false`) si no se guardó: el asset sigue con cambios. */
+  _onSave: (asset: SpriteAsset) => void | boolean | Promise<void | boolean>;
   _onOpenChange: (open: boolean) => void;
   _previewPanelRef: React.RefObject<AnimationPreviewPanelHandle>;
   _generatePrompt?: string;
@@ -193,7 +199,12 @@ export interface SpriteEditorState {
 
 export interface CreateSpriteEditorStoreOptions {
   initialAsset: SpriteAsset;
-  onSave: (asset: SpriteAsset) => void;
+  onSave: (asset: SpriteAsset) => void | boolean | Promise<void | boolean>;
+  /**
+   * El asset viene de un dibujo de texto: la paleta se respeta tal cual (aunque tenga 1 o 2 colores)
+   * y no hay borrador en localStorage (la verdad es el archivo).
+   */
+  fromTextFile?: boolean;
   onOpenChange: (open: boolean) => void;
   previewPanelRef: React.RefObject<AnimationPreviewPanelHandle>;
   generatePrompt?: string;

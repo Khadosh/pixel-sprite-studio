@@ -21,10 +21,30 @@
 //   .kppk.                         frame outside every animation. Then its rows.
 //
 // Frames are numbered in the order they appear.
+//
+// No Node imports here: the web editor opens and saves these files too.
+// `fromAscii` also returns the text's layout (the glyph of each color, which
+// animations had an "anim:" line, the "fit:" header) and `toAscii` honors it,
+// so a drawing read and written back is the same text.
 
-import { basename, dirname, resolve } from 'node:path';
 import type { Frame, SpriteAsset } from '../lib/types';
-import { blankFrame, createAsset, dims, frameCount, normalizeHex, onPalette, setAnimation } from './asset';
+import { blankFrame, createAsset, dims, frameCount, normalizeHex, onPalette, setAnimation } from './assetModel';
+
+function basename(path: string): string {
+  return path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? path;
+}
+
+/** `rel` against the folder of `from` (posix-style, like path.resolve without the cwd). */
+export function resolveBeside(from: string, rel: string): string {
+  if (rel.startsWith('/')) return rel;
+  const parts = from.split('/').slice(0, -1);
+  for (const seg of rel.split('/')) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..' && parts.length > 0 && parts[parts.length - 1] !== '..' && parts[parts.length - 1] !== '') parts.pop();
+    else parts.push(seg);
+  }
+  return parts.join('/') || '.';
+}
 
 const CATEGORIES = ['character', 'terrain', 'prop', 'nature', 'ui'] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -41,10 +61,23 @@ export interface AsciiAnimOptions {
   label?: string;
 }
 
+/** How a text drawing was written, beyond what the asset holds. */
+export interface AsciiLayout {
+  /** Glyph of each palette index, as the legend had it. */
+  glyphs: Record<number, string>;
+  /** Animations that had their own "anim:" line (the rest only appear in "==" lines). */
+  declared: string[];
+  /** The "fit:" header as written. */
+  fit?: string;
+  /** How many "#" comment lines the text had (toAscii does not write them back). */
+  comments: number;
+}
+
 export interface ParsedAscii {
   asset: SpriteAsset;
   /** Path of the "fit" header resolved against the source file, if any. */
   fit?: string;
+  layout: AsciiLayout;
 }
 
 export interface FromAsciiOptions {
@@ -109,13 +142,15 @@ export function fromAscii(text: string, opts: FromAsciiOptions = {}): ParsedAsci
   const legend = new Map<string, string>();
   const names = new Map<string, string>();
   const frames: RawFrame[] = [];
+  let comments = 0;
 
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
   lines.forEach((raw, i) => {
     const n = i + 1;
     const where = `${src}:${n}`;
     const line = raw.replace(/\s+$/, '');
-    if (!line.trim() || line.trimStart().startsWith('#')) return;
+    if (!line.trim()) return;
+    if (line.trimStart().startsWith('#')) { comments++; return; }
 
     if (line.startsWith('==')) {
       const rest = line.slice(2).trim();
@@ -176,6 +211,7 @@ export function fromAscii(text: string, opts: FromAsciiOptions = {}): ParsedAsci
   });
 
   if (frames.length === 0) fail(src, 'no frames: start each one with a "==" line');
+  const declared = [...animOrder];
 
   // Size: declared or inferred from the first frame.
   let width: number | undefined;
@@ -259,8 +295,10 @@ export function fromAscii(text: string, opts: FromAsciiOptions = {}): ParsedAsci
   }
 
   let fit: string | undefined;
-  if (header.fit) fit = opts.sourcePath ? resolve(dirname(opts.sourcePath), header.fit) : header.fit;
-  return { asset, fit };
+  if (header.fit) fit = opts.sourcePath ? resolveBeside(opts.sourcePath, header.fit) : header.fit;
+  const glyphs: Record<number, string> = {};
+  [...legend.keys()].forEach((g, i) => { glyphs[i + 1] = g; });
+  return { asset, fit, layout: { glyphs, declared, fit: header.fit, comments } };
 }
 
 /** Throws naming every glyph whose hex is not in the given palette (translucent palette colors pass). */
@@ -292,6 +330,11 @@ export interface ToAsciiOptions {
    * its index in it, so every file drawn on the same palette shares glyphs.
    */
   glyphPalette?: Record<number, string>;
+  /**
+   * The layout fromAscii returned: glyphs, "anim:" lines and "fit:" come back
+   * as they were. Colors added since get free glyphs; it wins over glyphPalette.
+   */
+  layout?: AsciiLayout;
 }
 
 function headerValue(v: string): string {
@@ -306,10 +349,17 @@ export function toAscii(asset: SpriteAsset, opts: ToAsciiOptions = {}): { text: 
   // Glyph per palette index: from the reference palette when it has the color, else by index.
   const glyphOf = new Map<number, string>();
   const used = new Set<string>(['.']);
+  if (opts.layout) {
+    for (const i of indices) {
+      const g = opts.layout.glyphs[i];
+      if (g && g !== '.' && g !== '#' && g !== '=' && !/\s/.test(g) && !used.has(g)) { glyphOf.set(i, g); used.add(g); }
+    }
+  }
   if (opts.glyphPalette) {
     const ref = new Map<string, number>();
     for (const [k, hex] of Object.entries(opts.glyphPalette)) ref.set(normalizeHex(hex), Number(k));
     for (const i of indices) {
+      if (glyphOf.has(i)) continue;
       const r = ref.get(normalizeHex(asset.palette[i]));
       const g = r !== undefined ? ASCII_GLYPHS[r] : undefined;
       if (g && !used.has(g)) { glyphOf.set(i, g); used.add(g); }
@@ -330,7 +380,21 @@ export function toAscii(asset: SpriteAsset, opts: ToAsciiOptions = {}): { text: 
   out.push(`category: ${asset.category ?? 'prop'}`);
   out.push(`size: ${width}x${height}`);
   for (const d of (asset.description ?? '').split('\n')) if (asset.description) out.push(`description: ${d}`);
-  for (const a of asset.animations) {
+  if (opts.layout?.fit) out.push(`fit: ${opts.layout.fit}`);
+  // With a layout, an animation without options keeps its "anim:" line only if
+  // it had one or if leaving it out would change the order fromAscii reads back
+  // (declared ones first, then the rest by first appearance in the frames).
+  const anims = asset.animations;
+  let withLine = anims.length;
+  if (opts.layout) {
+    const declared = new Set(opts.layout.declared);
+    const bare = (a: SpriteAsset['animations'][number]) => !declared.has(a.name) && a.frameIndices.length > 0 &&
+      a.fps === undefined && !a.durations && a.loop === undefined && (a.label === undefined || a.label === a.name.toUpperCase());
+    const first = (a: SpriteAsset['animations'][number]) => Math.min(...a.frameIndices);
+    while (withLine > 0 && bare(anims[withLine - 1]) &&
+      (withLine === anims.length || first(anims[withLine - 1]) <= first(anims[withLine]))) withLine--;
+  }
+  for (const a of anims.slice(0, withLine)) {
     const words = [a.name];
     if (a.fps !== undefined) words.push(`fps=${a.fps}`);
     if (a.durations) words.push(`durations=${a.durations.join(',')}`);

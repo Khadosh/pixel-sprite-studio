@@ -1,0 +1,25 @@
+id: pasto_bosque
+name: Pasto del bosque
+category: prop
+size: 16x16
+
+k = #8fb66a
+o = #6fa05a
+
+==
+kkkkkkkkkkkkkkkk
+kkkokkkkkkkkkkkk
+kkokokkkkkkokkkk
+kkkkkkkkkkokokkk
+kkkkkkkkkkkkkkkk
+kkkkkkkokkkkkkkk
+kkkkkkokokkkkkkk
+kkkkkkkkkkkkkkkk
+kkkkkkkkkkkkkkok
+kkkokkkkkkkkkkkk
+kkokokkkkkkkkkkk
+kkkkkkkkkokkkkkk
+kkkkkkkkokokkkkk
+kkkkkkkkkkkkkkkk
+kkkkkokkkkkkkkkk
+kkkkkkkkkkkkkkkk

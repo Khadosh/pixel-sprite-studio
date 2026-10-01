@@ -1,0 +1,52 @@
+id: estante
+name: Estante de la casa de té
+category: prop
+size: 48x32
+
+1 = #15120f
+s = #c48a5a
+F = #9c7048
+G = #7a5236
+u = #5a3a26
+e = #a83a29
+g = #c9a34c
+b = #4a4650
+q = #8d8a86
+f = #e2c77a
+d = #d14b34
+9 = #e6dcc6
+8 = #f4efe3
+
+==
+111111111111111111111111111111111111111111111111
+1ssssssssssssssssssssssssssssssssssssssssssssss1
+1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF1
+1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF1
+1GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG1
+11GF1111111111111111111111111111111111111111FG11
+.1GF1111111111111111111111111111111111111111FG1.
+.1GF1uu1111uuuuuuuuuu1uuuuuu1uuuuu1111uuuuu1FG1.
+.1GF1uu1ee1uuuuuuuuuuuuu11uuuuuuuu1gg1uuuuu1FG1.
+.1GF1u1eeee1uu111uuuu11111111uu1u1gggg1uuuu1FG1.
+.1GF1u1gggg1uu1e1uuu11bqbbbb111uu1eeee1u11u1FG1.
+.1GF1u1fggg1u11111uu1bqbbbbbbb1uu1deee1u11u1FG1.
+.1GF1u1fggg1u19991uu1bbbbbbbb1uuu1deee111111FG1.
+.1GF1u1gggg1u19991uu11bbbbbb11uuu1eeee11gg11FG1.
+.1GF1u111111u11111uuu11111111uuuu11111111111FG1.
+.1GF1ssssssssssssssssssssssssssssssssssssss1FG1.
+.1GF1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF1FG1.
+.1GF1111111111111111111111111111111111111111FG1.
+.1GF1uuuuuuu1111uuuuuuuuuuuuuuuuuuuuu1ee1uu1FG1.
+.1GF1uu111uu1gg1uuuuuuuuuuuuuuuuuuuu1eeee1u1FG1.
+.1GF1uu1g1u1gggg1uu11uuuuuuuuuuuuuuu1gggg1u1FG1.
+.1GF1u11111199991uu11uuu111u111u111u1fggg1u1FG1.
+.1GF1u1eee1189991u1111uu191u191u191u1fggg1u1FG1.
+.1GF1u1eee1199991u1gg1uu191u191u191u1gggg1u1FG1.
+.1GF1u11111111111u1111uu111u111u111u111111u1FG1.
+.1GFssssssssssssssssssssssssssssssssssssssssFG1.
+.1GFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFG1.
+.1111111111111111111111111111111111111111111111.
+..1FF1....................................1FF1..
+..1FF1....................................1FF1..
+..1111....................................1111..
+................................................

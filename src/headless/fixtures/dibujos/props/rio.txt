@@ -1,0 +1,25 @@
+id: rio
+name: Agua del río
+category: prop
+size: 16x16
+
+j = #3d6a8f
+i = #6f9fc4
+
+==
+jjjjjjjjjjjjjjjj
+jjjiijjjjjjjjjjj
+jjijjijjjjjjjjjj
+jjjjjjjjjjjiiijj
+jjjjjjjjjjijjjij
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj
+jiiijjjjjjjjjjjj
+ijjjijjjjjjjjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjiiijjjjjj
+jjjjjjijjjijjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj

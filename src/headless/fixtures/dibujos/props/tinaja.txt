@@ -1,0 +1,28 @@
+id: tinaja
+name: Tinaja de barro
+category: prop
+size: 16x16
+
+u = #5a3a26
+G = #7a5236
+F = #9c7048
+s = #c48a5a
+H = #d9b98a
+
+==
+................
+......uHHu......
+...uuHHHHHHuu...
+..uHHGHHHHGHHu..
+..uGGGGGGGGGGu..
+...ussFFFFFGu...
+..ussFFFFFFFGu..
+.ussFFFFFFFFGGu.
+.ussFFFFFFFFGGu.
+.usFFFFFFFFGGGu.
+.usFFFFFFFFGGGu.
+.usFFFFFFFGGGGu.
+..uFFFFFFFGGGu..
+...uGGGGGGGGu...
+....uuuuuuuu....
+................

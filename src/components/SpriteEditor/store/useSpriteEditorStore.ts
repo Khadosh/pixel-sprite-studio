@@ -27,8 +27,8 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
   const initialAsset = { ...options.initialAsset };
   const currentPaletteKeys = Object.keys(initialAsset.palette || {}).filter(k => k !== '0');
   
-  // If the palette is empty or very basic, inject the theory palette
-  if (currentPaletteKeys.length <= 2) {
+  // If the palette is empty or very basic, inject the theory palette (not for text drawings: their palette is theirs)
+  if (currentPaletteKeys.length <= 2 && !options.fromTextFile) {
     const newPalette: Record<number, string> = { 0: 'transparent' };
     const newColorNames: Record<number, string> = { 0: 'Transparent' };
     DEFAULT_THEORY_PALETTE.forEach((color, i) => {
@@ -127,6 +127,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
         name: storageKey,
         storage: {
           getItem: (name: string) => {
+            if (options.fromTextFile) return null;
             const raw = localStorage.getItem(name);
             if (!raw) return null;
             try {
@@ -144,6 +145,7 @@ export function createSpriteEditorStore(options: CreateSpriteEditorStoreOptions)
             }
           },
           setItem: (name: string, value: any) => {
+            if (options.fromTextFile) return;
             const saveToStorage = (val: any) => {
               const stateToSave = { ...val.state };
               if (stateToSave.editedAsset) {

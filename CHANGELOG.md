@@ -5,7 +5,12 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-10-01 (Hoy)
-**4 commits realizados**
+**5 commits realizados**
+
+- **Editor**: **Abre y guarda los dibujos de texto**. Nueva página `/dibujo` (sin cuenta ni nube): ABRIR .TXT (o pegar el texto) carga tamaño, paleta con nombres, cuadros y animaciones (con duraciones y loop) en el editor de siempre, con línea de tiempo, piel de cebolla y capas; GUARDAR escribe el mismo `.txt` en su lugar (File System Access API en Chrome/Edge; en otros navegadores lo descarga con el mismo nombre). Un dibujo abierto y guardado sin tocar es el mismo texto, glifos incluidos; un píxel retocado cambia un carácter. Lo que el texto no guarda (capas que se aplanan, capas ocultas, opacidad de capa, píxeles fuera de un lienzo no cuadrado, etiquetas con espacios, comentarios `#`, anatomía) se avisa al guardar y se puede cancelar. Los lienzos no cuadrados se abren en un cuadrado y se recortan al guardar. Primer caso: el guardián de piedra del juego, retocado y guardado desde el navegador.
+- **Headless**: `fromAscii` devuelve el `layout` del texto (glifo de cada color, qué animaciones tenían línea `anim:`, `fit:`, comentarios) y `toAscii` lo respeta: ida y vuelta exacta sobre los 79 dibujos del juego (antes ninguno volvía igual: los glifos salían por índice). `ascii.ts` y el modelo (`assetModel.ts`, separado de la lectura/escritura en disco de `asset.ts`) ya no importan Node, así que el navegador usa el mismo código.
+- **App**: sin `.env` la app ya no se rompe entera al arrancar: el cliente de Supabase apunta al stack local y sólo falla lo que pide datos.
+- **Tests**: 79 dibujos reales del juego como fixtures (`src/headless/fixtures/dibujos`): ida y vuelta por texto y por el store del editor, el píxel retocado, colores nuevos, paleta corta respetada, lienzo no cuadrado, avisos y guardado cancelado.
 
 - **Headless**: **La hoja de control muestra el cuadro más lleno**. `contact` acepta `frame=fullest`: de cada asset dibuja el cuadro con más píxeles pintados (el primero si empatan), no el 0. Un efecto que crece desde un punto (un destello, unas ondas, una hoja que entra por el costado) arranca en un píxel o vacío, y el cuadro 0 no decía cuánto ocupa en pantalla. Nuevo `fullestFrame` en `inspect.ts`. Primer uso: los detalles vivos del juego (el destello de lo que se puede tocar, el remolino, las ondas, la hoja) en `./arte.sh control`.
 - **Tests**: 50 tests headless (1 nuevo: `fullest` elige el cuadro de la cruz y el 0 sigue siendo el punto).

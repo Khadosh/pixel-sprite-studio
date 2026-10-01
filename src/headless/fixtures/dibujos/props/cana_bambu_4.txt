@@ -1,0 +1,44 @@
+id: cana_bambu_4
+name: Caña de bambú doble
+category: prop
+size: 16x32
+
+m = #345a52
+k = #8fb66a
+l = #56864c
+o = #6fa05a
+n = #a7c86f
+
+==
+................
+...m....m.......
+..mkm..mkm......
+.mlklmmlkkm.....
+..mllkmklm......
+...mnolmm.......
+...mnolmmmm..m..
+.mmmnolmkmkmmkm.
+mklmnolmklmmlklm
+.mmmnolmlkmkllm.
+...mmmmmmmlolm..
+...mnolm.mnolm..
+...mnolmmmnolmmm
+...mnolmlmnolmlm
+...mnolmmmnolmmm
+...mnolm.mmmmm..
+...mmmmm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mmmmm..
+...mmmmm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mmmmm..
+...mmmmm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..
+...mnolm.mnolm..

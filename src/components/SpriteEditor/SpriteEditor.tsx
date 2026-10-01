@@ -24,6 +24,7 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
     projectId: props.projectId,
     isIconMode: props.isIconMode,
     iconId: props.iconId,
+    fromTextFile: props.fromTextFile,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep props in sync with store
@@ -36,8 +37,9 @@ export const SpriteEditor: React.FC<SpriteEditorModalProps> = (props) => {
       _isGenerating: isGenerating,
       _previewPanelRef: previewPanelRef,
       projectId: props.projectId,
+      _textFile: props.textFile ?? null,
     });
-  }, [store, onSave, onOpenChange, generatePrompt, onRegenerate, isGenerating]);
+  }, [store, onSave, onOpenChange, generatePrompt, onRegenerate, isGenerating, props.textFile, props.projectId]);
 
   // Handle asset ID change (different project opened)
   useEffect(() => {

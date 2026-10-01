@@ -1,0 +1,45 @@
+id: losas_patio
+name: Losas del patio de la secta
+category: prop
+size: 32x32
+description: Piso de losas de piedra irregulares con musgo en las juntas, sin borde: empalma por los cuatro lados (2x2 celdas, se repite entera). Suelo del telón de la secta de noche (scenery.secta_noche).
+
+L = #c2bdb5 piedra clara
+s = #8d8a86 piedra
+d = #5f5c5a piedra sombra
+m = #56864c musgo
+n = #345a52 musgo sombra
+
+==
+sssdsssssssssssddssssssssdssssss
+sssdssssssssssssdssssssssdssssss
+sLLdssssssssssssdsssssssdLssssss
+sssdssssssssssddddddssssdsssssss
+sssddssssssdddLssssdddsdddddddds
+dddLdddsdddLsssssssssddLssssssdn
+sdLsssddLsssssLLsssssdLsssssssss
+dLsssssdsssssssssssssdssssssssss
+dssssssdsssssssssssssdssssssssss
+dssssssmdssssssssssssdssssssssss
+Lsssssssdssssssssssssdsssssssssd
+ssssssssdssssssssssssdsssssssssd
+ssssssssddsssssssssssdsssssssssd
+sssssssssdddsssssssssdssssssssdL
+ssssssssdLsdddddssssdddsssssssds
+dsssssddLssssssdddddLsdddssssddd
+ddddmdLsssssssssssnLssssdddddLss
+sssssdsssssssssssdLsssssssdLssss
+sssssdssLLsssssssdssssssssdsssss
+sssssddsssssssssdLssssssssddssss
+ssssssdsssssssssdssssssssssdssss
+ssssssdsssssssssdssssssssssdssss
+ssssssdssssssssdLssssssssssdssss
+ssssssdssssssssdsssssssssssdssss
+ssssssddssssssdLsssssssssssddsss
+sssssssddddddddsssssssssssssmdds
+dddddddLssssssddddddddddndddLsmd
+ssssdLssssssssdLsssssssssssdssss
+sssdLsssssssssdsssssssssssdLssss
+sssdssssssssssddssssssssssdsssss
+sssdsssssssssssnssssssssssdsssss
+sssnsssssssssssdsssssssssdLsssss

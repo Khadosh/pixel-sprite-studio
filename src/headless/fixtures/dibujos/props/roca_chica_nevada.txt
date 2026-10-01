@@ -1,0 +1,30 @@
+id: roca_chica_nevada
+name: Roca chica nevada
+category: prop
+size: 16x16
+
+1 = #15120f
+8 = #f4efe3
+h = #dbeeff
+q = #8d8a86
+p = #c2bdb5
+r = #5f5c5a
+b = #4a4650
+
+==
+................
+......11111.....
+.....18888811...
+....1888888881..
+....18888888881.
+....18hhhhhhhh81
+...1qhpppqqrbbh1
+..18qqqppprrrbb1
+.188qqqqprrrrrr1
+1888qqqqrbbrrrr1
+1h8hpqqrrrrbbrr1
+..hqpprqqrrrrbb.
+...qqprqqqrrrr..
+....qbbqqqqrr...
+........qqqr....
+................

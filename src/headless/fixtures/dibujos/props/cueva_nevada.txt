@@ -1,0 +1,46 @@
+id: cueva_nevada
+name: Cueva nevada
+category: prop
+size: 48x32
+
+1 = #15120f
+b = #4a4650
+r = #5f5c5a
+q = #8d8a86
+p = #c2bdb5
+8 = #f4efe3
+h = #dbeeff
+
+==
+................................................
+................................................
+................................................
+...................1111111111...................
+................1118888888888111................
+..............11888888888888888q11..............
+.............188888hhhhhhhhhhhhqqq1.............
+...........118888hhqqqqqqqqqqqqqqqq11...........
+...........18888hqqqqqqqqqqqqqqqqqqq1...........
+..........18888hqqqqqqqqqqqqqqqqqqqqq1..........
+......11111188hqqqqqqqqqqqqqqqqqqqqq111111......
+....1188888811qqqqqqqqqqqqqqqqqqqq1188888811....
+...188hhhhhhqq1qqqqqqqqqqqqqqqqqq188hhhhhhqq1...
+..188hqqqqqqqqq1qqqqqqqqqqqqqqqq188hqqqqqqqqq1..
+..18hqqqqqqqqqq1qqqqqqqqqqqqqqqr18hqqqqqqqqqq1..
+.188qqqqqqqqqqqq1qqqqqqqqqqqqqr188qqqqqqqqqqqq1.
+.18hqqqqqqqqqqqr1qqq11111111qrr18hqqqqqqqqqqqr1.
+.1hqqqqqqqqqqrrr1q118888888811r1hqqqqqqqqqqrrr1.
+.1qqqqqqqqqqqrrr11888hhhhhhhqq11qqqqqqqqqqqrrr1.
+..1qqqq111111111888hhbbbbbbqqqqq111111111qrrr1..
+..1q111pppppppp1pphbbb1111bbbqqq1pppppppp111r1..
+...1pppqqqqqqq1ppqbb11111111bbqqq1qqqqqqqqqq1...
+.11ppqqqqqqqqq1ppqb1111111111bqqr1qqqqqqqqqqq11.
+.1ppqqqqqqqqqq1qqbb1111111111bbrr1qqqqqqqqqqqq1.
+1ppqqqqqqqqqqq1qqb111111111111brr1qqqqqqqqqqqqq1
+1ppqqqqqqqqqqqq1qb111111111111br1qqqqqqqqqqqqqr1
+1qqqqqqqqqqqqqq1qb111111111111br1qqqqqqqqqqrrrr1
+1q111111qqqqqqqq1b111111111111b1qqqqqqqq111111r1
+.1qqqqqq1qqqqqqrrb111111111111bqqqqqqqq1qqqqqq1.
+1pqqqqqqr1rrrrrrhb111111111111bhqqqrrr1pqqqqqqr1
+.1qqhq8r1h8rrrrr8b111111111111b8qrrrr8rhq8qhqr1.
+..18881888181118881111111111118881118188818881..

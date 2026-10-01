@@ -1,0 +1,28 @@
+id: acequia_agua
+name: Acequia con agua otra vez
+category: prop
+size: 16x16
+
+I = #a6c778
+k = #8fb66a
+G = #7a5236
+j = #3d6a8f
+i = #6f9fc4
+
+==
+IIIIGjjjjjjGIIII
+IkkIGjjiijjGIkkI
+IIIIGjiiijjGIIII
+IIkkGjjjjjjGIIII
+IIIIGjjjjjjGIIkk
+IIIIGjjjjiiGIIII
+IkkIGjjjiijGIIII
+IIIIGjjjjjjGIIII
+IIIIGjjjjjjGkkII
+IIkkGjiijjjGIIII
+IIIIGiiijjjGIIII
+IIIIGjjjjjjGIIkk
+IkkIGjjjjiiGIIII
+IIIIGjjjiijGIIII
+IIkkGjjjjjjGIkkI
+IIIIGjjjjjjGIIII

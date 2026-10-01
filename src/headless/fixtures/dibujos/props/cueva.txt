@@ -1,0 +1,46 @@
+id: cueva
+name: Cueva
+category: prop
+size: 48x32
+
+1 = #15120f
+b = #4a4650
+r = #5f5c5a
+q = #8d8a86
+p = #c2bdb5
+l = #56864c
+k = #8fb66a
+
+==
+................................................
+................................................
+................................................
+...................1111111111...................
+................111pppppppppp111................
+..............11pppppppppppppppq11..............
+.............1pppppqqqqqqqqqqqqqqq1.............
+...........11ppppqqqqqqqqqqqqqqqqqq11...........
+...........1ppppqqqqqqqqqqqqqqqqqqqq1...........
+..........1ppppqqqqqqqqqqqqqqqqqqqqqq1..........
+......111111ppqqqqqqqqqqqqqqqqqqqqqq111111......
+....11pppppp11qqqqqqqqqqqqqqqqqqqq11pppppp11....
+...1ppqqqqqqqq1qqqqqqqqqqqqqqqqqq1ppqqqqqqqq1...
+..1ppqqqqqqqqqq1qqqqqqqqqqqqqqqq1ppqqqqqqqqqq1..
+..1pqqqqqqqqqqq1qqqqqqqqqqqqqqqr1pqqqqqqqqqqq1..
+.1ppqqqqqqqqqqqq1qqqqqqqqqqqqqr1ppqqqqqqqqqqqq1.
+.1pqqqqqqqqqqqqr1qqq11111111qrr1pqqqqqqqqqqqqr1.
+.1qqqqqqqqqqqrrr1q11pppppppp11r1qqqqqqqqqqqrrr1.
+.1qqqqqqqqqqqrrr11pppqqqqqqqqq11qqqqqqqqqqqrrr1.
+..1qqqq111111111pppqqbbbbbbqqqqq111111111qrrr1..
+..1q111pppppppp1ppqbbb1111bbbqqq1pppppppp111r1..
+...1pppqqqqqqq1ppqbb11111111bbqqq1qqqqqqqqqq1...
+.11ppqqqqqqqqq1ppqb1111111111bqqr1qqqqqqqqqqq11.
+.1ppqqqqqqqqqq1qqbb1111111111bbrr1qqqqqqqqqqqq1.
+1ppqqqqqqqqqqq1qqb111111111111brr1qqqqqqqqqqqqq1
+1ppqqqqqqqqqqqq1qb111111111111br1qqqqqqqqqqqqqr1
+1qqqqqqqqqqqqqq1qb111111111111br1qqqqqqqqqqrrrr1
+1q111111qqqqqqqq1b111111111111b1qqqqqqqq111111r1
+.1qqqqqq1qqqqqqrrb111111111111bqqqqqqqq1qqqqqq1.
+1pqqqqqqr1rrrrrrkb111111111111bkqqqrrr1pqqqqqqr1
+.1qqkqlr1klrrrrrlb111111111111blqrrrrlrkqlqkqr1.
+..1lll1lll1l111lll111111111111lll111l1lll1lll1..

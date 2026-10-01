@@ -19,6 +19,7 @@ import ProjectWorkspace from "./pages/ProjectWorkspace.tsx";
 import SpriteStudio from "./pages/SpriteStudio.tsx";
 
 import IconPreview from "./pages/IconPreview.tsx";
+import TextDrawing from "./pages/TextDrawing.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 // Varias queries pueden fallar a la vez con el mismo JWT expirado: cerrar sesión una sola vez.
@@ -72,6 +73,7 @@ const App = () => (
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/asset/:assetSlug" element={<AssetDetail />} />
             <Route path="/icon-preview" element={<IconPreview />} />
+            <Route path="/dibujo" element={<TextDrawing />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

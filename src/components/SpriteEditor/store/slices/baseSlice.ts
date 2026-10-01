@@ -190,8 +190,12 @@ export const createBaseSlice: StoreSlice<Partial<SpriteEditorState>> = (set, get
   // Meta actions
   handleSave: () => {
     const state = get();
-    state._onSave({ ...state.editedAsset, name: state.assetName });
-    set({ isDirty: false });
+    const result = state._onSave({ ...state.editedAsset, name: state.assetName });
+    if (result instanceof Promise) {
+      result.then(ok => { if (ok !== false) set({ isDirty: false }); }, () => {});
+    } else if (result !== false) {
+      set({ isDirty: false });
+    }
   },
 
   handleClose: () => {

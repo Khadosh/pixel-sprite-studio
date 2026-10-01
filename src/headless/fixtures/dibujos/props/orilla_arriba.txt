@@ -1,0 +1,28 @@
+id: orilla_arriba
+name: Orilla: la arena entra al agua
+category: prop
+size: 16x16
+
+H = #d9b98a
+g = #c9a34c
+F = #9c7048
+j = #3d6a8f
+i = #6f9fc4
+
+==
+HHHHHHHHHHHHHHHH
+HHHHHHHHHHHHHHHH
+HHHHHHHHHHHHHHHH
+gHHHHHHggHHHHHHg
+FggHHHgFFggHHggF
+jFFgggFjjFFggFFj
+jjjFFFjjjjjFFjjj
+jjjjjjjjjjjjjjjj
+iiijjjjjiiijjjii
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjiijjjj
+jjjjjjjjjijjijjj
+jjjiijjjjjjjjjjj
+jjijjijjjjjjjjjj

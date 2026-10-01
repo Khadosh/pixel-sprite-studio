@@ -32,7 +32,11 @@ export interface SpriteEditorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialAsset: SpriteAsset;
-  onSave: (asset: SpriteAsset) => void;
+  onSave: (asset: SpriteAsset) => void | boolean | Promise<void | boolean>;
+  /** Ver `CreateSpriteEditorStoreOptions.fromTextFile`. */
+  fromTextFile?: boolean;
+  /** Ver `SpriteEditorState._textFile`. */
+  textFile?: { name: string; onOpen: () => void } | null;
   generatePrompt?: string;
   onRegenerate?: () => void;
   isGenerating?: boolean;

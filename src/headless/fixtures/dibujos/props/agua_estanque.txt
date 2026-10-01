@@ -1,0 +1,26 @@
+id: agua_estanque
+name: Agua baja sobre el barro del estanque
+category: prop
+size: 16x16
+
+j = #3d6a8f
+i = #6f9fc4
+G = #7a5236
+
+==
+jjjGGjjjjjGGjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjiijjjjjjj
+jjjjjjiijiijjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjGGjjj
+jiijjjjjjjjjjjjj
+iijiijjjjjjjjjjj
+jjjjGGjjjjjjjiij
+jjjjjjjjjjjjiiii
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjGGjjjj
+jjjjjjiiijjjjjjj
+jjjGGiijjiijjjjj
+jjjjjjjjjjjjjjjj
+jjjjjjjjjjjjjjjj

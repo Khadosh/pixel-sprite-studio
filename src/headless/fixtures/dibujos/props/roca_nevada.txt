@@ -1,0 +1,62 @@
+id: roca_nevada
+name: Roca nevada
+category: prop
+size: 32x48
+
+1 = #15120f
+8 = #f4efe3
+h = #dbeeff
+r = #5f5c5a
+q = #8d8a86
+p = #c2bdb5
+b = #4a4650
+
+==
+..........11111111..............
+.........1888888881.............
+......1118888888888111..........
+.....188888888888h88881.........
+....188888hhhhhhhr888881........
+....18888hqqqqqqrqh88h8811......
+....18hhhpqqqqqrrrqhhr88881.....
+....1hppppppqqqrrrrrrqh88881....
+....1ppqqppppqqrrrrrqqqh88h81...
+...1ppqqqqqqqqqrrqqqqqqqhhrh1...
+..18ppqqqqqqqqrrpqqqqqqqqrrr1...
+..18ppqqqqqqqrrppppqqqqqrrrr1...
+..18pppqqqqqqrpppppppppprrrr1...
+..1hppppqqqqqrqppppppppprrrrr1..
+..1pppppqqqqqqqqpppppppqrqqqr81.
+.1pppppppqqqqqqqqppppqqqqqqqqh1.
+18ppqqqqqqqqqqqqqqpppqqqqqqqrrr1
+18pqqqqqqqqqqqqqqqqqppqqqqrrrrr1
+18qqqqqrrrqqqrrrqqqqqqqqqrrrrrr1
+1hqqqqrrrrrqrrrrrrqqqqqqrrrrrrr1
+1pqqqrrrrrqrrrrrrrrrqqqqrrrrrrr1
+1ppqqrrrrqqrrrrrrrrrrqqqrrrrrrr1
+1ppprrrrrqqqrrrrrrrrrrrqqrrrrqq1
+1qpqrrrrrqqqqqrrrrrqrrrqqqrrqqr1
+1qqrrrqrrrqqqqqqrrqrrrppqqqqqqr1
+1qqrrqrrrrrqqqqqqqrrrpppppqqqrr1
+1qqrqrrrrrrrrqqqqrrrrppppppprrb1
+1qqqqqrrrrrrrrrrbqrrrrpppppprbb1
+1qqqqqrrrrrrrrrbbqqrrrrrppqqbbb1
+1qrqqqrrrrrrrrbbbqqrrrrqrrqbbbb1
+1qrqqqqrrrrrrbbbbqqqrrqrrrbbbb11
+1qrqqqqqrrrrbbbbrqqqqqrrrrrrb111
+1qrqqrqqrrrrbbrrrrqqqqrrrrrrrb11
+.1rqrrrqrrrrrqrrrrrqqrrrrrrrrbb1
+..1qrrrrrrrrqqqrrrrrrrrrrrrrrbb1
+..1qrrrrrrrqqqqqqrrrrrqqrrrrbbb1
+..1qrrrrrbqqqqqqqqqrrqqqqqrbbbb1
+..1qrrrrbbqqrrqqqqrbbqrqqqbbbbb1
+..1qrrrrbbqrrrrrqbbbbqrrrrrbbbb1
+..1qrrrrbbqrrrrrbbbbbqrrrrrbbbb1
+..1qrrrrbbqrrrrbrrbbbqrrrrbbrrr1
+...qrrrrbbqrrrbrrrrbbqrrrbbrrrr1
+....rrrrbbqrrrbrrrbbbqrrrbrrrrr1
+.....rrrbbqrrrrrrbbbbqrrrbrrrrb1
+......rrbbqrrrrrrbbbbqrrrbrrrbb1
+..........qrrrrrbbbbbqrrrbrrrbb.
+...........rrrrrbbb..qrrrb.rrb..
+............rrrrbb..............

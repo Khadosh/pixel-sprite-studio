@@ -1,0 +1,43 @@
+id: estera
+name: Estera
+category: prop
+size: 32x32
+
+m = #345a52
+f = #e2c77a
+g = #c9a34c
+l = #56864c
+
+==
+................................
+................................
+................................
+................................
+..mmmmmmmmmmmmmmmmmmmmmmmmmmmm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mlfffffffffffmlffffffffffflm..
+..mlgggggggggggmlggggggggggglm..
+..mmmmmmmmmmmmmmmmmmmmmmmmmmmm..
+................................
+................................
+................................
+................................

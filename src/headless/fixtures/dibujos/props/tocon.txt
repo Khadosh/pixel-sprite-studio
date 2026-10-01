@@ -1,0 +1,29 @@
+id: tocon
+name: Tocón
+category: prop
+size: 16x16
+
+1 = #15120f
+H = #d9b98a
+s = #c48a5a
+F = #9c7048
+G = #7a5236
+u = #5a3a26
+
+==
+................
+................
+................
+................
+.....111111.....
+...11HHHHHH11...
+..1HHHssssHHH1..
+..1HHsHFFHsHH1..
+..1HHHssssHHH1..
+..1GHHHHHHHHu1..
+..1GGGHHHHGuu1..
+..1GGuGGGGGuu1..
+..1GGuGGGGGuu11.
+.11GGuGGGGGuuuG1
+1GG1GGGGGGGuuGG1
+1111.1111111111.

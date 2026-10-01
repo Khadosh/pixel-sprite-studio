@@ -1,0 +1,29 @@
+id: pasarela
+name: Pasarela de piedra sobre el estanque
+category: prop
+size: 16x16
+
+F = #9c7048
+G = #7a5236
+r = #5f5c5a
+q = #8d8a86
+p = #c2bdb5
+a = #bfb8a8
+
+==
+FFFGFFFFFFGFFFFF
+FFFGFFFFFFGFFFFF
+rrrrrrrrrrrrrrrr
+pppppppprppppppp
+paaqqqqqrpaaqqqq
+paqqqqqqrpqqqqqq
+pqqqqqqqrpqqqqqq
+pqqqqqqqrpqqqqqq
+rrrrrrrrrrrrrrrr
+ppppprpppppppppp
+pqqqqrpaaqqqqqqq
+pqqqqrpaqqqqqqqq
+pqqqqrpqqqqqqqqq
+rrrrrrrrrrrrrrrr
+qFFGFFFFFFGFFFFF
+FFFGFFFFFFGFFFFF

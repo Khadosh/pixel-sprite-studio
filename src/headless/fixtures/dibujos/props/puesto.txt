@@ -1,0 +1,56 @@
+id: puesto
+name: Puesto del mercado
+category: prop
+size: 32x32
+description: Puesto de Zhao (ronda de pulido 2): toldo a rayas bermellón y pergamino sobre dos postes, ristras colgando y un mostrador de madera con verduras, frutas y tarros. Reemplaza al del pack, que era una carpa en otra perspectiva.
+
+u = #5a3a26 contorno
+H = #d9b98a madera luz
+s = #c48a5a madera clara
+F = #9c7048 madera
+G = #7a5236 madera sombra
+K = #2c2a33 sombra
+r = #a83a29 bermellón
+R = #d14b34 bermellón claro
+9 = #e6dcc6 pergamino
+8 = #f4efe3 pergamino luz
+o = #6fa05a verdura
+n = #a7c86f verdura luz
+f = #ff8a3d fruta
+y = #ffd27a fruta luz
+g = #c9a34c oro
+e = #e2c77a paja luz
+
+==
+................................
+................................
+................................
+..uuuuuuuuuuuuuuuuuuuuuuuuuuuu..
+.uRRR888RRR888RRR888RRR888RRR8u.
+.urrr999rrr999rrr999rrr999rrr9u.
+.urrr999rrr999rrr999rrr999rrr9u.
+.uuruu9uuruu9uuruu9uuruu9uuruu9.
+..uFuKKKKKKKKKKKKKKKKKKKKKKuFuu.
+..uFKKKKfKKKKKeKKKKKfKKKeKKKFu..
+..uFKKKKfKKKKKeKKKKKfKKKeKKKFu..
+..uFKKKKfKKKKKeKKKKKfKKKeKKKFu..
+..uFKKKKfKKKKKeKKKKKfKKKKKKKFu..
+..uFKKKKfKKKKKeKKKKKfKKKKKKKFu..
+..uFKKKKKKKKKKKKKKKKKKKKKKKKFu..
+..uFKuuKKKKKKnnKKyyKKKKKuuKKFu..
+..uFugguKKKKnooofyyfKKKussuKFu..
+..uFugguKKuoonnoffffKKKuFFuKFu..
+..uuuuuuuuuuuuuuuuuuuuuuuuuuuu..
+..HHHHHHHHHHHHHHHHHHHHHHHHHHHH..
+..ssssssssssssssssssssssssssss..
+..uuuuuuuuuuuuuuuuuuuuuuuuuuuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+..uuGFFFGFFFGFFFGFFFGFFFGFFFuu..
+...uuuuuuuuuuuuuuuuuuuuuuuuuu...
+................................
+................................

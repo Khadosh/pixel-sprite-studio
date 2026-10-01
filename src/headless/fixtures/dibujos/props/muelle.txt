@@ -1,0 +1,28 @@
+id: muelle
+name: Tablones del muelle
+category: prop
+size: 16x16
+
+G = #7a5236
+s = #c48a5a
+F = #9c7048
+t = #8a5a3c
+u = #5a3a26
+
+==
+GssssssFsssssssG
+GFFFFFFFFFFFFFFG
+GFFFtFFFFFFFFtFG
+GuuuuuuuuuuuuuuG
+GsssFssssssssssG
+GFFFFFFFFFFFFFFG
+GFtFFFFFFFFtFFFG
+GuuuuuuuuuuuuuuG
+GsssssssssFssssG
+GFFFFFFFFFFFFFFG
+GFFFtFFFFFFFFtFG
+GuuuuuuuuuuuuuuG
+GssssssFsssssssG
+GFFFFFFFFFFFFFFG
+GFtFFFFFFFFtFFFG
+GuuuuuuuuuuuuuuG

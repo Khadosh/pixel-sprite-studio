@@ -1,0 +1,31 @@
+id: muelle_punta
+name: Punta del muelle
+category: prop
+size: 16x16
+
+G = #7a5236
+s = #c48a5a
+F = #9c7048
+t = #8a5a3c
+u = #5a3a26
+1 = #15120f
+j = #3d6a8f
+i = #6f9fc4
+
+==
+GssssssFsssssssG
+GFFFFFFFFFFFFFFG
+GFFFtFFFFFFFFtFG
+GuuuuuuuuuuuuuuG
+GsssFssssssssssG
+GFFFFFFFFFFFFFFG
+GFtFFFFFFFFtFFFG
+GuuuuuuuuuuuuuuG
+GsssssssssFssssG
+GFFFFFFFFFFFFFFG
+GFFFtFFFFFFFFtFG
+uuuuuuuuuuuuuuuu
+1111111111111111
+j1tt1jjjjjj1tt1j
+ji1t1ijjjjjjt1jj
+jjiiijjjjjjiijjj
