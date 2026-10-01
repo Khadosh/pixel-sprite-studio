@@ -137,18 +137,63 @@ export interface CropResult {
 }
 
 /**
+ * Which pixels are the figure: not background, and not a speck. A speck is a
+ * connected blob far smaller than the biggest one (a shadow crumb, a stray
+ * dot the model left on the chroma): it would otherwise widen the crop and
+ * leave a lone pixel in the air after sampling. `minFraction` is the size
+ * under which a blob, relative to the largest, is a speck (0 keeps all).
+ */
+export function contentMask(img: Rgba, background?: [number, number, number] | null, minFraction = 0.01): Uint8Array {
+  const bg = background === undefined ? detectBackground(img) : background;
+  const { width: w, height: h } = img;
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4;
+    if (!isBackgroundPixel(img.data[o], img.data[o + 1], img.data[o + 2], img.data[o + 3], bg)) mask[i] = 1;
+  }
+  if (minFraction <= 0) return mask;
+  // Label 4-connected blobs and measure them.
+  const label = new Int32Array(w * h).fill(-1);
+  const sizes: number[] = [];
+  const stack: number[] = [];
+  for (let start = 0; start < w * h; start++) {
+    if (!mask[start] || label[start] >= 0) continue;
+    const id = sizes.length;
+    sizes.push(0);
+    label[start] = id;
+    stack.push(start);
+    while (stack.length) {
+      const i = stack.pop()!;
+      sizes[id]++;
+      const x = i % w, y = (i - x) / w;
+      const around = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
+      for (const j of around) {
+        if (j >= 0 && mask[j] && label[j] < 0) { label[j] = id; stack.push(j); }
+      }
+    }
+  }
+  const largest = Math.max(0, ...sizes);
+  const floor = largest * minFraction;
+  for (let i = 0; i < w * h; i++) {
+    if (mask[i] && sizes[label[i]] < floor) mask[i] = 0;
+  }
+  return mask;
+}
+
+/**
  * Crops the image to the square around whatever is not background (chroma
  * green or transparent), with a margin, so a small figure in a big render
- * fills the grid instead of dissolving into a few cells.
+ * fills the grid instead of dissolving into a few cells. Specks are ignored
+ * (see contentMask); pass `mask` to reuse one already computed.
  */
-export function cropToContent(img: Rgba, marginFraction = 0.04, background?: [number, number, number] | null): CropResult {
+export function cropToContent(img: Rgba, marginFraction = 0.04, background?: [number, number, number] | null, mask?: Uint8Array): CropResult {
   const bg = background === undefined ? detectBackground(img) : background;
+  const content = mask ?? contentMask(img, bg);
   const pad: [number, number, number, number] = bg ? [bg[0], bg[1], bg[2], 255] : [0, 0, 0, 0];
   let x0 = img.width, y0 = img.height, x1 = -1, y1 = -1;
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
-      const i = (y * img.width + x) * 4;
-      if (isBackgroundPixel(img.data[i], img.data[i + 1], img.data[i + 2], img.data[i + 3], bg)) continue;
+      if (!content[y * img.width + x]) continue;
       if (x < x0) x0 = x;
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
@@ -165,8 +210,8 @@ export function cropToContent(img: Rgba, marginFraction = 0.04, background?: [nu
     for (let x = 0; x < side; x++) {
       const px = sx + x, py = sy + y;
       const o = (y * side + x) * 4;
-      if (px < 0 || py < 0 || px >= img.width || py >= img.height) {
-        out.data.set(pad, o); // outside: more of the same background
+      if (px < 0 || py < 0 || px >= img.width || py >= img.height || !content[py * img.width + px]) {
+        out.data.set(pad, o); // outside, background or speck: more of the same background
         continue;
       }
       const i = (py * img.width + px) * 4;
@@ -189,28 +234,31 @@ export interface PixelizeOptions {
   category?: SpriteAsset['category'];
   /** Crop to the non-background content first. Default true. */
   crop?: boolean;
+  /** Blobs smaller than this fraction of the largest one are specks and vanish (default 0.01; 0 keeps everything). */
+  speckFraction?: number;
 }
 
-/** RGBA image → one-frame asset with a quantized palette (the editor's importer, headless). */
-/** Makes every background pixel transparent so cell averages do not bleed green into the edges. */
-export function knockOutBackground(img: Rgba, background?: [number, number, number] | null): Rgba {
+/** Makes every background pixel (and every speck) transparent so cell averages do not bleed green into the edges. */
+export function knockOutBackground(img: Rgba, background?: [number, number, number] | null, mask?: Uint8Array): Rgba {
   const bg = background === undefined ? detectBackground(img) : background;
-  if (!bg) return img;
+  const content = mask ?? contentMask(img, bg);
   const out: Rgba = { width: img.width, height: img.height, data: new Uint8Array(img.data) };
-  for (let i = 0; i < out.data.length; i += 4) {
-    if (isBackgroundPixel(out.data[i], out.data[i + 1], out.data[i + 2], out.data[i + 3], bg)) {
-      out.data[i + 3] = 0;
-    }
+  for (let i = 0; i < content.length; i++) {
+    if (!content[i]) out.data[i * 4 + 3] = 0;
   }
   return out;
 }
 
+/** RGBA image → one-frame asset with a quantized palette (the editor's importer, headless). */
 export function pixelize(source: Rgba, o: PixelizeOptions): SpriteAsset {
   // The background is read once from the full render: after a tight crop the
   // corners may already be inside the figure.
   const bg = detectBackground(source);
-  const cropped = (o.crop ?? true) ? cropToContent(source, 0.04, bg).image : source;
-  const img = (o.removeBackground ?? true) ? knockOutBackground(cropped, bg) : cropped;
+  const mask = contentMask(source, bg, o.speckFraction ?? 0.01);
+  // The crop already drops the background and the specks, so a cropped
+  // image needs no second knockout; an uncropped one does.
+  const cropped = (o.crop ?? true) ? cropToContent(source, 0.04, bg, mask).image : source;
+  const img = (o.removeBackground ?? true) ? knockOutBackground(cropped, bg, (o.crop ?? true) ? undefined : mask) : cropped;
   const imageData = { data: new Uint8ClampedArray(img.data), width: img.width, height: img.height, colorSpace: 'srgb' } as unknown as ImageData;
   const result = imageToPixelData(imageData, {
     targetSize: o.size,

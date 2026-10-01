@@ -8,12 +8,12 @@ import { createAsset, composite, dims, frameCount, loadAsset, saveAsset, setAnim
 import { readPng, writePng, getPixel } from './png';
 import { renderAscii, renderFrame, hexToRgba, rgbaToHex } from './render';
 import { exportSheet, importSheet, importSheetImage } from './sheet';
-import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fitPalette, knockOutColor } from './ops';
+import { applyDrawOps, generateFxAnimation, seededRandom, applyFx, floodFill, fitPalette, knockOutColor, despeckle } from './ops';
 import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 import { importCharacter } from './character';
 import { animateAsset } from './animate';
-import { cropToContent, generateImage, loadFalKey, pixelize } from './ai';
+import { contentMask, cropToContent, generateImage, loadFalKey, pixelize } from './ai';
 
 let dir: string;
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'pss-')); });
@@ -119,6 +119,35 @@ describe('drawing', () => {
     expect(peak).toBeGreaterThan(0);
     expect(peak).toBeLessThan(4);
     expect(a.animations[0]).toMatchObject({ name: 'technique', loop: false, fps: 12 });
+  });
+});
+
+describe('despeckle', () => {
+  it('removes lone pixels and fills lone holes but keeps lines and outlines', () => {
+    const f = Array.from({ length: 8 }, () => Array<number>(8).fill(1));
+    f[3][3] = 2; // lone pixel
+    f[6][6] = 0; // lone hole
+    for (let x = 0; x < 8; x++) f[1][x] = 3; // a line
+    f[5][3] = 2; f[5][4] = 2; // a two-pixel dash
+    const changed = despeckle(f);
+    expect(changed).toBe(2);
+    expect(f[3][3]).toBe(1);
+    expect(f[6][6]).toBe(1);
+    expect(f[1].every(v => v === 3)).toBe(true);
+    expect(f[5][3]).toBe(2);
+    despeckle(f, 2);
+    expect(f[5][3]).toBe(1);
+    expect(f[5][4]).toBe(1);
+    expect(f[1].every(v => v === 3)).toBe(true);
+  });
+
+  it('is a command on every frame, with passes', async () => {
+    const path = join(dir, 'd.pss.json');
+    await runCommand('new', { path, width: 6, palette: ['#ff0000', '#00ff00'] });
+    await runCommand('draw', { path, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 6, h: 6, color: 1, fill: true }, { op: 'pixel', x: 2, y: 2, color: 2 }] });
+    const r = (await runCommand('despeckle', { path, passes: 2 })).data as { changed: number };
+    expect(r.changed).toBe(1);
+    expect(composite(loadAsset(path), 0)[2][2]).toBe(1);
   });
 });
 
@@ -266,6 +295,23 @@ describe('ai', () => {
     expect(c[8][8]).not.toBe(c[3][3]);
     const table = fitPalette(a, ['#ff0000', '#0000ff']);
     expect(table.every(t => ['#ff0000', '#0000ff'].includes(t.to))).toBe(true);
+  });
+
+  it('the crop ignores specks far from the figure, unless asked to keep them', () => {
+    // 64x64: a 44px red square and a 4x4 blue crumb in the bottom-left corner (under 1% of the square).
+    const w = 64, img = { width: w, height: w, data: new Uint8Array(w * w * 4) };
+    for (let i = 0; i < w * w; i++) img.data.set([0, 255, 0, 255], i * 4);
+    for (let y = 10; y < 54; y++) for (let x = 10; x < 54; x++) img.data.set([200, 30, 30, 255], (y * w + x) * 4);
+    for (let y = 60; y < 64; y++) for (let x = 0; x < 4; x++) img.data.set([30, 30, 200, 255], (y * w + x) * 4);
+    const tight = cropToContent(img);
+    expect(tight.box.w).toBeLessThan(52);
+    const loose = cropToContent(img, 0.04, undefined, contentMask(img, undefined, 0));
+    expect(loose.box.w).toBeGreaterThan(56);
+    // The crumb does not survive into the pixels either.
+    const a = composite(pixelize(img, { id: 's', size: 16, maxColors: 4, crop: false }), 0);
+    expect(a[15][0]).toBe(0);
+    const kept = composite(pixelize(img, { id: 'k', size: 16, maxColors: 4, crop: false, speckFraction: 0 }), 0);
+    expect(kept[15][0]).not.toBe(0);
   });
 
   it('generate builds the technical prompt and downloads the first image, with an injected fetch', async () => {

@@ -107,6 +107,42 @@ export function shift(frame: Frame, dx: number, dy: number): Frame {
   return out;
 }
 
+/**
+ * Majority filter for the noise a pixelized render leaves behind: a pixel
+ * with fewer than `strength` neighbours of its own index (out of 8, the
+ * outside counting as transparent) takes the index most of its neighbours
+ * share, if at least `majority` of them agree. strength 1 removes only lone
+ * pixels (and fills lone holes); 2 also eats the ends of dashes. Lines and
+ * outlines survive: every pixel on a line has two neighbours like itself.
+ * Returns how many pixels changed.
+ */
+export function despeckle(frame: Frame, strength = 1, majority = 5): number {
+  const h = frame.length, w = frame[0]?.length ?? 0;
+  const src = frame.map(row => [...row]);
+  let changed = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const own = src[y][x];
+      const counts = new Map<number, number>();
+      let same = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = x + dx, ny = y + dy;
+          const v = nx >= 0 && ny >= 0 && nx < w && ny < h ? src[ny][nx] : 0;
+          if (v === own) same++;
+          else counts.set(v, (counts.get(v) ?? 0) + 1);
+        }
+      }
+      if (same >= strength) continue;
+      let best = own, bestN = 0;
+      for (const [v, n] of counts) if (n > bestN) { best = v; bestN = n; }
+      if (bestN >= majority && best !== own) { frame[y][x] = best; changed++; }
+    }
+  }
+  return changed;
+}
+
 // ── Draw ops as data (what the "draw" command receives) ─────────────────
 
 export type DrawOp =

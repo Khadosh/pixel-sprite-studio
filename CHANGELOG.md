@@ -20,7 +20,9 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 - **Paletas**: `png_fit` recolorea un PNG entero (un tileset, cualquier imagen) a una paleta destino sin tocar su disposición: cada color va a su mapeo forzado o al más cercano, con alpha intacto.
 - **Paletas**: `png_knockout` vuelve transparente, en un PNG, el color de fondo que toca el borde de cada región (relleno desde los bordes), dejando las islas del mismo color: despega el pasto pegado alrededor de las piezas de un tileset sin tocar los rellenos.
 - **Paletas**: `png_fit` acepta `regions` para recolorear sólo dentro de rectángulos (un adorno de un tileset con su propio mapeo, antes del general).
-- **Tests**: 31 tests nuevos en entorno `node`; `setup.ts` ya no exige `window`.
+- **Pixelize**: el recorte al contenido ignora las manchas sueltas (blobs mucho más chicos que la figura: una miga de sombra, un punto que el modelo dejó en el croma) y las borra antes de muestrear; `speck_fraction` regula el umbral (0 las conserva). Antes un punto en una esquina estiraba el recorte y la figura salía chica.
+- **Limpieza**: `despeckle`, filtro de mayoría para el ruido que deja un render pixelizado: cada píxel suelto toma el color en que coinciden sus vecinos; las líneas y los contornos sobreviven. `strength` 2 también come las puntas de los guiones; `passes` repite.
+- **Tests**: 34 tests en entorno `node`; `setup.ts` ya no exige `window`.
 
 ---
 

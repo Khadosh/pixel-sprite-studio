@@ -22,7 +22,7 @@ import { ANIMATION_KINDS, animateAsset } from './animate';
 import { generateImage, loadFalKey, pixelize } from './ai';
 import { readPng } from './png';
 import {
-  applyDrawOps, applyFx, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
+  applyDrawOps, applyFx, despeckle, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
 
 export interface CommandResult {
@@ -273,12 +273,13 @@ export const commands: Command[] = [
       fit: pathArg.optional().describe('asset whose palette to fit the result to'),
       category: category.optional(),
       crop: z.boolean().optional().describe('crop to the figure before sampling (default true)'),
+      speck_fraction: z.number().min(0).max(1).optional().describe('blobs smaller than this fraction of the largest are specks and vanish (default 0.01)'),
     }),
     run: (a) => {
       const id = a.id ?? basename(a.out).replace(/\.pss\.json$|\.json$/i, '');
       const asset = pixelize(readPng(a.png), {
         id, name: a.name, size: a.size, maxColors: a.max_colors, alphaThreshold: a.alpha_threshold,
-        removeBackground: a.remove_background, category: a.category, crop: a.crop,
+        removeBackground: a.remove_background, category: a.category, crop: a.crop, speckFraction: a.speck_fraction,
       });
       let table: unknown = null;
       if (a.fit) table = fitPalette(asset, Object.values(loadAsset(a.fit).palette));
@@ -576,6 +577,28 @@ export const commands: Command[] = [
         setFrame(asset, i, out, a.layer ?? 0);
       }
       return { frames: targets };
+    }),
+  }),
+  define({
+    name: 'despeckle',
+    description: 'Clean the noise a pixelized render leaves: every lone pixel (fewer than "strength" of its 8 neighbours share its color) takes the color most of its neighbours agree on. Lines and outlines survive. Run it on one frame or every frame, with "passes" repetitions.',
+    schema: z.object({
+      path: pathArg,
+      frame: z.number().int().nonnegative().optional().describe('default: every frame'),
+      strength: z.number().int().min(1).max(3).optional().describe('1 lone pixels only (default), 2 also dash ends'),
+      majority: z.number().int().min(3).max(8).optional().describe('neighbours that must agree (default 5)'),
+      passes: z.number().int().min(1).max(10).optional(),
+      layer: z.number().int().nonnegative().optional(),
+    }),
+    run: (a) => withAsset(a.path, asset => {
+      const targets = a.frame !== undefined ? [a.frame] : Array.from({ length: frameCount(asset) }, (_, i) => i);
+      let changed = 0;
+      for (const i of targets) {
+        const f = getFrame(asset, i, a.layer ?? 0);
+        for (let pass = 0; pass < (a.passes ?? 1); pass++) changed += despeckle(f, a.strength ?? 1, a.majority ?? 5);
+        setFrame(asset, i, f, a.layer ?? 0);
+      }
+      return { frames: targets, changed, ascii: targets.length === 1 ? renderAscii(composite(asset, targets[0])) : undefined };
     }),
   }),
   define({

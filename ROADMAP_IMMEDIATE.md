@@ -30,6 +30,7 @@
 *Ver "Headless" en AGENTS.md. Primer consumidor: The Unwritten Dao (Godot).*
 
 - [x] **Núcleo headless**: `src/headless/` con registro de comandos, CLI (`bin/pss`) y MCP (`bin/pss-mcp`).
+- [x] **Limpieza de renders**: `despeckle` y recorte que ignora manchas (`pixelize`). Lección del juego: a 16 y 32 px un objeto simple (una estera, un pergamino) sale mejor dibujado con `draw` que pixelizado; la IA rinde en formas grandes (un biombo, un poste).
 - [x] **Import de hojas 1:1** (grilla, margen, espaciado, colores exactos, tags por fila/columna).
 - [x] **Export hoja 1:1 + JSON estilo Aseprite** (rects, duración por cuadro, frameTags con loop).
 - [x] **FX procedurales por comando** (`fx`, `fx_anim`) con semilla reproducible.
