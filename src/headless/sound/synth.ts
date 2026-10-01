@@ -151,6 +151,92 @@ function renderSource(layer: LayerSpec, n: number, rate: number, rng: Rng, pitch
       }
       return out;
     }
+    case 'string': {
+      // A better plucked string (Karplus-Strong extended, Jaffe & Smith):
+      // the loop is tuned exactly with an allpass for the fraction of a
+      // sample (the plain pluck rounds the period: E5 came out a quarter
+      // tone sharp), the loss per pass comes from how long the note rings
+      // (so a high note lasts as long as a low one), and the excitation is
+      // a noise burst softened by the pick and combed by where it plucks
+      // (the harmonics that have a node there are missing, as on a real
+      // string).
+      const f = Math.max(20, freqAt(0));
+      const s = 0.5 * (src.damping ?? 0.6);
+      const total = rate / f;
+      const whole = Math.max(2, Math.floor(total - s - 0.1));
+      const frac = total - s - whole;
+      const c = (1 - frac) / (1 + frac);
+      const ring = src.ring ?? 3;
+      // The averaging filter also takes from the fundamental on every pass;
+      // the loss gives that back so the note itself rings `ring` seconds
+      // (capped under 1: the loop never grows at DC).
+      const w0 = (2 * Math.PI * f) / rate;
+      const lpGain = Math.sqrt(1 - 2 * s * (1 - s) * (1 - Math.cos(w0)));
+      const g = Math.min(0.9999, Math.pow(10, -3 / (ring * f)) / lpGain);
+      const exLen = Math.max(2, Math.round(total));
+      const ex = new Float32Array(exLen);
+      const bright = src.bright ?? 0.6;
+      const soft = 0.05 + 0.9 * (1 - bright);
+      let lpn = 0;
+      for (let i = 0; i < exLen; i++) {
+        lpn += (1 - soft) * ((rng() * 2 - 1) - lpn);
+        ex[i] = lpn;
+      }
+      const pickAt = Math.round((src.pick ?? 0.13) * exLen);
+      if (pickAt > 0) for (let i = exLen - 1; i >= pickAt; i--) ex[i] -= ex[i - pickAt];
+      let mean = 0;
+      for (const v of ex) mean += v / exLen;
+      let peakEx = 0;
+      for (let i = 0; i < exLen; i++) { ex[i] -= mean; peakEx = Math.max(peakEx, Math.abs(ex[i])); }
+      if (peakEx > 0) for (let i = 0; i < exLen; i++) ex[i] /= peakEx;
+      const line = new Float32Array(whole);
+      let idx = 0, prevU = 0, prevLp = 0, prevAp = 0;
+      for (let i = 0; i < n; i++) {
+        const u = line[idx];
+        const lp = (1 - s) * u + s * prevU;
+        prevU = u;
+        const ap = c * lp + prevLp - c * prevAp;
+        prevLp = lp;
+        prevAp = ap;
+        const y = (i < exLen ? ex[i] : 0) + g * ap;
+        line[idx] = y;
+        idx = idx + 1 === whole ? 0 : idx + 1;
+        out[i] = y;
+      }
+      return out;
+    }
+    case 'bell': {
+      // Modal: a few inharmonic partials, each dying at its own pace (the
+      // high ones first), each split in two close modes that beat slowly,
+      // the wobble of a bowl. Every mode starts at zero phase: no click.
+      const f = Math.max(20, freqAt(0));
+      const parts = src.partials ?? [[1, 1, 9], [2.71, 0.5, 6], [5.15, 0.28, 3.5], [8.43, 0.12, 2], [12.1, 0.05, 1.2]];
+      const beat = src.beat ?? 0;
+      const nyq = rate * 0.45;
+      for (const [ratio, amp, t60] of parts) {
+        const fr = f * ratio;
+        if (fr >= nyq || amp <= 0) continue;
+        const k = 6.907755 / t60;
+        const pairs = beat > 0 ? [fr - beat / 2, fr + beat / 2] : [fr];
+        const a = amp / pairs.length;
+        for (const fm of pairs) {
+          const w = (2 * Math.PI * fm) / rate;
+          const decayStep = Math.exp(-k / rate);
+          let env = a;
+          // Recurrence for sin(w i): s[i] = 2cos(w) s[i-1] - s[i-2].
+          const c2 = 2 * Math.cos(w);
+          let s1 = 0, s2 = -Math.sin(w);
+          for (let i = 0; i < n; i++) {
+            const sv = c2 * s1 - s2;
+            s2 = s1; s1 = sv;
+            out[i] += env * s2;
+            env *= decayStep;
+            if (env < 1e-6) break;
+          }
+        }
+      }
+      return out;
+    }
     case 'crackle': {
       // Short bursts at random moments (Poisson), each a little noise that
       // dies fast, with its own random level: embers, twigs, a hearth.
@@ -186,13 +272,14 @@ type FilterSpec = NonNullable<LayerSpec['filters']>[number];
 function applyFilter(x: Float32Array, spec: FilterSpec, rate: number, pitch: number,
   cutoffLfos: { spec: LfoSpec; fn: (t: number) => number }[]): void {
   const nyq = rate * 0.45;
+  const follow = spec.track === false ? 1 : pitch;
   const fcAt = (i: number) => {
     const t = i / rate;
-    let f = curveAt(spec.freq, t, 1000) * pitch;
+    let f = curveAt(spec.freq, t, 1000) * follow;
     for (const l of cutoffLfos) f *= Math.pow(2, l.spec.depth * l.fn(t));
     return Math.min(nyq, Math.max(10, f));
   };
-  if ((spec.poles ?? 2) === 1 && spec.type !== 'bandpass') {
+  if ((spec.poles ?? 2) === 1 && spec.type !== 'bandpass' && spec.type !== 'peak') {
     let y = 0, a = 0;
     for (let i = 0; i < x.length; i++) {
       if (i % 16 === 0) a = 1 - Math.exp((-2 * Math.PI * fcAt(i)) / rate);
@@ -210,11 +297,19 @@ function applyFilter(x: Float32Array, spec: FilterSpec, rate: number, pitch: num
       const w = (2 * Math.PI * fcAt(i)) / rate;
       const cos = Math.cos(w), alpha = Math.sin(w) / (2 * q);
       const a0 = 1 + alpha;
-      if (spec.type === 'lowpass') { b0 = (1 - cos) / 2; b1 = 1 - cos; b2 = (1 - cos) / 2; }
-      else if (spec.type === 'highpass') { b0 = (1 + cos) / 2; b1 = -(1 + cos); b2 = (1 + cos) / 2; }
-      else { b0 = alpha; b1 = 0; b2 = -alpha; }
-      b0 /= a0; b1 /= a0; b2 /= a0;
-      a1 = (-2 * cos) / a0; a2 = (1 - alpha) / a0;
+      if (spec.type === 'peak') {
+        // RBJ peaking EQ: a boost (or cut) around freq, flat elsewhere.
+        const A = Math.pow(10, (spec.gain_db ?? 6) / 40);
+        const p0 = 1 + alpha / A;
+        b0 = (1 + alpha * A) / p0; b1 = (-2 * cos) / p0; b2 = (1 - alpha * A) / p0;
+        a1 = (-2 * cos) / p0; a2 = (1 - alpha / A) / p0;
+      } else {
+        if (spec.type === 'lowpass') { b0 = (1 - cos) / 2; b1 = 1 - cos; b2 = (1 - cos) / 2; }
+        else if (spec.type === 'highpass') { b0 = (1 + cos) / 2; b1 = -(1 + cos); b2 = (1 + cos) / 2; }
+        else { b0 = alpha; b1 = 0; b2 = -alpha; }
+        b0 /= a0; b1 /= a0; b2 /= a0;
+        a1 = (-2 * cos) / a0; a2 = (1 - alpha) / a0;
+      }
     }
     const y = b0 * x[i] + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
     x2 = x1; x1 = x[i]; y2 = y1; y1 = y;
@@ -345,6 +440,22 @@ function renderLayer(layer: LayerSpec, n: number, rate: number, seed: number, pa
   for (let j = 0; j < len; j++) out[at + j] = voice[j] * gain;
   return out;
 }
+
+/**
+ * One note of an instrument: its layers mixed into `n` samples, at `pitch`
+ * times the frequencies written in them (filters follow unless track:
+ * false). `seed` makes each note its own (a new pluck, a new strike).
+ */
+export function renderLayersAt(layers: LayerSpec[], n: number, rate: number, seed: number, pitch: number): Float32Array {
+  const out = new Float32Array(n);
+  layers.forEach((layer, i) => {
+    const y = renderLayer(layer, n, rate, seed, String(i), pitch);
+    for (let j = 0; j < n; j++) out[j] += y[j];
+  });
+  return out;
+}
+
+export { mixSeed };
 
 // ── The whole recipe ─────────────────────────────────────────────────────
 

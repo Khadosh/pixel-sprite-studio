@@ -119,6 +119,18 @@ an agent (or a script) can produce art for a game:
   loop seam (jump vs the usual step, plus a click test across the splice), one-shot edges at silence, and clicks
   (an isolated second-difference spike over 20× its neighbourhood while the level holds: crackle grains stay
   under it, a cut or a square gate does not); `out=` draws waveform strips. Tests: `src/headless/sound/sound.test.ts`.
+  Sources also include `string` (Karplus-Strong tuned exactly with an allpass, `ring` = seconds to -60 dB at any pitch,
+  `pick` position comb, `bright` pick) and `bell` (modal: inharmonic `partials` [ratio, amp, T60], `beat` Hz); filters
+  add `peak` (RBJ peaking EQ, `gain_db`) and `track: false` (a fixed resonance, the box of an instrument).
+- Music (`src/headless/sound/music.ts`, `instruments.ts`): `music score=<file|dir|text> out=|out_dir=` renders a
+  `.partitura` (text: `tempo`, `compas`, `semilla`, `loop: si`, `humano: tiempo= fuerza=`, `sala: mix largo=`, `cola`,
+  `instrumento <name> = <preset|json> gain= ring= octava=`, `voz <name> = <instrument> octava= gain=` and then notes:
+  `A3 q`, `E4 h.`, chords `A3+E4`, `r` rest, `x` hit, durations carry over, `pp…ff`, `>` accent, `~` grace,
+  `[ … ]xN`, `|` bar check with the line in the error). Instruments are recipe layers tuned to `base` Hz, rendered per
+  note at note/base pitch: built-ins `citara`, `qin`, `gota`, `cuenco`, `campana`, `gong`, `tambor`, `madera`, `bambu`
+  (plucked and struck only), or a JSON in `instrumentos/` next to the score. A loop folds everything that rings past
+  the end (and the room tail) onto the start, so it is exactly periodic. Tests: `src/headless/sound/music.test.ts`
+  (determinism, seam with a note ringing across it, levels, tuning of the string, ring time, bowl decay).
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
   Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
   (node environment, no jsdom).
@@ -129,7 +141,7 @@ an agent (or a script) can produce art for a game:
 First consumer: *The Unwritten Dao* (Godot), whose `arte.sh` rebuilds `art/pss/src/*.pss.json` from the
 hand drawings in `art/pss/dibujos/*.txt` (`from_ascii`), exports them through `bin/pss export_sheet`,
 and checks new art with `arte.sh control` (`contact` + `lint`). Its `sonido.sh` renders `art/sonido/recetas/*.json`
-with `sound` and reviews them with `sound_contact`.
+with `sound`, its scores `art/sonido/musica/*.partitura` with `music`, and reviews them with `sound_contact`.
 
 ## Roadmap (3 archivos)
 

@@ -63,3 +63,33 @@ export function writeSound(recipePath: string, out: string) {
   writeFileSync(out, res.wav);
   return { out: resolve(out), limited: res.limited, ...res.stats };
 }
+
+// ── Music: scores (.partitura) → WAV ─────────────────────────────────────
+
+import { loadScore, parseScore, renderScore, type Score } from './music';
+import { INSTRUMENTS } from './instruments';
+
+export { loadScore, parseScore, renderScore, INSTRUMENTS };
+export type { Score };
+
+/** Renders a score to WAV bytes, its stats and what it holds. */
+export function musicToWav(score: Score, name = score.id) {
+  const r = renderScore(score);
+  const wav = encodeWav(r.rate, r.samples, r.loop);
+  return { wav, stats: analyzeWav(name, decodeWav(wav)), limited: r.limited, bars: r.bars, notes: r.notes };
+}
+
+/** Every .partitura under a directory (sorted), or the file itself. */
+export function scoreFiles(path: string): string[] {
+  if (!existsSync(path)) throw new Error(`no such file or directory: ${path}`);
+  if (!statSync(path).isDirectory()) return [path];
+  return readdirSync(path).filter(f => f.endsWith('.partitura')).sort().map(f => join(path, f));
+}
+
+export function writeMusic(scorePath: string, out: string) {
+  const score = loadScore(scorePath);
+  const res = musicToWav(score, basename(scorePath, extname(scorePath)));
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, res.wav);
+  return { out: resolve(out), limited: res.limited, bars: res.bars, notes: res.notes, ...res.stats };
+}

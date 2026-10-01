@@ -26,6 +26,7 @@ import { contactSheetMany, fullestFrame, lintAsset } from './inspect';
 import { makeVariant } from './variant';
 import {
   analyzeWav, parseRecipe, readWav, recipeFiles, soundToWav, statsTable, waveformSheet, wavFiles, writeSound,
+  parseScore, musicToWav, scoreFiles, writeMusic, INSTRUMENTS,
 } from './sound';
 import {
   applyDrawOps, applyFx, despeckle, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
@@ -803,6 +804,29 @@ export const commands: Command[] = [
       if (!a.out_dir) throw new Error('out_dir is required for a directory of recipes (or out for a single one)');
       const rows = files.map(f => writeSound(f, resolve(a.out_dir!, basename(f).replace(/\.json$/, '.wav'))));
       return { data: { written: rows.length, sounds: rows }, text: statsTable(rows) };
+    },
+  }),
+  define({
+    name: 'music',
+    description: 'Render a score (.partitura: text with tempo, meter, instruments and voices of notes like `A3 q`, `E4 h.`, rests, repeats, dynamics, grace notes, seeded humanizing, a small room; `loop: si` folds the tails onto the start so it loops without a seam) into a WAV, PCM 16 bit mono. Instruments are plucked and struck only: ' + Object.keys(INSTRUMENTS).join(', ') + ', or a JSON next to the score. score = a file, a directory of .partitura (each to out_dir/<file>.wav) or the score text itself. Returns the same checks as sound_contact plus bars and notes.',
+    schema: z.object({
+      score: z.string().describe('a .partitura file, a directory of them, or the score text (with a newline)'),
+      out: z.string().optional().describe('WAV path (one score)'),
+      out_dir: z.string().optional().describe('directory for the WAVs (named after each score file)'),
+    }),
+    run: (a) => {
+      if (a.score.includes('\n')) {
+        if (!a.out) throw new Error('out is required with an inline score');
+        const res = musicToWav(parseScore(a.score, a.out.replace(/\.wav$/i, '.partitura')));
+        mkdirSync(dirname(a.out), { recursive: true });
+        writeFileSync(a.out, res.wav);
+        return { data: { out: resolve(a.out), limited: res.limited, bars: res.bars, notes: res.notes, ...res.stats } };
+      }
+      const files = scoreFiles(a.score);
+      if (files.length === 1 && a.out) return { data: writeMusic(files[0], a.out) };
+      if (!a.out_dir) throw new Error('out_dir is required for a directory of scores (or out for a single one)');
+      const rows = files.map(f => writeMusic(f, resolve(a.out_dir!, basename(f).replace(/\.partitura$/, '.wav'))));
+      return { data: { written: rows.length, pieces: rows }, text: statsTable(rows) };
     },
   }),
   define({

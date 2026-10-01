@@ -20,10 +20,12 @@ const envelope = z.object({
 });
 
 const filter = z.object({
-  type: z.enum(['lowpass', 'highpass', 'bandpass']),
+  type: z.enum(['lowpass', 'highpass', 'bandpass', 'peak']),
   freq: curve.describe('cutoff / center in Hz, or [t, Hz] points'),
-  q: z.number().positive().optional().describe('biquad resonance (default 0.707; bandpass: higher = narrower)'),
+  q: z.number().positive().optional().describe('biquad resonance (default 0.707; bandpass and peak: higher = narrower)'),
   poles: z.union([z.literal(1), z.literal(2)]).optional().describe('1 = gentle one-pole (lowpass/highpass), 2 = biquad (default)'),
+  gain_db: z.number().optional().describe('peak: boost (or cut) at freq in dB (default 6): the resonance of a body or a box'),
+  track: z.boolean().optional().describe('follow the pitch of the voice (default true); false = a fixed resonance, like the wooden box of an instrument'),
 });
 
 const lfo = z.object({
@@ -50,14 +52,20 @@ const events = z.object({
 });
 
 const source = z.object({
-  type: z.enum(['sine', 'triangle', 'square', 'saw', 'noise', 'pluck', 'crackle']),
-  freq: curve.optional().describe('Hz (oscillators and pluck; default 440)'),
+  type: z.enum(['sine', 'triangle', 'square', 'saw', 'noise', 'pluck', 'crackle', 'string', 'bell']),
+  freq: curve.optional().describe('Hz (oscillators, pluck, string, bell; default 440)'),
   duty: z.number().min(0.01).max(0.99).optional().describe('square: fraction high (default 0.5)'),
   color: z.enum(['white', 'pink', 'brown']).optional().describe('noise and crackle (default white)'),
   decay: z.number().min(0.5).max(1).optional().describe('pluck: string loss per pass (default 0.996)'),
-  damping: z.number().min(0).max(1).optional().describe('pluck: 0 bright … 1 dull (default 0.5)'),
+  damping: z.number().min(0).max(1).optional().describe('pluck and string: 0 bright … 1 dull (default 0.5 pluck, 0.6 string): how fast the high harmonics die'),
   density: z.number().positive().optional().describe('crackle: bursts per second (default 20)'),
   burst: z.number().positive().optional().describe('crackle: burst length in seconds (default 0.004)'),
+  ring: z.number().positive().optional().describe('string: seconds until the note falls 60 dB, the same at every pitch (default 3)'),
+  pick: z.number().min(0).max(0.5).optional().describe('string: where the string is plucked, 0..0.5 of its length (default 0.13; near 0 bright and thin, 0.5 hollow)'),
+  bright: z.number().min(0).max(1).optional().describe('string: how hard the pick is, 0 soft … 1 hard (default 0.6)'),
+  partials: z.array(z.tuple([z.number().positive(), z.number().nonnegative(), z.number().positive()])).min(1).optional()
+    .describe('bell: [ratio, amplitude, seconds to -60 dB] per mode (default a singing bowl: inharmonic partials, the high ones die first)'),
+  beat: z.number().nonnegative().optional().describe('bell: each mode is two close modes this many Hz apart, the slow wobble of a bowl (default 0)'),
 });
 
 export interface LayerSpec {
