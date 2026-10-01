@@ -104,6 +104,21 @@ an agent (or a script) can produce art for a game:
   every glyph but `.` is laid over the base, and/or `ops`. The base file and layers are never touched, so
   re-running after the base changes rebuilds the variant. Returns `painted` and `changed` pixel counts.
   The game uses it for portraits with mood (`art/pss/recetas/caras/<id>_<cara>.txt`).
+- Sound (`src/headless/sound/`): `sound` synthesizes a recipe (JSON, schema in `recipe.ts`) into a WAV, PCM 16 bit
+  mono at 22050 (default) or 44100 Hz. A recipe is `duration`, `seed`, optional `loop`/`crossfade`, `normalize`
+  (peak dBFS) or `gain_db`, and `layers`; each layer has a `source` (`sine`, `triangle`, `square`, `saw`, `noise`
+  white/pink/brown, `pluck` = Karplus-Strong, `crackle` = seeded random bursts) or sub-`layers` mixed as one voice,
+  plus `filters` (lowpass/highpass one-pole or biquad, bandpass), an ADSR `envelope`, `lfo` on gain/freq/cutoff
+  (`random` = smooth seeded wander), `echo`, `start`/`length`, and `events` (repeat the layer as separate voices at
+  seeded intervals with random pitch and gain: birds, knocks, cups). Frequencies can be `[[t, Hz], …]` sweeps.
+  Each layer draws from its own generator (seed + position), so the same recipe gives the same bytes and adding a
+  layer does not change the others. `loop: true` renders the crossfade length past the end, lays it over the start
+  (equal power) and writes a `smpl` loop point (Godot imports it as a loop). The mix goes through a DC blocker,
+  one-shots get 2 ms / 10 ms fades, and a limiter keeps every peak under -0.5 dBFS. `sound recipe=<dir> out_dir=`
+  renders a folder. `sound_contact` checks WAVs without listening: duration, peak and RMS, DC, spectral centroid,
+  loop seam (jump vs the usual step, plus a click test across the splice), one-shot edges at silence, and clicks
+  (an isolated second-difference spike over 20× its neighbourhood while the level holds: crackle grains stay
+  under it, a cut or a square gate does not); `out=` draws waveform strips. Tests: `src/headless/sound/sound.test.ts`.
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
   Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
   (node environment, no jsdom).
@@ -113,7 +128,8 @@ an agent (or a script) can produce art for a game:
 
 First consumer: *The Unwritten Dao* (Godot), whose `arte.sh` rebuilds `art/pss/src/*.pss.json` from the
 hand drawings in `art/pss/dibujos/*.txt` (`from_ascii`), exports them through `bin/pss export_sheet`,
-and checks new art with `arte.sh control` (`contact` + `lint`).
+and checks new art with `arte.sh control` (`contact` + `lint`). Its `sonido.sh` renders `art/sonido/recetas/*.json`
+with `sound` and reviews them with `sound_contact`.
 
 ## Roadmap (3 archivos)
 

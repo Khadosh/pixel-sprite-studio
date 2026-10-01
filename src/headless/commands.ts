@@ -25,6 +25,9 @@ import { checkFit, fromAscii, legendGlyphs, toAscii } from './ascii';
 import { contactSheetMany, fullestFrame, lintAsset } from './inspect';
 import { makeVariant } from './variant';
 import {
+  analyzeWav, parseRecipe, readWav, recipeFiles, soundToWav, statsTable, waveformSheet, wavFiles, writeSound,
+} from './sound';
+import {
   applyDrawOps, applyFx, despeckle, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
 
@@ -777,6 +780,54 @@ export const commands: Command[] = [
       else { asset.width = a.width; asset.height = a.height; }
       return { from: old, to: { width: a.width, height: a.height } };
     }),
+  }),
+  define({
+    name: 'sound',
+    description: 'Synthesize a sound from a recipe (JSON: layers of oscillators, noise, Karplus-Strong pluck or crackle, with filters, ADSR, LFOs, echo and scattered events; seeded, loop: true splices the end into the start) into a WAV, PCM 16 bit mono at 22050 or 44100 Hz. recipe = a file, a directory of recipes (each to out_dir/<file>.wav) or the recipe object itself. Returns the same checks as sound_contact.',
+    schema: z.object({
+      recipe: z.union([z.string(), z.record(z.string(), z.unknown())]).describe('recipe file, directory of *.json recipes, or the recipe object'),
+      out: z.string().optional().describe('WAV path (one recipe)'),
+      out_dir: z.string().optional().describe('directory for the WAVs (named after each recipe file)'),
+    }),
+    run: (a) => {
+      if (typeof a.recipe !== 'string') {
+        if (!a.out) throw new Error('out is required with an inline recipe');
+        const recipe = parseRecipe(a.recipe);
+        const res = soundToWav(recipe);
+        mkdirSync(dirname(a.out), { recursive: true });
+        writeFileSync(a.out, res.wav);
+        return { data: { out: resolve(a.out), limited: res.limited, ...res.stats } };
+      }
+      const files = recipeFiles(a.recipe);
+      if (files.length === 1 && a.out) return { data: writeSound(files[0], a.out) };
+      if (!a.out_dir) throw new Error('out_dir is required for a directory of recipes (or out for a single one)');
+      const rows = files.map(f => writeSound(f, resolve(a.out_dir!, basename(f).replace(/\.json$/, '.wav'))));
+      return { data: { written: rows.length, sounds: rows }, text: statsTable(rows) };
+    },
+  }),
+  define({
+    name: 'sound_contact',
+    description: 'Check WAVs without listening: duration, peak and RMS (dBFS), DC offset, spectral centroid (low wind vs high chime), whether a loop splices without a jump, whether a one-shot starts and ends at silence, clicks. Prints a table; with out, also a PNG of waveform strips.',
+    schema: z.object({
+      paths: z.array(z.string()).min(1).describe('WAV files or directories of WAVs'),
+      out: z.string().optional().describe('PNG path for the waveform sheet'),
+    }),
+    run: (a) => {
+      const files = wavFiles(a.paths);
+      const items = files.map(f => {
+        const wav = readWav(f);
+        return { name: basename(f).replace(/\.wav$/i, ''), wav, stats: analyzeWav(basename(f).replace(/\.wav$/i, ''), wav) };
+      });
+      const rows = items.map(it => it.stats);
+      let png: Buffer | undefined;
+      if (a.out && items.length) {
+        png = encodePng(waveformSheet(items));
+        mkdirSync(dirname(a.out), { recursive: true });
+        writeFileSync(a.out, png);
+      }
+      const bad = rows.filter(r => r.warnings.length > 0).length;
+      return { data: { sounds: rows, warnings: bad, out: a.out ? resolve(a.out) : null }, text: `${statsTable(rows)}\n\n${rows.length} sounds, ${bad} with warnings` };
+    },
   }),
 ];
 
