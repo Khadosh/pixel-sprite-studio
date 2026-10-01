@@ -4,7 +4,16 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 
 ---
 
-## 2026-09-30 (Hoy)
+## 2026-10-01 (Hoy)
+**1 commit realizado**
+
+- **Headless**: **Arte como texto**. `from_ascii` crea o reemplaza un asset desde un dibujo de caracteres con su leyenda (encabezado con id, nombre, categoría, tamaño opcional, descripción, `fit` y opciones de animación; leyenda `glifo = #hex [nombre]`; uno o más cuadros tras `== <animación> <n>`) y `to_ascii` escribe cualquier asset en el mismo formato, ida y vuelta exacta (probado sobre los 93 assets del juego: 92 idénticos, el único distinto es el que tiene anatomía). Errores con archivo, línea, cuadro, fila y columna; `fit` nombra el glifo y el hex fuera de la paleta. `glyphs_from` da a cada color el glifo de su índice en otra paleta: todos los dibujos sobre la misma madre comparten glifos. Reemplaza los cuatro conversores sueltos que escribieron los agentes del juego.
+- **Headless**: **Hoja de control y lint**. `contact` pone varios assets lado a lado a escala entera, cada uno junto a un asset de referencia (el jugador) sobre la misma línea de pie, con fondo de color, grilla de N px y el nombre debajo (fuente de 3×5). `lint` revisa sin tocar nada: colores fuera de una paleta, lados que no son múltiplo de `grid`, píxeles sueltos (la regla de `despeckle`, como informe) y, para tiles, bordes opuestos que no empalman o que dejan huecos transparentes.
+- **Tests**: 44 tests headless (10 nuevos: formato, errores, varios cuadros con animación, ida y vuelta, contacto y lint).
+
+---
+
+## 2026-09-30
 **1 commit realizado**
 
 - **Headless**: **Núcleo sin navegador, CLI y servidor MCP** (`src/headless/`, `bin/pss`, `bin/pss-mcp`). Un agente puede crear assets, importar hojas PNG 1:1 (colores exactos), dibujar, aplicar los FX procedurales (`fx`, `fx_anim` con curvas de intensidad y semilla), manejar paleta, cuadros y animaciones, y exportar hoja 1:1 + JSON estilo Aseprite (`frameTags` con `loop`, duración por cuadro). `render` devuelve la imagen por MCP. Primer consumidor: el juego *The Unwritten Dao* (Godot).

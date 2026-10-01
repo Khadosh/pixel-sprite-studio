@@ -13,6 +13,8 @@ import { runCommand, commands } from './commands';
 import { main as cliMain } from './cli';
 import { importCharacter } from './character';
 import { animateAsset } from './animate';
+import { fromAscii, toAscii } from './ascii';
+import { contactSheetMany, lintAsset } from './inspect';
 import { contentMask, cropToContent, generateImage, loadFalKey, pixelize } from './ai';
 
 let dir: string;
@@ -440,6 +442,174 @@ describe('png_knockout', () => {
   });
 });
 
+const LOBO = `# a tiny two-frame drawing
+id: bicho
+name: Bicho de prueba
+category: character
+description: first line
+description: second line
+anim: idle durations=300,200 loop=true
+anim: attack fps=8 loop=false
+
+k = #15120f tinta
+m = #8d8a86
+e = #ffd27a ojo
+
+== idle 0, attack 1
+.kk.
+kmek
+kmmk
+.k.k
+
+== idle
+....
+.kk.
+kmek
+kmmk
+
+== attack 0
+kk..
+mek.
+mmk.
+k.k.
+`;
+
+describe('ascii format', () => {
+  it('builds frames, palette in legend order, names and animations', () => {
+    const { asset } = fromAscii(LOBO);
+    expect(asset.id).toBe('bicho');
+    expect(asset.category).toBe('character');
+    expect(asset.description).toBe('first line\nsecond line');
+    expect(dims(asset)).toEqual({ width: 4, height: 4 });
+    expect(asset.palette).toEqual({ 1: '#15120f', 2: '#8d8a86', 3: '#ffd27a' });
+    expect(asset.colorNames[1]).toBe('tinta');
+    expect(asset.colorNames[2]).toBe('color 2');
+    expect(frameCount(asset)).toBe(3);
+    expect(asset.layers![0].frames[0][1]).toEqual([1, 2, 3, 1]);
+    expect(asset.animations).toEqual([
+      { name: 'idle', label: 'IDLE', frameIndices: [0, 1], durations: [300, 200], loop: true },
+      { name: 'attack', label: 'ATTACK', frameIndices: [2, 0], fps: 8, loop: false },
+    ]);
+  });
+
+  it('round-trips exactly: text → asset → text → asset', () => {
+    const a = fromAscii(LOBO).asset;
+    const text = toAscii(a).text;
+    const b = fromAscii(text).asset;
+    expect(b).toEqual(a);
+    expect(toAscii(b).text).toBe(text);
+  });
+
+  it('round-trips an asset built by commands, non-square and with a frame outside any animation', async () => {
+    const path = join(dir, 'r.pss.json');
+    await runCommand('new', { path, width: 6, height: 3, palette: ['#ff0000', '#00ff0080'], frames: 2 });
+    await runCommand('draw', { path, frame: 0, ops: [{ op: 'line', x0: 0, y0: 0, x1: 5, y1: 2, color: 1 }] });
+    await runCommand('draw', { path, frame: 1, ops: [{ op: 'rect', x: 1, y: 0, w: 3, h: 3, color: 2, fill: true }] });
+    await runCommand('anim', { path, name: 'pulse', frames: [1], fps: 3 });
+    const txt = join(dir, 'r.txt');
+    await runCommand('to_ascii', { path, out: txt });
+    expect(readFileSync(txt, 'utf8')).toContain('size: 6x3');
+    const back = join(dir, 'back.pss.json');
+    await runCommand('from_ascii', { txt, out: back });
+    expect(loadAsset(back)).toEqual(loadAsset(path));
+  });
+
+  it('infers the size from the drawing and the id from the file name', async () => {
+    const txt = join(dir, 'piedra.txt');
+    writeFileSync(txt, 'k = #000\n==\nkkk\nk.k\n');
+    const res = await runCommand('from_ascii', { txt, out: join(dir, 'piedra.pss.json') });
+    expect(res.data).toMatchObject({ id: 'piedra', width: 3, height: 2, frames: 1 });
+    expect(res.png!.length).toBeGreaterThan(50);
+  });
+
+  it('fails clearly on rows of different length, unknown glyphs and size mismatches', () => {
+    expect(() => fromAscii('k = #000\n==\nkk\nk\n')).toThrow(/:4 \(frame 0, row 1\): is 1 wide, expected 2/);
+    expect(() => fromAscii('k = #000\n==\nkz\n')).toThrow(/glyph "z" is not in the legend/);
+    expect(() => fromAscii('size: 3x2\nk = #000\n==\nkk\nkk\n')).toThrow(/is 2 wide, expected 3/);
+    expect(() => fromAscii('size: 2x3\nk = #000\n==\nkk\nkk\n')).toThrow(/has 2 rows, expected 3/);
+    expect(() => fromAscii('k = #000\n')).toThrow(/no frames/);
+    expect(() => fromAscii('k = #000\nk = #fff\n==\nk\n')).toThrow(/defined twice/);
+    expect(() => fromAscii('anim: idle fps=0\nk = #000\n== idle 0\nk\n')).toThrow(/fps/);
+    expect(() => fromAscii('k = #000\n== idle 1\nk\n')).toThrow(/missing position 0/);
+    expect(() => fromAscii('anim: idle durations=100,100\nk = #000\n== idle\nk\n')).toThrow(/1 frames but 2 durations/);
+  });
+
+  it('fit names the glyph and the hex that are off the palette', async () => {
+    const pal = join(dir, 'pal.pss.json');
+    await runCommand('new', { path: pal, width: 1, palette: ['#000000', '#ffffff'] });
+    const txt = join(dir, 'x.txt');
+    writeFileSync(txt, 'k = #000000\nr = #ff0000 rojo\n==\nkr\n');
+    await expect(runCommand('from_ascii', { txt, out: join(dir, 'x.pss.json'), fit: pal })).rejects.toThrow(/"r" = #ff0000/);
+    writeFileSync(txt, 'fit: pal.pss.json\nk = #000000\n==\nk.\n');
+    await runCommand('from_ascii', { txt, out: join(dir, 'x.pss.json') });
+    expect(existsSync(join(dir, 'x.pss.json'))).toBe(true);
+  });
+
+  it('glyphs_from gives a color the glyph of its index in the reference palette', async () => {
+    const pal = join(dir, 'pal.pss.json');
+    await runCommand('new', { path: pal, width: 1, palette: ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666', '#777777', '#888888', '#999999', '#aaaaaa'] });
+    const path = join(dir, 'a.pss.json');
+    await runCommand('new', { path, width: 2, palette: ['#aaaaaa', '#333333'] });
+    await runCommand('draw', { path, frame: 0, ops: [{ op: 'pixel', x: 0, y: 0, color: 1 }, { op: 'pixel', x: 1, y: 1, color: 2 }] });
+    const res = await runCommand('to_ascii', { path, glyphs_from: pal });
+    expect(res.text).toContain('a = #aaaaaa');
+    expect(res.text).toContain('3 = #333333');
+    expect(res.text).toContain('a.\n.3');
+  });
+});
+
+describe('contact and lint', () => {
+  it('contact puts the reference next to each asset on a baseline, with a label', async () => {
+    const ref = join(dir, 'ref.pss.json');
+    await runCommand('new', { path: ref, width: 16, palette: ['#ff0000'] });
+    await runCommand('draw', { path: ref, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 16, h: 16, color: 1, fill: true }] });
+    const tall = join(dir, 'tall.pss.json');
+    await runCommand('new', { path: tall, width: 16, height: 32, palette: ['#0000ff'] });
+    await runCommand('draw', { path: tall, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 16, h: 32, color: 1, fill: true }] });
+    const res = await runCommand('contact', { paths: [tall, ref], ref, scale: 1, grid: 16, background: '#000000', out: join(dir, 'c.png') });
+    const img = readPng(join(dir, 'c.png'));
+    expect(res.png!.length).toBeGreaterThan(50);
+    // Both stand on the same baseline: the reference's bottom row and the tall one's share a y.
+    const pad = 16;
+    const baseline = pad + 32 - 1;
+    expect(getPixel(img, pad + 2, baseline)).toEqual([255, 0, 0, 255]);
+    expect(getPixel(img, pad + 16 + 16 + 2, baseline)).toEqual([0, 0, 255, 255]);
+    expect(getPixel(img, pad + 2, baseline - 16)).not.toEqual([255, 0, 0, 255]); // above the reference: background, not red
+    expect(getPixel(img, pad + 32 + 2, pad)).toEqual([0, 0, 255, 255]); // the tall one reaches the top
+  });
+
+  it('lint reports off-palette colors, sizes off the grid, lone pixels and seams, without touching the asset', () => {
+    const a = createAsset({ id: 't', width: 8, height: 6, palette: ['#00ff00', '#ff00ff', '#000000'] });
+    const f = a.layers![0].frames[0];
+    for (const row of f) row.fill(1);
+    f[2][3] = 2;               // a lone off-palette pixel
+    for (let y = 0; y < 6; y++) f[y][7] = 3; // right edge unlike the left
+    const before = JSON.stringify(a);
+    const r = lintAsset(a, { palette: ['#00ff00', '#000000'], grid: 16, tile: true });
+    expect(JSON.stringify(a)).toBe(before);
+    expect(r.warnings.some(w => /#ff00ff is off the palette \(1 px\)/.test(w))).toBe(true);
+    expect(r.warnings.some(w => /8x6 is not a multiple of 16/.test(w))).toBe(true);
+    expect(r.warnings.some(w => /1 lone pixel \(x,y: 3,2\)/.test(w))).toBe(true);
+    expect(r.warnings.some(w => /left\/right edges do not meet/.test(w))).toBe(true);
+    expect(r.warnings.some(w => /top\/bottom/.test(w))).toBe(false);
+  });
+
+  it('a clean tile lints clean, and lint runs as a command over several paths', async () => {
+    const path = join(dir, 'tile.pss.json');
+    await runCommand('new', { path, width: 16, palette: ['#336699'] });
+    await runCommand('draw', { path, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 16, h: 16, color: 1, fill: true }] });
+    const holed = join(dir, 'holed.pss.json');
+    await runCommand('new', { path: holed, width: 16, palette: ['#336699'] });
+    await runCommand('draw', { path: holed, frame: 0, ops: [{ op: 'rect', x: 0, y: 0, w: 15, h: 16, color: 1, fill: true }] });
+    const res = await runCommand('lint', { paths: [path, holed], colors: ['#336699'], grid: 16, tiles: ['tile', 'holed'] });
+    const data = res.data as { clean: number; reports: { warnings: string[] }[] };
+    expect(data.clean).toBe(1);
+    expect(data.reports[1].warnings.join()).toMatch(/transparent px on the left\/right edges/);
+    expect(res.text).toContain('1/2 clean');
+    expect(contactSheetMany([{ asset: loadAsset(path) }]).width).toBeGreaterThan(16);
+  });
+});
+
 describe('commands', () => {
   it('every command has a unique name and a description', () => {
     const names = commands.map(c => c.name);
@@ -473,6 +643,7 @@ describe('commands', () => {
   it('the real binary starts under tsx (catches "@/" alias imports that only vitest resolves)', () => {
     const out = execFileSync(join(process.cwd(), 'bin/pss'), ['help'], { encoding: 'utf8' });
     expect(out).toContain('animate');
+    for (const name of ['from_ascii', 'to_ascii', 'contact', 'lint']) expect(out).toContain(name);
   });
 
   it('the CLI parses key=value and JSON forms', async () => {

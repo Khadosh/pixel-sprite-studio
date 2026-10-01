@@ -2,7 +2,7 @@
 
 > **Foco actual**: 🦴 **Anatomy-Driven Animation Engine**. 
 > Integrar el sistema de desmembramiento para que las animaciones entiendan píxeles reales, no solo rectángulos.
-> Última actualización: 2026-05-06
+> Última actualización: 2026-10-01
 
 ---
 
@@ -39,6 +39,9 @@
 - [ ] **Que el editor honre `width/height`, `durations` y `loop`** (hoy sólo el lado headless).
 - [x] **IA como materia prima por comando**: `generate` (fal.ai) y `pixelize` (el puente "HQ Image-to-Pixel" del roadmap, sin panel).
 - [ ] **Import de hojas desde la UI** reutilizando `importSheetImage`.
+- [x] **Arte como texto** (`from_ascii` / `to_ascii`): el dibujo de caracteres con leyenda es la fuente de verdad de lo dibujado a mano; el juego guarda 43 en `art/pss/dibujos/` y `arte.sh` los rearma.
+- [x] **Control de escala y limpieza** (`contact` + `lint`): la hoja al lado del jugador que atrapó los faroles gigantes, ahora por comando.
+- [ ] **Abrir un `.txt` de dibujo en el editor** (y guardar de vuelta), para retocar con el mouse lo que nació como texto.
 
 ## ⏳ Futuro Cercano (Post-Anatomy)
 - [ ] **Auto-Shade Generator** (Herramientas de Paleta)

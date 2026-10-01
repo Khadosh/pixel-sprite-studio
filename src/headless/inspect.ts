@@ -1,0 +1,238 @@
+// Control tools for a batch of assets: a contact sheet that puts each one next
+// to a reference sprite (the player) on a grid, to catch scale mistakes before
+// they reach a map, and a lint that flags off-palette colors, sizes off the
+// grid, lone pixels and tiles whose edges do not meet when repeated.
+
+import type { Frame, SpriteAsset } from '../lib/types';
+import { composite, dims, frameCount, normalizeHex } from './asset';
+import { despeckle } from './ops';
+import { blankImage, blit, setPixel, type Rgba } from './png';
+import { hexToRgba, renderFrame, type RgbaTuple } from './render';
+
+// ── A 3×5 pixel font for labels ─────────────────────────────────────────
+
+const FONT: Record<string, string> = {
+  a: '010101111101101', b: '110101110101110', c: '011100100100011', d: '110101101101110',
+  e: '111100110100111', f: '111100110100100', g: '011100101101011', h: '101101111101101',
+  i: '111010010010111', j: '001001001101010', k: '101101110101101', l: '100100100100111',
+  m: '101111111101101', n: '110101101101101', o: '010101101101010', p: '110101110100100',
+  q: '010101101110011', r: '110101110101101', s: '011100010001110', t: '111010010010010',
+  u: '101101101101111', v: '101101101101010', w: '101101111111101', x: '101101010101101',
+  y: '101101010010010', z: '111001010100111',
+  0: '111101101101111', 1: '010110010010111', 2: '110001010100111', 3: '110001010001110',
+  4: '101101111001001', 5: '111100110001110', 6: '011100111101111', 7: '111001010010010',
+  8: '111101111101111', 9: '111101111001110',
+  _: '000000000000111', '-': '000000111000000', '.': '000000000000010', ' ': '000000000000000',
+  '/': '001001010100100', '(': '010100100100010', ')': '010001001001010',
+};
+
+export function textWidth(text: string, px: number): number {
+  return text.length === 0 ? 0 : (text.length * 4 - 1) * px;
+}
+
+/** Draws lowercase text with the 3×5 font; unknown characters become a box. */
+export function drawText(img: Rgba, text: string, x: number, y: number, px: number, color: RgbaTuple): void {
+  [...text.toLowerCase()].forEach((ch, i) => {
+    const bits = FONT[ch] ?? '111101101101111';
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (bits[r * 3 + c] !== '1') continue;
+        for (let dy = 0; dy < px; dy++) for (let dx = 0; dx < px; dx++) {
+          setPixel(img, x + (i * 4 + c) * px + dx, y + r * px + dy, color);
+        }
+      }
+    }
+  });
+}
+
+// ── Contact sheet ───────────────────────────────────────────────────────
+
+export interface ContactItem {
+  asset: SpriteAsset;
+  frame?: number;
+}
+
+export interface ContactOptions {
+  scale?: number;
+  /** Background hex. */
+  background?: string;
+  /** Grid every N asset pixels (0 = none), anchored at each cell's feet. */
+  grid?: number;
+  /** Shown left of every item, bottom-aligned, to compare sizes. */
+  reference?: ContactItem;
+  /** Items per row before wrapping (default: all in one row up to 8). */
+  columns?: number;
+}
+
+function shade(rgba: RgbaTuple, amount: number): RgbaTuple {
+  const lum = (rgba[0] * 299 + rgba[1] * 587 + rgba[2] * 114) / 1000;
+  const k = lum > 128 ? -amount : amount;
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v + k)));
+  return [clamp(rgba[0]), clamp(rgba[1]), clamp(rgba[2]), 255];
+}
+
+/**
+ * Each item in a cell: the reference on the left, the item on the right, both
+ * standing on the same baseline over the background grid, name underneath.
+ */
+export function contactSheetMany(items: ContactItem[], opts: ContactOptions = {}): Rgba {
+  if (items.length === 0) throw new Error('contact needs at least one asset');
+  const scale = opts.scale ?? 4;
+  const grid = opts.grid ?? 16;
+  const bg = hexToRgba(opts.background ?? '#a6c778');
+  const lineColor = shade(bg, 28);
+  const textColor: RgbaTuple = shade(bg, 140);
+  const label = Math.max(1, Math.floor(scale / 2));
+  const pad = Math.max(grid, 4) * scale;
+  const ref = opts.reference;
+  const refDims = ref ? dims(ref.asset) : { width: 0, height: 0 };
+  const gap = ref ? (grid || 4) : 0;
+
+  const cells = items.map(it => {
+    const d = dims(it.asset);
+    const w = refDims.width + gap + d.width;
+    const h = Math.max(refDims.height, d.height);
+    const name = it.asset.id;
+    return { it, d, w, h, name };
+  });
+  const columns = Math.max(1, opts.columns ?? Math.min(8, items.length));
+  const rows: (typeof cells)[] = [];
+  for (let i = 0; i < cells.length; i += columns) rows.push(cells.slice(i, i + columns));
+
+  const labelH = (5 + 3) * label;
+  const cellW = (c: (typeof cells)[number]) => Math.max(c.w * scale, textWidth(c.name, label));
+  const rowW = rows.map(r => r.reduce((s, c) => s + cellW(c) + pad, pad));
+  const rowH = rows.map(r => Math.max(...r.map(c => c.h)) * scale + labelH + pad);
+  const img = blankImage(Math.max(...rowW), rowH.reduce((s, h) => s + h, pad), [bg[0], bg[1], bg[2], 255]);
+
+  let y0 = pad;
+  rows.forEach((row, ri) => {
+    const baseline = y0 + Math.max(...row.map(c => c.h)) * scale;
+    let x0 = pad;
+    for (const c of row) {
+      const w = c.w * scale;
+      // Grid lines behind the drawing area, anchored at the left edge and the baseline.
+      if (grid > 0) {
+        const top = baseline - c.h * scale;
+        for (let gx = 0; gx <= c.w; gx += grid) {
+          for (let y = top; y < baseline; y++) setPixel(img, x0 + gx * scale - (gx === c.w ? 1 : 0), y, lineColor);
+        }
+        for (let gy = 0; gy <= c.h; gy += grid) {
+          const y = baseline - gy * scale - (gy === 0 ? 1 : 0);
+          for (let x = x0; x < x0 + w; x++) setPixel(img, x, y, lineColor);
+        }
+      }
+      if (ref) {
+        const frame = composite(ref.asset, ref.frame ?? 0);
+        blit(img, renderFrame(ref.asset, frame, scale), x0, baseline - refDims.height * scale);
+      }
+      const frame = composite(c.it.asset, c.it.frame ?? 0);
+      blit(img, renderFrame(c.it.asset, frame, scale), x0 + (refDims.width + gap) * scale, baseline - c.d.height * scale);
+      drawText(img, c.name, x0, baseline + 3 * label, label, textColor);
+      x0 += cellW(c) + pad;
+    }
+    y0 += rowH[ri];
+  });
+  return img;
+}
+
+// ── Lint ────────────────────────────────────────────────────────────────
+
+export interface LintOptions {
+  /** Allowed hex colors; colors outside are reported. */
+  palette?: string[];
+  /** Sides must be multiples of this. */
+  grid?: number;
+  /** Check that opposite edges meet when the asset is repeated as a tile. */
+  tile?: boolean;
+  /** Same knobs as despeckle (defaults 1 and 5). */
+  strength?: number;
+  majority?: number;
+}
+
+export interface LintReport {
+  id: string;
+  width: number;
+  height: number;
+  warnings: string[];
+}
+
+function usedIndices(asset: SpriteAsset): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (let f = 0; f < frameCount(asset); f++) {
+    for (const row of composite(asset, f)) for (const v of row) if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function mismatches(a: (i: number) => number, b: (i: number) => number, n: number): number {
+  let k = 0;
+  for (let i = 0; i < n; i++) if (a(i) !== b(i)) k++;
+  return k;
+}
+
+/** How unlike two opposite edges are, against how unlike neighbouring inner lines usually are. */
+function seam(frame: Frame, axis: 'x' | 'y'): { edge: number; typical: number; holes: number } {
+  const h = frame.length, w = frame[0]?.length ?? 0;
+  const px = (x: number, y: number) => frame[y]?.[x] ?? 0;
+  let edge: number, inner = 0, count = 0, holes = 0;
+  if (axis === 'x') {
+    edge = mismatches(y => px(w - 1, y), y => px(0, y), h);
+    for (let x = 0; x < w - 1; x++) { inner += mismatches(y => px(x, y), y => px(x + 1, y), h); count++; }
+    for (let y = 0; y < h; y++) { if (!px(0, y)) holes++; if (!px(w - 1, y)) holes++; }
+  } else {
+    edge = mismatches(x => px(x, h - 1), x => px(x, 0), w);
+    for (let y = 0; y < h - 1; y++) { inner += mismatches(x => px(x, y), x => px(x, y + 1), w); count++; }
+    for (let x = 0; x < w; x++) { if (!px(x, 0)) holes++; if (!px(x, h - 1)) holes++; }
+  }
+  return { edge, typical: count ? inner / count : 0, holes };
+}
+
+export function lintAsset(asset: SpriteAsset, opts: LintOptions = {}): LintReport {
+  const { width, height } = dims(asset);
+  const warnings: string[] = [];
+
+  if (opts.palette) {
+    const allowed = new Set(opts.palette.map(normalizeHex));
+    for (const [idx, n] of usedIndices(asset)) {
+      const hex = asset.palette[idx];
+      if (!hex) warnings.push(`index ${idx} is used (${n} px) but has no palette color`);
+      else if (!allowed.has(normalizeHex(hex))) warnings.push(`color ${normalizeHex(hex)} is off the palette (${n} px)`);
+    }
+  }
+
+  if (opts.grid) {
+    if (width % opts.grid || height % opts.grid) {
+      warnings.push(`size ${width}x${height} is not a multiple of ${opts.grid}`);
+    }
+  }
+
+  for (let f = 0; f < frameCount(asset); f++) {
+    const probe = composite(asset, f).map(row => [...row]);
+    const before = probe.map(row => [...row]);
+    const changed = despeckle(probe, opts.strength ?? 1, opts.majority ?? 5);
+    if (changed) {
+      const where: string[] = [];
+      for (let y = 0; y < height && where.length < 6; y++) {
+        for (let x = 0; x < width && where.length < 6; x++) if (probe[y][x] !== before[y][x]) where.push(`${x},${y}`);
+      }
+      warnings.push(`frame ${f}: ${changed} lone pixel${changed > 1 ? 's' : ''} (x,y: ${where.join(' ')}${changed > where.length ? ' …' : ''})`);
+    }
+  }
+
+  if (opts.tile) {
+    const frame = composite(asset, 0);
+    const lr = seam(frame, 'x');
+    const tb = seam(frame, 'y');
+    const report = (label: string, s: { edge: number; typical: number; holes: number }) => {
+      if (s.holes) warnings.push(`tile: ${s.holes} transparent px on the ${label} edges (a gap when repeated)`);
+      if (s.edge > Math.max(2, s.typical * 2)) {
+        warnings.push(`tile: ${label} edges do not meet (${s.edge} px differ, inner lines differ by ${s.typical.toFixed(1)} on average)`);
+      }
+    };
+    report('left/right', lr);
+    report('top/bottom', tb);
+  }
+
+  return { id: asset.id, width, height, warnings };
+}

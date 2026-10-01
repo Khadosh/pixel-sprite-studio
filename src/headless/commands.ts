@@ -6,7 +6,7 @@
 // (the asset JSON, by convention *.pss.json) and save it back when they change it.
 
 import { dirname, resolve, basename } from 'node:path';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
 import type { SpriteAsset } from '../lib/types';
 import {
@@ -21,6 +21,8 @@ import { importCharacter } from './character';
 import { ANIMATION_KINDS, animateAsset } from './animate';
 import { generateImage, loadFalKey, pixelize } from './ai';
 import { readPng } from './png';
+import { checkFit, fromAscii, legendGlyphs, toAscii } from './ascii';
+import { contactSheetMany, lintAsset } from './inspect';
 import {
   applyDrawOps, applyFx, despeckle, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
@@ -304,6 +306,109 @@ export const commands: Command[] = [
       mkdirSync(dirname(a.out), { recursive: true });
       writeFileSync(a.out, img.bytes);
       return { data: { out: resolve(a.out), model: img.model, prompt: img.prompt, bytes: img.bytes.length } };
+    },
+  }),
+  define({
+    name: 'from_ascii',
+    description: 'Create or replace an asset from a text drawing: a header (id, name, category, size, description, fit, anim lines), a legend "glyph = #hex [name]" ("." transparent) and one or more frames, each after a "== <anim> <pos>" line. Rows of different length, unknown glyphs, sizes that do not match and (with fit) colors off the palette fail with the line. The inverse of to_ascii.',
+    schema: z.object({
+      txt: z.string().optional().describe('text file path'),
+      text: z.string().optional().describe('the text itself, instead of txt'),
+      out: pathArg,
+      fit: pathArg.optional().describe('asset whose palette every color must belong to (overrides the "fit:" header)'),
+      id: z.string().optional().describe('when the header has none (default: the txt file name)'),
+    }),
+    run: (a) => {
+      if (!a.txt && a.text === undefined) throw new Error('from_ascii needs txt or text');
+      const text = a.text ?? readFileSync(a.txt!, 'utf8');
+      const { asset, fit } = fromAscii(text, {
+        sourcePath: a.txt, defaultId: a.id ?? (a.txt ? undefined : basename(a.out).replace(/\.pss\.json$|\.json$/i, '')),
+      });
+      const fitPath = a.fit ?? fit;
+      if (fitPath) {
+        try {
+          checkFit(asset, Object.values(loadAsset(fitPath).palette), basename(fitPath), legendGlyphs(text));
+        } catch (err) {
+          throw new Error(`${a.txt ? basename(a.txt) : 'text'}: ${(err as Error).message}`);
+        }
+      }
+      saveAsset(a.out, asset);
+      return { data: summarize(asset), png: encodePng(contactSheet(asset, { scale: 4 })) };
+    },
+  }),
+  define({
+    name: 'to_ascii',
+    description: 'Write an asset in the from_ascii text format (header, legend, every frame with its animation slots), so it can be edited as text and rebuilt exactly. Multi-layer assets are flattened. "glyphs_from" gives each color the glyph of its index in another palette, so files on the same palette share glyphs.',
+    schema: z.object({
+      path: pathArg,
+      out: z.string().optional().describe('text file to write; when omitted the text is only returned'),
+      glyphs_from: pathArg.optional().describe('asset whose palette indices pick the glyphs'),
+    }),
+    run: (a) => {
+      const asset = loadAsset(a.path);
+      const { text, flattened } = toAscii(asset, { glyphPalette: a.glyphs_from ? loadAsset(a.glyphs_from).palette : undefined });
+      if (a.out) { mkdirSync(dirname(a.out), { recursive: true }); writeFileSync(a.out, text); }
+      return { data: { out: a.out ? resolve(a.out) : null, flattened }, text: a.out ? undefined : text };
+    },
+  }),
+  define({
+    name: 'contact',
+    description: 'Control sheet: several assets side by side at an integer scale on a background color, over a grid of N px anchored at their feet, each named underneath and with a reference asset (the player) standing next to it to compare sizes. Returns the PNG.',
+    schema: z.object({
+      paths: z.array(z.string()).min(1).describe('asset JSON paths'),
+      ref: pathArg.optional().describe('reference asset shown next to each one'),
+      ref_frame: z.number().int().nonnegative().optional(),
+      frame: z.number().int().nonnegative().optional().describe('frame of each asset (default 0)'),
+      scale: z.number().int().positive().optional().describe('default 4'),
+      background: z.string().optional().describe('hex (default #a6c778, grass)'),
+      grid: z.number().int().nonnegative().optional().describe('grid every N asset px (default 16, 0 = none)'),
+      columns: z.number().int().positive().optional().describe('assets per row (default up to 8)'),
+      out: z.string().optional().describe('PNG path; when omitted the image is only returned'),
+    }),
+    run: (a) => {
+      const items = a.paths.map(p => {
+        const asset = loadAsset(p);
+        return { asset, frame: Math.min(a.frame ?? 0, frameCount(asset) - 1) };
+      });
+      const img = contactSheetMany(items, {
+        scale: a.scale, background: a.background, grid: a.grid, columns: a.columns,
+        reference: a.ref ? { asset: loadAsset(a.ref), frame: a.ref_frame } : undefined,
+      });
+      const png = encodePng(img);
+      if (a.out) { mkdirSync(dirname(a.out), { recursive: true }); writeFileSync(a.out, png); }
+      return { data: { out: a.out ? resolve(a.out) : null, assets: items.length, width: img.width, height: img.height }, png };
+    },
+  }),
+  define({
+    name: 'lint',
+    description: 'Check one or more assets without changing them: colors off a palette, sides that are not a multiple of "grid", lone pixels (the despeckle rule, as a report) and, for tiles, left/right and top/bottom edges that do not meet when repeated (or leave transparent gaps).',
+    schema: z.object({
+      paths: z.array(z.string()).min(1),
+      palette: pathArg.optional().describe('asset whose palette is the allowed set'),
+      colors: z.array(z.string()).optional().describe('allowed hex colors, instead of (or added to) palette'),
+      grid: z.number().int().positive().optional(),
+      tile: z.boolean().optional().describe('check seams on every asset'),
+      tiles: z.array(z.string()).optional().describe('asset ids (or paths) to check as tiles'),
+      strength: z.number().int().min(1).max(3).optional(),
+      majority: z.number().int().min(3).max(8).optional(),
+    }),
+    run: (a) => {
+      let palette: string[] | undefined = a.colors;
+      if (a.palette) palette = (palette ?? []).concat(Object.values(loadAsset(a.palette).palette));
+      const tiles = new Set(a.tiles ?? []);
+      const reports = a.paths.map(p => {
+        const asset = loadAsset(p);
+        return lintAsset(asset, {
+          palette, grid: a.grid, strength: a.strength, majority: a.majority,
+          tile: a.tile || tiles.has(asset.id) || tiles.has(p),
+        });
+      });
+      const bad = reports.filter(r => r.warnings.length);
+      const lines = reports.map(r => r.warnings.length
+        ? `✗ ${r.id} (${r.width}x${r.height})\n${r.warnings.map(w => `    ${w}`).join('\n')}`
+        : `✓ ${r.id} (${r.width}x${r.height})`);
+      lines.push('', `${reports.length - bad.length}/${reports.length} clean`);
+      return { data: { clean: reports.length - bad.length, total: reports.length, reports }, text: lines.join('\n') };
     },
   }),
   define({

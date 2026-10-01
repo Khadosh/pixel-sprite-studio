@@ -1,7 +1,7 @@
 # AGENTS.md — Pixel Sprite Studio
 
 > This file provides project context for AI coding assistants. `CLAUDE.md` is a symlink to it.
-> Last verified against the code: 2026-09-22. If you find a discrepancy, fix this file in the same change.
+> Last verified against the code: 2026-10-01. If you find a discrepancy, fix this file in the same change.
 
 ## Project Overview
 
@@ -83,6 +83,16 @@ an agent (or a script) can produce art for a game:
   `palette_show`, `png_fit` (recolor a whole PNG to a palette, layout untouched), `png_knockout` (drop a background color connected to region edges), `remap`, `frames`, `anim`, `animate` (anatomy-engine generators from one pose), `anatomy`,
   `transform`, `resize`, `despeckle` (majority filter: lone pixels take the color their neighbours agree on; lines survive), `pixelize` (PNG → asset via the editor's quantizer; specks far from the figure are ignored by the crop, `speck_fraction`), `generate` (fal.ai → PNG; key from
   `FAL_AI_KEY` or `supabase/functions/.env`, never a command argument).
+- Text and control (`src/headless/ascii.ts`, `src/headless/inspect.ts`): `from_ascii` builds an asset from a text
+  drawing and `to_ascii` writes any asset back in the same format (exact round trip). Format: header lines
+  `id:`, `name:`, `category:`, `size: WxH` (inferred when missing), `description:` (repeatable), `fit: <asset>`,
+  `anim: <name> fps=N durations=a,b loop=true|false label=X`; legend `glyph = #hex [name]` in palette order
+  (`.` is transparent); then frames, each after `== <anim> <pos>, <anim2> <pos>` (`==` alone: no animation;
+  pos optional = next). Errors name file, line, frame, row and column. `to_ascii glyphs_from=<asset>` picks
+  each glyph from that palette's index so files on one palette share glyphs. `contact` is a control sheet
+  (assets next to a reference sprite on a baseline, background color, grid of N px, names in a 3×5 font) and
+  `lint` reports colors off a palette, sides off `grid`, lone pixels (the `despeckle` rule, read-only) and
+  tile edges that do not meet.
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
   Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
   (node environment, no jsdom).
@@ -90,8 +100,9 @@ an agent (or a script) can produce art for a game:
   (non-square canvas), `AnimationDef.durations` (ms per frame) and `AnimationDef.loop`.
 - Coordinates in commands are x = column, y = row; frames stay `number[][]` as `[row][col]`.
 
-First consumer: *The Unwritten Dao* (Godot), whose `arte.sh` exports `art/pss/src/*.pss.json`
-through `bin/pss export_sheet`.
+First consumer: *The Unwritten Dao* (Godot), whose `arte.sh` rebuilds `art/pss/src/*.pss.json` from the
+hand drawings in `art/pss/dibujos/*.txt` (`from_ascii`), exports them through `bin/pss export_sheet`,
+and checks new art with `arte.sh control` (`contact` + `lint`).
 
 ## Roadmap (3 archivos)
 
