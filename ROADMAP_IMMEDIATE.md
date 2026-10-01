@@ -41,6 +41,7 @@
 - [ ] **Import de hojas desde la UI** reutilizando `importSheetImage`.
 - [x] **Arte como texto** (`from_ascii` / `to_ascii`): el dibujo de caracteres con leyenda es la fuente de verdad de lo dibujado a mano; el juego guarda 43 en `art/pss/dibujos/` y `arte.sh` los rearma.
 - [x] **Control de escala y limpieza** (`contact` + `lint`): la hoja al lado del jugador que atrapó los faroles gigantes, ahora por comando.
+- [x] **Variantes de un asset** (`variant`): la misma cara con otras cejas, boca o mirada, en una capa encima de la base sin tocarla; el juego hace 24 retratos con ánimo así.
 - [ ] **Abrir un `.txt` de dibujo en el editor** (y guardar de vuelta), para retocar con el mouse lo que nació como texto.
 
 ## ⏳ Futuro Cercano (Post-Anatomy)

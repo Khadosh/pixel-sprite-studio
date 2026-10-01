@@ -92,7 +92,13 @@ an agent (or a script) can produce art for a game:
   each glyph from that palette's index so files on one palette share glyphs. `contact` is a control sheet
   (assets next to a reference sprite on a baseline, background color, grid of N px, names in a 3×5 font) and
   `lint` reports colors off a palette, sides off `grid`, lone pixels (the `despeckle` rule, read-only) and
-  tile edges that do not meet.
+  tile edges that do not meet. `fit` and `lint` accept a palette color at any opacity (`#rrggbbaa` whose
+  `#rrggbb` is on the palette: fog, shadows).
+- Variants (`src/headless/variant.ts`): `variant path=<base> out=<new> overlay=<txt>` copies the base and
+  paints the changes on a new top layer ("variante"): an overlay drawing in the `from_ascii` format where
+  every glyph but `.` is laid over the base, and/or `ops`. The base file and layers are never touched, so
+  re-running after the base changes rebuilds the variant. Returns `painted` and `changed` pixel counts.
+  The game uses it for portraits with mood (`art/pss/recetas/caras/<id>_<cara>.txt`).
 - Registry in `src/headless/commands.ts` (zod schemas); CLI and MCP are thin adapters.
   Add a command there and both fronts get it. Tests: `src/headless/headless.test.ts`
   (node environment, no jsdom).

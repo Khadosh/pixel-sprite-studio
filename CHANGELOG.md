@@ -5,7 +5,11 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-10-01 (Hoy)
-**1 commit realizado**
+**2 commits realizados**
+
+- **Headless**: **Variantes de un asset**. `variant` copia un asset a otro archivo y pinta los cambios en una capa nueva encima ("variante"): un dibujo de texto en el formato de `from_ascii` donde todo glifo menos `.` va sobre la base, y/o operaciones de `draw`. El archivo base y sus capas no se tocan nunca, así que rearmar la base y volver a correr el mismo comando rearma la variante. Devuelve cuántos píxeles pinta y cuántos cambian de verdad; con `fit`, el dibujo tiene que estar en la paleta. Primer uso: los retratos con ánimo del juego (cálido y duro, desde el neutro).
+- **Paletas**: `fit` (en `from_ascii` y `variant`) y `lint` aceptan un color de la paleta con cualquier opacidad: `#rrggbbaa` pasa si su `#rrggbb` está. La niebla y las sombras son colores de la madre con alpha, no colores nuevos.
+- **Tests**: 48 tests headless (4 nuevos: la variante no toca la base, cuenta lo que cambia, rechaza pisar la base, tamaños distintos y colores fuera de la paleta; y el alpha sobre la paleta).
 
 - **Headless**: **Arte como texto**. `from_ascii` crea o reemplaza un asset desde un dibujo de caracteres con su leyenda (encabezado con id, nombre, categoría, tamaño opcional, descripción, `fit` y opciones de animación; leyenda `glifo = #hex [nombre]`; uno o más cuadros tras `== <animación> <n>`) y `to_ascii` escribe cualquier asset en el mismo formato, ida y vuelta exacta (probado sobre los 93 assets del juego: 92 idénticos, el único distinto es el que tiene anatomía). Errores con archivo, línea, cuadro, fila y columna; `fit` nombra el glifo y el hex fuera de la paleta. `glyphs_from` da a cada color el glifo de su índice en otra paleta: todos los dibujos sobre la misma madre comparten glifos. Reemplaza los cuatro conversores sueltos que escribieron los agentes del juego.
 - **Headless**: **Hoja de control y lint**. `contact` pone varios assets lado a lado a escala entera, cada uno junto a un asset de referencia (el jugador) sobre la misma línea de pie, con fondo de color, grilla de N px y el nombre debajo (fuente de 3×5). `lint` revisa sin tocar nada: colores fuera de una paleta, lados que no son múltiplo de `grid`, píxeles sueltos (la regla de `despeckle`, como informe) y, para tiles, bordes opuestos que no empalman o que dejan huecos transparentes.

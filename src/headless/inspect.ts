@@ -4,7 +4,7 @@
 // grid, lone pixels and tiles whose edges do not meet when repeated.
 
 import type { Frame, SpriteAsset } from '../lib/types';
-import { composite, dims, frameCount, normalizeHex } from './asset';
+import { composite, dims, frameCount, normalizeHex, onPalette } from './asset';
 import { despeckle } from './ops';
 import { blankImage, blit, setPixel, type Rgba } from './png';
 import { hexToRgba, renderFrame, type RgbaTuple } from './render';
@@ -197,7 +197,7 @@ export function lintAsset(asset: SpriteAsset, opts: LintOptions = {}): LintRepor
     for (const [idx, n] of usedIndices(asset)) {
       const hex = asset.palette[idx];
       if (!hex) warnings.push(`index ${idx} is used (${n} px) but has no palette color`);
-      else if (!allowed.has(normalizeHex(hex))) warnings.push(`color ${normalizeHex(hex)} is off the palette (${n} px)`);
+      else if (!onPalette(allowed, hex)) warnings.push(`color ${normalizeHex(hex)} is off the palette (${n} px)`);
     }
   }
 

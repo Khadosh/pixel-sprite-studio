@@ -545,6 +545,18 @@ describe('ascii format', () => {
     expect(existsSync(join(dir, 'x.pss.json'))).toBe(true);
   });
 
+  it('fit and lint take a palette color at any opacity (#rrggbbaa), not a different color', async () => {
+    const pal = join(dir, 'pal.pss.json');
+    await runCommand('new', { path: pal, width: 1, palette: ['#cfd6d8', '#9fb0b3'] });
+    const txt = join(dir, 'niebla.txt');
+    writeFileSync(txt, 'n = #cfd6d860 niebla\ns = #9fb0b330\n==\nns\n');
+    await runCommand('from_ascii', { txt, out: join(dir, 'niebla.pss.json'), fit: pal });
+    const lint = await runCommand('lint', { paths: [join(dir, 'niebla.pss.json')], palette: pal });
+    expect(JSON.stringify(lint.data)).not.toContain('off the palette');
+    writeFileSync(txt, 'n = #cfd6d960\n==\nn\n');
+    await expect(runCommand('from_ascii', { txt, out: join(dir, 'x.pss.json'), fit: pal })).rejects.toThrow(/#cfd6d960/);
+  });
+
   it('glyphs_from gives a color the glyph of its index in the reference palette', async () => {
     const pal = join(dir, 'pal.pss.json');
     await runCommand('new', { path: pal, width: 1, palette: ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666', '#777777', '#888888', '#999999', '#aaaaaa'] });
@@ -555,6 +567,51 @@ describe('ascii format', () => {
     expect(res.text).toContain('a = #aaaaaa');
     expect(res.text).toContain('3 = #333333');
     expect(res.text).toContain('a.\n.3');
+  });
+});
+
+describe('variant', () => {
+  const CARA = 'k = #15120f\np = #ef914f\n==\nkkkk\nkpkp\npppp\n';
+
+  it('lays an overlay on a new layer and leaves the base file and layer untouched', async () => {
+    const base = join(dir, 'cara.pss.json');
+    writeFileSync(join(dir, 'cara.txt'), CARA);
+    await runCommand('from_ascii', { txt: join(dir, 'cara.txt'), out: base });
+    const before = readFileSync(base, 'utf8');
+    const overlay = join(dir, 'cara_dura.txt');
+    writeFileSync(overlay, 'k = #15120f\nr = #a83a29\n==\n....\n.k.k\n.rr.\n');
+    const res = await runCommand('variant', { path: base, out: join(dir, 'cara_dura.pss.json'), overlay });
+    expect(readFileSync(base, 'utf8')).toBe(before);
+    expect(res.data).toMatchObject({ painted: 4, changed: 4 });
+    const v = loadAsset(join(dir, 'cara_dura.pss.json'));
+    expect(v.id).toBe('cara_dura');
+    expect(v.layers!.map(l => l.name)).toEqual(['Base', 'variante']);
+    expect(v.layers![0]).toEqual(loadAsset(base).layers![0]);
+    const out = composite(v, 0).map(row => row.map(i => (i ? v.palette[i] : '.')));
+    expect(out[1]).toEqual(['#15120f', '#15120f', '#15120f', '#15120f']);
+    expect(out[2]).toEqual(['#ef914f', '#a83a29', '#a83a29', '#ef914f']);
+  });
+
+  it('counts painted pixels that equal the base as not changed, and takes ops too', async () => {
+    const base = join(dir, 'b.pss.json');
+    writeFileSync(join(dir, 'b.txt'), CARA);
+    await runCommand('from_ascii', { txt: join(dir, 'b.txt'), out: base });
+    const res = await runCommand('variant', {
+      path: base, out: join(dir, 'b_calida.pss.json'), overlay_text: 'k = #15120f\n==\nk...\n....\n....\n',
+      ops: [{ op: 'pixel', x: 3, y: 2, color: '#c9a34c' }],
+    });
+    expect(res.data).toMatchObject({ painted: 2, changed: 1 });
+  });
+
+  it('refuses to overwrite the base, a wrong size and colors off the fit palette', async () => {
+    const base = join(dir, 'c.pss.json');
+    writeFileSync(join(dir, 'c.txt'), CARA);
+    await runCommand('from_ascii', { txt: join(dir, 'c.txt'), out: base });
+    await expect(runCommand('variant', { path: base, out: base, ops: [{ op: 'clear' }] })).rejects.toThrow(/different file/);
+    await expect(runCommand('variant', { path: base, out: join(dir, 'x.pss.json'), overlay_text: 'k = #000\n==\nk\n' })).rejects.toThrow(/overlay is 1x1/);
+    await expect(runCommand('variant', {
+      path: base, out: join(dir, 'x.pss.json'), overlay_text: 'z = #00ff00\n==\nz...\n....\n....\n', fit: base,
+    })).rejects.toThrow(/"z" = #00ff00/);
   });
 });
 
@@ -643,7 +700,7 @@ describe('commands', () => {
   it('the real binary starts under tsx (catches "@/" alias imports that only vitest resolves)', () => {
     const out = execFileSync(join(process.cwd(), 'bin/pss'), ['help'], { encoding: 'utf8' });
     expect(out).toContain('animate');
-    for (const name of ['from_ascii', 'to_ascii', 'contact', 'lint']) expect(out).toContain(name);
+    for (const name of ['from_ascii', 'to_ascii', 'contact', 'lint', 'variant']) expect(out).toContain(name);
   });
 
   it('the CLI parses key=value and JSON forms', async () => {

@@ -24,7 +24,7 @@
 
 import { basename, dirname, resolve } from 'node:path';
 import type { Frame, SpriteAsset } from '../lib/types';
-import { blankFrame, createAsset, dims, frameCount, normalizeHex, setAnimation } from './asset';
+import { blankFrame, createAsset, dims, frameCount, normalizeHex, onPalette, setAnimation } from './asset';
 
 const CATEGORIES = ['character', 'terrain', 'prop', 'nature', 'ui'] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -263,11 +263,11 @@ export function fromAscii(text: string, opts: FromAsciiOptions = {}): ParsedAsci
   return { asset, fit };
 }
 
-/** Throws naming every glyph whose hex is not in the given palette. */
+/** Throws naming every glyph whose hex is not in the given palette (translucent palette colors pass). */
 export function checkFit(asset: SpriteAsset, palette: string[], label: string, glyphs?: Map<number, string>): void {
   const allowed = new Set(palette.map(normalizeHex));
   const bad = Object.entries(asset.palette)
-    .filter(([, hex]) => !allowed.has(normalizeHex(hex)))
+    .filter(([, hex]) => !onPalette(allowed, hex))
     .map(([k, hex]) => `"${glyphs?.get(Number(k)) ?? ASCII_GLYPHS[Number(k)] ?? k}" = ${hex}`);
   if (bad.length) throw new Error(`not in the palette of ${label}: ${bad.join(', ')}`);
 }

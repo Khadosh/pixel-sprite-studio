@@ -23,6 +23,7 @@ import { generateImage, loadFalKey, pixelize } from './ai';
 import { readPng } from './png';
 import { checkFit, fromAscii, legendGlyphs, toAscii } from './ascii';
 import { contactSheetMany, lintAsset } from './inspect';
+import { makeVariant } from './variant';
 import {
   applyDrawOps, applyFx, despeckle, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
 } from './ops';
@@ -334,6 +335,42 @@ export const commands: Command[] = [
       }
       saveAsset(a.out, asset);
       return { data: summarize(asset), png: encodePng(contactSheet(asset, { scale: 4 })) };
+    },
+  }),
+  define({
+    name: 'variant',
+    description: 'Make a variant of an asset without touching it: copy "path" to "out" with a new id, add a layer on top and paint the changes there — an "overlay" text drawing in the from_ascii format (every glyph but "." is laid over the base) and/or drawing "ops". The base layers are copied as they are, so after the base changes the same call rebuilds the variant. Returns how many pixels the variant paints and how many of those differ from the base.',
+    schema: z.object({
+      path: pathArg.describe('the base asset (read, never written)'),
+      out: pathArg.describe('where the variant goes'),
+      id: z.string().optional().describe('default: the out file name without .pss.json'),
+      name: z.string().optional(),
+      layer: z.string().optional().describe('name of the layer with the changes (default "variante")'),
+      frame: z.number().int().nonnegative().optional().describe('first frame the overlay and ops land on (default 0)'),
+      overlay: z.string().optional().describe('text file with the overlay drawing'),
+      overlay_text: z.string().optional().describe('the overlay drawing itself, instead of overlay'),
+      ops: z.array(drawOpSchema).optional(),
+      fit: pathArg.optional().describe('asset whose palette every overlay color must belong to'),
+    }),
+    run: (a) => {
+      if (resolve(a.path) === resolve(a.out)) throw new Error('variant: out must be a different file from path (the base is never overwritten)');
+      if (!a.overlay && a.overlay_text === undefined && !a.ops?.length) throw new Error('variant needs overlay, overlay_text or ops');
+      const overlay = a.overlay_text ?? (a.overlay ? readFileSync(a.overlay, 'utf8') : undefined);
+      if (overlay !== undefined && a.fit) {
+        const { asset: over } = fromAscii(overlay, { sourcePath: a.overlay });
+        try {
+          checkFit(over, Object.values(loadAsset(a.fit).palette), basename(a.fit), legendGlyphs(overlay));
+        } catch (err) {
+          throw new Error(`${a.overlay ? basename(a.overlay) : 'overlay'}: ${(err as Error).message}`);
+        }
+      }
+      const id = a.id ?? basename(a.out).replace(/\.pss\.json$|\.json$/i, '');
+      const { asset, painted, changed } = makeVariant(loadAsset(a.path), {
+        id, name: a.name, layer: a.layer, frame: a.frame, ops: a.ops as DrawOp[] | undefined,
+        overlay, overlaySource: a.overlay,
+      });
+      saveAsset(a.out, asset);
+      return { data: { painted, changed, asset: summarize(asset) }, png: encodePng(contactSheet(asset, { scale: 4 })) };
     },
   }),
   define({

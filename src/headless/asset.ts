@@ -51,6 +51,15 @@ export function normalizeHex(hex: string): string {
   return h;
 }
 
+/**
+ * Is this color on the palette? A translucent color (#rrggbbaa) counts when its
+ * opaque #rrggbb is: fog or a shadow is a palette color at some opacity.
+ */
+export function onPalette(allowed: Set<string>, hex: string): boolean {
+  const h = normalizeHex(hex);
+  return allowed.has(h) || (h.length === 9 && allowed.has(h.slice(0, 7)));
+}
+
 export function createAsset(opts: CreateOptions): SpriteAsset {
   const width = opts.width;
   const height = opts.height ?? opts.width;
