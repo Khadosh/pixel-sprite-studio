@@ -425,7 +425,7 @@ export const commands: Command[] = [
   }),
   define({
     name: 'lint',
-    description: 'Check one or more assets without changing them: colors off a palette, sides that are not a multiple of "grid", lone pixels (the despeckle rule, as a report) and, for tiles, left/right and top/bottom edges that do not meet when repeated (or leave transparent gaps).',
+    description: 'Check one or more assets without changing them: colors off a palette, sides that are not a multiple of "grid", lone pixels (the despeckle rule, as a report), with "pieces" detached pieces (a group of pixels that does not touch the body in a frame: a crown split off by a transparent row) and, for tiles, left/right and top/bottom edges that do not meet when repeated (or leave transparent gaps).',
     schema: z.object({
       paths: z.array(z.string()).min(1),
       palette: pathArg.optional().describe('asset whose palette is the allowed set'),
@@ -433,6 +433,9 @@ export const commands: Command[] = [
       grid: z.number().int().positive().optional(),
       tile: z.boolean().optional().describe('check seams on every asset'),
       tiles: z.array(z.string()).optional().describe('asset ids (or paths) to check as tiles'),
+      pieces: z.union([z.boolean(), z.number().int().min(1)]).optional()
+        .describe('report detached pieces of at least this many px (true = 4) on every asset'),
+      pieces_ids: z.array(z.string()).optional().describe('asset ids (or paths) to check for detached pieces'),
       strength: z.number().int().min(1).max(3).optional(),
       majority: z.number().int().min(3).max(8).optional(),
     }),
@@ -445,6 +448,7 @@ export const commands: Command[] = [
         return lintAsset(asset, {
           palette, grid: a.grid, strength: a.strength, majority: a.majority,
           tile: a.tile || tiles.has(asset.id) || tiles.has(p),
+          pieces: a.pieces || ((a.pieces_ids ?? []).some(id => id === asset.id || id === p) ? true : undefined),
         });
       });
       const bad = reports.filter(r => r.warnings.length);

@@ -171,6 +171,49 @@ export interface LintOptions {
   /** Same knobs as despeckle (defaults 1 and 5). */
   strength?: number;
   majority?: number;
+  /**
+   * Report detached pieces: in a frame, a group of painted pixels of at least
+   * this size (true = 4) that does not touch the main body, not even on a
+   * diagonal. For characters, where the body is one piece: a crown split off
+   * by a transparent row, a bun left behind by a sheet cut one pixel off.
+   */
+  pieces?: boolean | number;
+}
+
+export interface Piece { size: number; x: number; y: number }
+
+/**
+ * Groups of painted pixels (8-connected) of at least minSize that are not the
+ * biggest one, biggest first. x,y is the top-left pixel of each group.
+ */
+export function detachedPieces(frame: Frame, minSize = 4): Piece[] {
+  const h = frame.length, w = frame[0]?.length ?? 0;
+  const seen = new Uint8Array(w * h);
+  const groups: Piece[] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!frame[y][x] || seen[y * w + x]) continue;
+      let size = 0, top = { x, y };
+      const stack = [[x, y]];
+      seen[y * w + x] = 1;
+      while (stack.length) {
+        const [cx, cy] = stack.pop()!;
+        size++;
+        if (cy < top.y || (cy === top.y && cx < top.x)) top = { x: cx, y: cy };
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = cx + dx, ny = cy + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h || seen[ny * w + nx] || !frame[ny][nx]) continue;
+            seen[ny * w + nx] = 1;
+            stack.push([nx, ny]);
+          }
+        }
+      }
+      groups.push({ size, x: top.x, y: top.y });
+    }
+  }
+  groups.sort((a, b) => b.size - a.size);
+  return groups.slice(1).filter(g => g.size >= minSize);
 }
 
 export interface LintReport {
@@ -211,6 +254,15 @@ function seam(frame: Frame, axis: 'x' | 'y'): { edge: number; typical: number; h
   return { edge, typical: count ? inner / count : 0, holes };
 }
 
+/** "walk_down 2" for each frame that belongs to an animation (the first one that lists it). */
+function frameNames(asset: SpriteAsset): string[] {
+  const names: string[] = [];
+  for (const a of asset.animations ?? []) {
+    a.frameIndices.forEach((fi, i) => { if (names[fi] === undefined) names[fi] = `${a.name} ${i}`; });
+  }
+  return names;
+}
+
 export function lintAsset(asset: SpriteAsset, opts: LintOptions = {}): LintReport {
   const { width, height } = dims(asset);
   const warnings: string[] = [];
@@ -240,6 +292,18 @@ export function lintAsset(asset: SpriteAsset, opts: LintOptions = {}): LintRepor
         for (let x = 0; x < width && where.length < 6; x++) if (probe[y][x] !== before[y][x]) where.push(`${x},${y}`);
       }
       warnings.push(`frame ${f}: ${changed} lone pixel${changed > 1 ? 's' : ''} (x,y: ${where.join(' ')}${changed > where.length ? ' …' : ''})`);
+    }
+  }
+
+  if (opts.pieces) {
+    const min = opts.pieces === true ? 4 : opts.pieces;
+    const names = frameNames(asset);
+    for (let f = 0; f < frameCount(asset); f++) {
+      const loose = detachedPieces(composite(asset, f), min);
+      if (loose.length) {
+        const list = loose.slice(0, 3).map(p => `${p.size} px at ${p.x},${p.y}`).join(', ');
+        warnings.push(`frame ${f}${names[f] ? ` (${names[f]})` : ''}: ${loose.length} detached piece${loose.length > 1 ? 's' : ''} (${list}${loose.length > 3 ? ' …' : ''})`);
+      }
     }
   }
 

@@ -466,3 +466,42 @@ export function shiftRight(frame: Frame, px: number): Frame {
   }
   return out;
 }
+
+/**
+ * Closes the tears a transform opens inside a silhouette. A column of the
+ * frame with a short transparent run between two painted pixels (a "gap") is
+ * a tear when the base had no gap near those rows in that column: the head
+ * lifted one row off the neck, or a rotated head that left holes. The gap
+ * takes the color right above it (the part stretches instead of splitting).
+ * Gaps the base already had (between the legs, under an arm) stay.
+ */
+export function sealGaps(base: Frame, frame: Frame, maxGap: number = 2): Frame {
+  const out = cloneFrame(frame);
+  const h = frame.length;
+  const w = frame[0]?.length ?? 0;
+  const baseHole = (r: number, c: number) => {
+    if (r < 0 || r >= base.length) return false;
+    if (base[r][c] !== 0) return false;
+    let above = false, below = false;
+    for (let k = r - 1; k >= 0; k--) if (base[k][c] !== 0) { above = true; break; }
+    for (let k = r + 1; k < base.length; k++) if (base[k][c] !== 0) { below = true; break; }
+    return above && below;
+  };
+  for (let c = 0; c < w; c++) {
+    let r = 0;
+    while (r < h && frame[r][c] === 0) r++;
+    while (r < h) {
+      if (frame[r][c] !== 0) { r++; continue; }
+      const start = r;
+      while (r < h && frame[r][c] === 0) r++;
+      if (r >= h) break; // transparent to the bottom: not inside
+      const end = r - 1;
+      if (end - start + 1 > maxGap) continue;
+      let legit = false;
+      for (let k = start - 2; k <= end + 2 && !legit; k++) legit = baseHole(k, c);
+      if (legit) continue;
+      for (let k = start; k <= end; k++) out[k][c] = frame[start - 1][c];
+    }
+  }
+  return out;
+}

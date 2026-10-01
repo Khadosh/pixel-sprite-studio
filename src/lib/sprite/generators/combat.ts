@@ -1,5 +1,5 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { cloneFrame, shiftPixels, rotatePixels, clearPixels, stretchPixels } from '../transforms';
+import { cloneFrame, shiftPixels, rotatePixels, clearPixels, stretchPixels, sealGaps } from '../transforms';
 import { resolveMembers } from '../anatomyResolver';
 import { addGlow } from '../drawing';
 
@@ -76,7 +76,7 @@ export function generateCast(
   let f0 = clearPixels(cloneFrame(base), movingParts);
   if (arm_left) f0 = rotatePixels(base, f0, arm_left.pixels, arm_left.pivot, -90);
   if (arm_right) f0 = rotatePixels(base, f0, arm_right.pixels, arm_right.pivot, 90);
-  if (head) f0 = shiftPixels(base, f0, head.pixels, -1, 0);
+  if (head) f0 = stretchPixels(base, f0, head.pixels, -1);
   if (torso) f0 = shiftPixels(base, f0, torso.pixels, 0, 0);
   if (leg_left) f0 = shiftPixels(base, f0, leg_left.pixels, 0, 0);
   if (leg_right) f0 = shiftPixels(base, f0, leg_right.pixels, 0, 0);
@@ -85,11 +85,13 @@ export function generateCast(
   let f1 = clearPixels(cloneFrame(f0), movingParts);
   if (arm_left) f1 = rotatePixels(base, f1, arm_left.pixels, arm_left.pivot, -95);
   if (arm_right) f1 = rotatePixels(base, f1, arm_right.pixels, arm_right.pivot, 95);
-  if (head) f1 = shiftPixels(base, f1, head.pixels, -2, 0);
+  if (head) f1 = stretchPixels(base, f1, head.pixels, -2);
   if (torso) f1 = shiftPixels(base, f1, torso.pixels, 0, 0);
   if (leg_left) f1 = shiftPixels(base, f1, leg_left.pixels, 0, 0);
   if (leg_right) f1 = shiftPixels(base, f1, leg_right.pixels, 0, 0);
-  f1 = addGlow(f1, glowColor);
+  // The head lifts off the neck: stretch it and close what the arms leave open.
+  f0 = sealGaps(base, f0);
+  f1 = addGlow(sealGaps(base, f1), glowColor);
 
   return [f0, f1, f0, f1];
 }

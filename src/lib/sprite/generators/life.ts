@@ -1,5 +1,5 @@
 import type { Frame, AnatomyConfig } from '../../types';
-import { cloneFrame, shiftPixels, rotatePixels, shiftFrame, squash, clearPixels } from '../transforms';
+import { cloneFrame, shiftPixels, rotatePixels, shiftFrame, squash, clearPixels, sealGaps } from '../transforms';
 import { resolveMembers } from '../anatomyResolver';
 
 /**
@@ -28,6 +28,11 @@ export function generateHurt(
   if (leg_left) f1 = shiftPixels(base, f1, leg_left.pixels, 0, 0);
   if (leg_right) f1 = shiftPixels(base, f1, leg_right.pixels, 0, 0);
   
+  // A rotated head leaves holes (forward mapping) and can split off: seal them.
+  // Under 32 px there is no head to tilt (15° tears a chibi's head into
+  // fragments): the whole body recoils in one piece.
+  f1 = base.length < 32 ? shiftFrame(base, -1, -2) : sealGaps(base, f1);
+
   // 2. RECOVERY: Settle down
   const f2 = shiftFrame(base, 1, -1);
   

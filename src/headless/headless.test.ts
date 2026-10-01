@@ -14,7 +14,7 @@ import { main as cliMain } from './cli';
 import { importCharacter } from './character';
 import { animateAsset } from './animate';
 import { fromAscii, toAscii } from './ascii';
-import { contactSheetMany, fullestFrame, lintAsset } from './inspect';
+import { contactSheetMany, detachedPieces, fullestFrame, lintAsset } from './inspect';
 import { contentMask, cropToContent, generateImage, loadFalKey, pixelize } from './ai';
 
 let dir: string;
@@ -270,6 +270,29 @@ describe('animate', () => {
     // Frames keep roughly the same amount of body: nothing vanished.
     for (const i of [...walk, ...idle]) expect(painted(i)).toBeGreaterThan(painted(0) * 0.6);
     expect(() => animateAsset(a, { base: 0, anim: 'fly' })).toThrow(/unknown animation/);
+  });
+
+  it('cast and hurt keep a chibi in one piece (no crown split off by a transparent row)', () => {
+    // A chibi of the pack: the head takes most of the 16 px, the body three rows.
+    const a = createAsset({ id: 'chibi', width: 16, palette: ['#15120f', '#3b3643', '#ef914f', '#e6dcc6'] });
+    applyDrawOps(a, 0, [
+      { op: 'rect', x: 3, y: 1, w: 10, h: 6, color: 2, fill: true },
+      { op: 'rect', x: 3, y: 7, w: 10, h: 5, color: 3, fill: true },
+      { op: 'rect', x: 4, y: 12, w: 8, h: 4, color: 4, fill: true },
+      { op: 'rect', x: 2, y: 1, w: 1, h: 15, color: 1, fill: true },
+      { op: 'rect', x: 13, y: 1, w: 1, h: 15, color: 1, fill: true },
+    ]);
+    for (const anim of ['cast', 'hurt_down', 'hurt_left']) {
+      const idx = animateAsset(a, { base: 0, anim, glow: '#e6dcc6', anatomy: { neckRow: 6, waistRow: 12 } });
+      for (const i of idx) {
+        const f = composite(a, i);
+        expect(detachedPieces(f), `${anim} frame ${i}`).toEqual([]);
+        // No transparent row between two painted rows.
+        const painted = f.map(row => row.some(v => v));
+        const first = painted.indexOf(true), last = painted.lastIndexOf(true);
+        expect(painted.slice(first, last + 1).every(Boolean), `${anim} frame ${i}`).toBe(true);
+      }
+    }
   });
 });
 
@@ -683,6 +706,28 @@ describe('contact and lint', () => {
     expect(r.warnings.some(w => /1 lone pixel \(x,y: 3,2\)/.test(w))).toBe(true);
     expect(r.warnings.some(w => /left\/right edges do not meet/.test(w))).toBe(true);
     expect(r.warnings.some(w => /top\/bottom/.test(w))).toBe(false);
+  });
+
+  it('lint with pieces reports a crown split off the body, with the animation frame name', async () => {
+    const path = join(dir, 'pj.pss.json');
+    await runCommand('new', { path, width: 16, palette: ['#3b3643', '#ef914f'], frames: 2 });
+    for (const frame of [0, 1]) {
+      await runCommand('draw', { path, frame, ops: [{ op: 'rect', x: 4, y: 6, w: 8, h: 10, color: 2, fill: true }] });
+    }
+    // Frame 1: the crown one row above the head, a transparent row between.
+    await runCommand('draw', { path, frame: 1, ops: [{ op: 'rect', x: 5, y: 2, w: 6, h: 3, color: 1, fill: true }] });
+    await runCommand('anim', { path, name: 'idle', frames: [0, 1], fps: 3 });
+    const a = loadAsset(path);
+    expect(detachedPieces(composite(a, 0))).toEqual([]);
+    expect(detachedPieces(composite(a, 1))).toEqual([{ size: 18, x: 5, y: 2 }]);
+    // Small specks are the lone-pixel rule's business, not this one.
+    expect(detachedPieces(composite(a, 1), 19)).toEqual([]);
+    expect(lintAsset(a, {}).warnings.join()).not.toMatch(/detached/);
+    const res = await runCommand('lint', { paths: [path], pieces_ids: ['pj'] });
+    expect(res.text).toMatch(/frame 1 \(idle 1\): 1 detached piece \(18 px at 5,2\)/);
+    // Touching on a diagonal is still one piece.
+    await runCommand('draw', { path, frame: 1, ops: [{ op: 'pixel', x: 11, y: 5, color: 1 }] });
+    expect(detachedPieces(composite(loadAsset(path), 1))).toEqual([]);
   });
 
   it('a clean tile lints clean, and lint runs as a command over several paths', async () => {
