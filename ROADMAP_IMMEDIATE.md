@@ -37,6 +37,11 @@
 - [x] **Animación de anatomía por comando** (`animate` + `anatomy`).
 - [ ] **El motor sobre chibis de 16 px**: con piernas de 1–2 px la caminata casi no se mueve y `die` rota la cabeza en fragmentos. Hace falta un modo "chibi" (mover bloques enteros, sin rotar) o pasos mínimos de 1 px garantizados.
 - [ ] **Que el editor honre `width/height`, `durations` y `loop`** (hoy sólo el lado headless).
+- [ ] **El editor abre y guarda los dibujos de texto** (`from_ascii` / `to_ascii`, formato en `src/headless/ascii.ts`). **Prioridad.** Hoy el agente dibuja por texto y nadie puede retocar eso en el editor; con esto se juntan las dos mitades: el agente arma por texto, una persona abre el mismo dibujo con línea de tiempo, piel de cebolla y capas para animar o pulir, guarda, y el agente sigue sobre lo guardado. Pedido por Joaquín (1 de octubre). Criterios:
+  - Abrir un `.txt` (o pegar su contenido) carga tamaño, paleta, cuadros y animaciones (`== idle 0`) en el editor.
+  - Guardar vuelve a escribir el `.txt` sin perder nada que el formato tenga (ida y vuelta exacta, con test: `to_ascii(from_ascii(x)) == x`).
+  - Lo que el formato no sabe guardar (capas, alfa parcial fuera de la paleta) avisa al guardar en vez de perderse en silencio.
+  - Primer caso real: abrir `art/pss/dibujos/bestias/guardian_de_piedra_pelea.txt` de The Unwritten Dao, retocar un cuadro y que `./arte.sh` del juego lo tome.
 - [x] **IA como materia prima por comando**: `generate` (fal.ai) y `pixelize` (el puente "HQ Image-to-Pixel" del roadmap, sin panel).
 - [ ] **Import de hojas desde la UI** reutilizando `importSheetImage`.
 - [x] **Arte como texto** (`from_ascii` / `to_ascii`): el dibujo de caracteres con leyenda es la fuente de verdad de lo dibujado a mano; el juego guarda 43 en `art/pss/dibujos/` y `arte.sh` los rearma.
