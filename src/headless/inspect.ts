@@ -47,6 +47,21 @@ export function drawText(img: Rgba, text: string, x: number, y: number, px: numb
 
 // ── Contact sheet ───────────────────────────────────────────────────────
 
+/**
+ * The frame with the most painted pixels (the first one on a tie). An effect
+ * that grows and fades (a sparkle, a ripple) usually starts on a dot or an
+ * empty frame, so frame 0 says little about how big it gets on screen.
+ */
+export function fullestFrame(asset: SpriteAsset): number {
+  let best = 0;
+  let most = -1;
+  for (let i = 0; i < frameCount(asset); i++) {
+    const painted = composite(asset, i).reduce((n, row) => n + row.filter(v => v !== 0).length, 0);
+    if (painted > most) { most = painted; best = i; }
+  }
+  return best;
+}
+
 export interface ContactItem {
   asset: SpriteAsset;
   frame?: number;

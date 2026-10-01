@@ -14,7 +14,7 @@ import { main as cliMain } from './cli';
 import { importCharacter } from './character';
 import { animateAsset } from './animate';
 import { fromAscii, toAscii } from './ascii';
-import { contactSheetMany, lintAsset } from './inspect';
+import { contactSheetMany, fullestFrame, lintAsset } from './inspect';
 import { contentMask, cropToContent, generateImage, loadFalKey, pixelize } from './ai';
 
 let dir: string;
@@ -653,6 +653,20 @@ describe('contact and lint', () => {
     expect(add[0]).toBe(0x20 + 128); // the light adds on top of the dark background
     expect(add[1]).toBe(0x20 + 64);
     expect(add[2]).toBe(0x20);
+  });
+
+  it('contact can show the fullest frame of each asset, for effects that grow from a dot', async () => {
+    const txt = join(dir, 'chispa.txt');
+    writeFileSync(txt, 'k = #ffffff\n== idle 0\n...\n.k.\n...\n== idle 1\n.k.\nkkk\n.k.\n== idle 2\n...\n...\n...\n');
+    const spark = join(dir, 'chispa.pss.json');
+    await runCommand('from_ascii', { txt, out: spark });
+    expect(fullestFrame(loadAsset(spark))).toBe(1);
+    await runCommand('contact', { paths: [spark], scale: 1, grid: 0, background: '#000000', frame: 'fullest', out: join(dir, 'full.png') });
+    await runCommand('contact', { paths: [spark], scale: 1, grid: 0, background: '#000000', out: join(dir, 'first.png') });
+    const pad = 4;
+    // The arm of the cross (top middle) only exists in frame 1.
+    expect(getPixel(readPng(join(dir, 'full.png')), pad + 1, pad)).toEqual([255, 255, 255, 255]);
+    expect(getPixel(readPng(join(dir, 'first.png')), pad + 1, pad)).toEqual([0, 0, 0, 255]);
   });
 
   it('lint reports off-palette colors, sizes off the grid, lone pixels and seams, without touching the asset', () => {

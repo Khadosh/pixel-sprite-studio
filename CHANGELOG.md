@@ -5,7 +5,10 @@ El registro histórico completo de la evolución del proyecto, desde su concepci
 ---
 
 ## 2026-10-01 (Hoy)
-**3 commits realizados**
+**4 commits realizados**
+
+- **Headless**: **La hoja de control muestra el cuadro más lleno**. `contact` acepta `frame=fullest`: de cada asset dibuja el cuadro con más píxeles pintados (el primero si empatan), no el 0. Un efecto que crece desde un punto (un destello, unas ondas, una hoja que entra por el costado) arranca en un píxel o vacío, y el cuadro 0 no decía cuánto ocupa en pantalla. Nuevo `fullestFrame` en `inspect.ts`. Primer uso: los detalles vivos del juego (el destello de lo que se puede tocar, el remolino, las ondas, la hoja) en `./arte.sh control`.
+- **Tests**: 50 tests headless (1 nuevo: `fullest` elige el cuadro de la cruz y el 0 sigue siendo el punto).
 
 - **Headless**: **La hoja de control respeta el alpha**. `contact` compone cada píxel semitransparente sobre el fondo (source-over) en vez de copiarlo tal cual: una sombra de tinta al 40 % oscurece el pasto como en el juego, en vez de verse como una mancha gris opaca, y lo mismo la niebla. Con `blend=add` los suma (color por alfa), para ver un halo de luz como lo dibuja el juego sobre un fondo oscuro. Nuevo `blitBlend` en `png.ts` (`over` | `add`). Primer uso: las sombras de contacto y el halo de las luces del juego.
 - **Tests**: 49 tests headless (1 nuevo: la sombra a medio alfa oscurece el fondo y el halo se suma).

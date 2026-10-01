@@ -22,7 +22,7 @@ import { ANIMATION_KINDS, animateAsset } from './animate';
 import { generateImage, loadFalKey, pixelize } from './ai';
 import { readPng } from './png';
 import { checkFit, fromAscii, legendGlyphs, toAscii } from './ascii';
-import { contactSheetMany, lintAsset } from './inspect';
+import { contactSheetMany, fullestFrame, lintAsset } from './inspect';
 import { makeVariant } from './variant';
 import {
   applyDrawOps, applyFx, despeckle, flipH, flipV, generateFxAnimation, replaceIndex, shift, type DrawOp,
@@ -395,7 +395,8 @@ export const commands: Command[] = [
       paths: z.array(z.string()).min(1).describe('asset JSON paths'),
       ref: pathArg.optional().describe('reference asset shown next to each one'),
       ref_frame: z.number().int().nonnegative().optional(),
-      frame: z.number().int().nonnegative().optional().describe('frame of each asset (default 0)'),
+      frame: z.union([z.number().int().nonnegative(), z.literal('fullest')]).optional()
+        .describe('frame of each asset (default 0), or "fullest": the frame with the most painted pixels of each one (an effect that grows from a dot)'),
       scale: z.number().int().positive().optional().describe('default 4'),
       background: z.string().optional().describe('hex (default #a6c778, grass)'),
       grid: z.number().int().nonnegative().optional().describe('grid every N asset px (default 16, 0 = none)'),
@@ -406,7 +407,8 @@ export const commands: Command[] = [
     run: (a) => {
       const items = a.paths.map(p => {
         const asset = loadAsset(p);
-        return { asset, frame: Math.min(a.frame ?? 0, frameCount(asset) - 1) };
+        const frame = a.frame === 'fullest' ? fullestFrame(asset) : Math.min(a.frame ?? 0, frameCount(asset) - 1);
+        return { asset, frame };
       });
       const img = contactSheetMany(items, {
         scale: a.scale, background: a.background, grid: a.grid, columns: a.columns, blend: a.blend,
